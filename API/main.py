@@ -1,24 +1,18 @@
-# from typing import Optional
-
+import uvicorn
 from fastapi import FastAPI
 
-from fastapi.middleware.cors import CORSMiddleware
+from initialize import init_app
 
 app = FastAPI(title="Accuracy", version="1.0")
 
-# 跨域
-# allow_origins 允许的url列表
-# allow_methods 允许的请求方式
-# allow_headers 允许的请求头
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 初始化app
+init_app(app)
 
 
 @app.get("/")
 async def read_root():
-    return {"Hello": "World"}
+    return {"Hello": "Accuracy"}
+
+
+if __name__ == '__main__':
+    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)
