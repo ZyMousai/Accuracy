@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends
 
 from sqlalchemy import select
 
-
 from sql_models.PersonnelManagement.OrmUsers import User
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,4 +22,5 @@ async def get_demo(user_name: str, dbs: AsyncSession = Depends(db_session)):
 
 @users_router.get('/demo1/{id}')
 async def get_demo1(id: int, dbs: AsyncSession = Depends(db_session)):
-    return await dbs.get(User, id)
+    # return await dbs.get(User, id)
+    return await User.get_one(dbs, id)

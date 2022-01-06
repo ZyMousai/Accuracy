@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
+from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime
 
 async_session_local = None
 
@@ -25,3 +26,12 @@ async def db_session() -> AsyncSession:
 # mapper_registry.metadata即为MetaData单例
 mapper_registry = registry()
 Base = mapper_registry.generate_base()
+
+
+class BaseType(object):
+    BaseInteger = Integer
+    BaseString = String
+    BaseColumn = Column
+    BaseBoolean = Boolean
+    BaseDate = Date
+    BaseDateTime = DateTime
