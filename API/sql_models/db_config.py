@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
 from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime
+from sqlalchemy import select, func, delete
 
 async_session_local = None
 
@@ -35,3 +36,70 @@ class BaseType(object):
     BaseBoolean = Boolean
     BaseDate = Date
     BaseDateTime = DateTime
+
+
+class PBaseModel(Base):
+    __abstract__ = True
+    id = BaseType.BaseColumn(BaseType.BaseInteger, primary_key=True)
+    is_delete = BaseType.BaseColumn(BaseType.BaseBoolean, nullable=False, default=False)  # 逻辑删除
+
+    @classmethod
+    async def get_one_detail(cls, dbs, data_id):
+        """
+        以数据id为条件获取一条数据
+        :param dbs:
+        :param data_id:
+        :return:
+        """
+        return await dbs.get(cls, data_id)
+
+    @classmethod
+    async def get_all_detail_page(cls, dbs, page, page_size):
+        """获取所有数据-分页"""
+        # 处理分页
+        count = await cls.get_data_count(dbs)
+        remainder = count % page_size
+        if remainder == 0:
+            total_page = int(count // page_size)
+        else:
+            total_page = int(count // page_size) + 1
+
+        # 查询数据
+        _orm = select(cls).where(cls.is_delete == 0).order_by().limit(page_size).offset((page - 1) * page)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result, count, total_page
+
+    @classmethod
+    async def get_all_detail(cls, dbs):
+        """获取所有数据"""
+        _orm = select(cls).where(cls.is_delete == 0)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
+
+    @classmethod
+    async def get_data_count(cls, dbs):
+        """获取数据量"""
+        _orm = select(func.count()).where(cls.is_delete == 0)
+        total = (await dbs.execute(_orm)).scalar()
+        return total
+
+    @classmethod
+    async def delete_data_logic(cls, dbs, ids):
+        """逻辑删除"""
+        _orm = select(cls).where(cls.id.in_(ids))
+        result = (await dbs.execute(_orm)).scalars().all()
+
+        for r in result:
+            r.is_delete = 1
+
+        await dbs.flush()
+        await dbs.commit()
+
+    @classmethod
+    async def delete_data(cls, dbs, ids):
+        """真实删除"""
+        _orm = delete(cls).where(cls.id.in_(ids))
+        (await dbs.execute(_orm))
+
+        await dbs.flush()
+        await dbs.commit()
