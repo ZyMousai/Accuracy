@@ -1,6 +1,9 @@
 import datetime
+
 from sql_models import create_table
 from sql_models.db_config import BaseType, PBaseModel
+
+from sqlalchemy import select
 
 
 class Users(PBaseModel):
@@ -13,7 +16,22 @@ class Users(PBaseModel):
     entry_time = BaseType.BaseColumn(BaseType.BaseDate, nullable=False)  # 入职时间
     phone = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 电话
     address = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 地址
-    avatar = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False)  # 头像的路径
+    avatar = BaseType.BaseColumn(BaseType.BaseString(88), nullable=True, default='0')  # 头像的路径
+    update_password_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False,
+                                               default=datetime.datetime.now() - datetime.timedelta(days=30))  # 密码修改时间
+
+    @classmethod
+    async def add_data(cls, dbs, info):
+        _orm = select(cls).where(cls.is_delete == 0, cls.account == info.account)
+        result = (await dbs.execute(_orm)).scalars().first()
+        uid = 0
+        if not result:
+            user = cls(**info.dict())
+            dbs.add(user)
+            await dbs.flush()
+            uid = user.id
+            await dbs.commit()
+        return uid
 
 
 class Roles(PBaseModel):

@@ -89,11 +89,14 @@ class PBaseModel(Base):
         _orm = select(cls).where(cls.id.in_(ids))
         result = (await dbs.execute(_orm)).scalars().all()
 
-        for r in result:
-            r.is_delete = 1
+        if result:
+            for r in result:
+                r.is_delete = 1
 
-        await dbs.flush()
-        await dbs.commit()
+            await dbs.flush()
+            await dbs.commit()
+
+        return result
 
     @classmethod
     async def delete_data(cls, dbs, ids):
@@ -103,3 +106,27 @@ class PBaseModel(Base):
 
         await dbs.flush()
         await dbs.commit()
+
+    @classmethod
+    async def add_data(cls, dbs, info):
+        """添加单挑数据"""
+        data = cls(**info.dict())
+        dbs.add(data)
+        await dbs.flush()
+        uid = data.id
+        await dbs.commit()
+        return uid
+
+    @classmethod
+    async def update_data(cls, dbs, info):
+        _orm = select(cls).where(cls.is_delete == 0, cls.id == info['id'])
+        result = (await dbs.execute(_orm)).scalars().first()
+
+        if result:
+            for k, v in info.items():
+                exec(f'result.{k}=v')
+            await dbs.flush()
+            await dbs.commit()
+        else:
+            info = 0
+        return info
