@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import List
+from fastapi import Query
 from pydantic import BaseModel, validator
+from typing import Optional, List
 
 
 class DocumentManagementModel(BaseModel):
@@ -29,3 +30,12 @@ class CreateDocumentManagement(BaseModel):
     filesize: str
     user_id: str
     created_time: datetime
+
+
+class SearchDocumentManagement(BaseModel):
+    page: int = 1
+    page_size: int = 10
+    filename: Optional[str]
+    user_name: Optional[str]
+    start_time: Optional[str]
+    end_time: Optional[str]

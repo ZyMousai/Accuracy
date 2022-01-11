@@ -1,14 +1,10 @@
 # Documents 视图
-import shutil
-from tempfile import NamedTemporaryFile
-
 from fastapi import APIRouter, Depends, Query, File, UploadFile
-from fastapi_pagination import Page, add_pagination
-from typing import Union, Optional, List
+from typing import Optional, List
 from sql_models.db_config import db_session
 from datetime import datetime
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
-from app.DocumentManagement.schemas import DocumentManagementModel
+from app.DocumentManagement.schemas import SearchDocumentManagement
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import globals_config
 import os
@@ -18,27 +14,36 @@ documents_router = APIRouter(
     responses={404: {"description": "Not found"}}, )
 
 
-async def query_parm(filename: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None,
-                     user_name: Optional[str] = None):
-    return {"filename": filename, "start_time": start_time, "end_time": end_time,
-            "user_name": user_name}
-
-
-@documents_router.get('/', response_model=Page[DocumentManagementModel])
-async def get_docs_page(query: dict = Depends(query_parm), dbs: AsyncSession = Depends(db_session)):
+@documents_router.get('/')
+async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocumentManagement),
+                        dbs: AsyncSession = Depends(db_session)):
     """
     默认获取文档页当前第一页数据
     """
-    query['is_delete'] = 0
-    return await DocumentManagement.search(query, dbs)
+    filter_condition = [
+        ("filename", f'.like(f"%{query.filename}%")', query.filename),
+        # ("filename",f'.like(f"%{query.filename}%")',query.filename),
+        ("created_time", f'>"{query.start_time}"', query.start_time),
+        ("created_time", f'<"{query.end_time}"', query.end_time),
+        ("is_delete", '==0', 0),
+    ]
+
+    result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
+                                                                             *filter_condition)
+    response_json = {"total": count,
+                     "page": query.page,
+                     "page_size": query.page_size,
+                     "total_page": total_page,
+                     "data": result}
+    return response_json
 
 
 @documents_router.get('/{fileid}')
-async def get_doc_one(fileid: int, dbs: AsyncSession = Depends(db_session)):
+async def get_doc_one(file_id: int, dbs: AsyncSession = Depends(db_session)):
     """
     根据file的id来获取对应数据
     """
-    return await DocumentManagement.get_one_detail(dbs, fileid)
+    return await DocumentManagement.get_one_detail(dbs, file_id)
 
 
 # @documents_router.get('/search')
@@ -51,12 +56,12 @@ async def get_doc_one(fileid: int, dbs: AsyncSession = Depends(db_session)):
 
 @documents_router.delete('/')
 async def delete_doc(ids: Optional[List[int]] = Query(...),
-                     is_logicdel: int = Query(ge=0, le=1, default=0),
+                     is_logic_del: int = Query(ge=0, le=1, default=0),
                      dbs: AsyncSession = Depends(db_session)):
     """
     逻辑删除和真实删除
     """
-    if is_logicdel:
+    if is_logic_del:
         return await DocumentManagement.delete_data_logic(dbs, ids)
     else:
         for doc_id in ids:
@@ -74,9 +79,10 @@ async def upload_doc(user_id: int, files: List[UploadFile] = File(...), dbs: Asy
     for idx, f in enumerate(files):
         filename = f.filename
         content = await f.read()
-        filesize = str(float('%.2f' % (len(content) / 1024 / 1024))) + "M"
+        file_size = str(float('%.2f' % (len(content) / 1024 / 1024))) + "M"
         created_time = datetime.strptime(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
-        doc_model = DocumentManagement(filename=filename, filesize=filesize, user_id=user_id, created_time=created_time)
+        doc_model = DocumentManagement(filename=filename, file_size=file_size, user_id=user_id,
+                                       created_time=created_time)
         dbs.add(doc_model)
         await dbs.flush()
         with open(os.path.join(globals_config.DocumentStoragePath, f.filename), "wb") as w:
@@ -92,7 +98,3 @@ async def update_doc(ids: Optional[List[int]] = Query(...),
         return await DocumentManagement.delete_data_logic(dbs, ids)
     else:
         return await DocumentManagement.delete_data(dbs, ids)
-
-
-# 加载分页类
-add_pagination(documents_router)

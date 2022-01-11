@@ -1,13 +1,11 @@
 # Recycle 视图
 from typing import Optional
-
 from fastapi import APIRouter, Depends
-from fastapi_pagination import Page, add_pagination
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
 from sql_models.db_config import db_session
 
-from app.DocumentManagement.schemas import DocumentManagementModel
+from app.DocumentManagement.schemas import SearchDocumentManagement
 
 recycle_router = APIRouter(
     prefix="/recycle/v1",
@@ -33,16 +31,31 @@ async def read_root():
 #     return result
 
 
-@recycle_router.get('/', response_model=Page[DocumentManagementModel])
-async def get_recycle_page(query: dict = Depends(query_parm), dbs: AsyncSession = Depends(db_session)):
+@recycle_router.get('/')
+async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocumentManagement),
+                           dbs: AsyncSession = Depends(db_session)):
     """
-    默认获取回收站第一页内容，默认显示50条
+    默认获取回收站第一页内容，默认显示10条
     """
-    query['is_delete'] = 1
-    return await DocumentManagement.search(query, dbs)
+    filter_condition = [
+        ("filename", f'.like(f"%{query.filename}%")', query.filename),
+        # ("filename",f'.like(f"%{query.filename}%")',query.filename),
+        ("created_time", f'>"{query.start_time}"', query.start_time),
+        ("created_time", f'<"{query.end_time}"', query.end_time),
+        ("is_delete", '==1', 1),
+    ]
+
+    result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
+                                                                             *filter_condition)
+    response_json = {"total": count,
+                     "page": query.page,
+                     "page_size": query.page_size,
+                     "total_page": total_page,
+                     "data": result}
+    return response_json
 
 
-@recycle_router.get('/recover', response_model=Page[DocumentManagementModel])
+@recycle_router.get('/recover')
 async def get_recycle_page(file_id: int, dbs: AsyncSession = Depends(db_session)):
     """
     恢复功能
@@ -51,7 +64,3 @@ async def get_recycle_page(file_id: int, dbs: AsyncSession = Depends(db_session)
     file.is_delete = 0
     await dbs.flush()
     await dbs.commit()
-
-
-# 加载分页类
-add_pagination(recycle_router)
