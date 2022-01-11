@@ -1,9 +1,9 @@
 # Users 视图
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
 
 from typing import Optional, List
 from util.crypto import sha1_encode
-from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword
+from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
 from sql_models.PersonnelManagement.OrmUsers import Users
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
@@ -14,18 +14,23 @@ users_router = APIRouter(
 
 
 @users_router.get('/')
-async def get_user(page: Optional[int] = 1, page_size: Optional[int] = 10, dbs: AsyncSession = Depends(db_session)):
+async def get_user(info: SearchUser = Depends(SearchUser),
+                   dbs: AsyncSession = Depends(db_session)):
     """
     获取用户列表
-    :param page:
-    :param page_size:
+    :param info:
     :param dbs:
     :return:
     """
-    result, count, total_page = await Users.get_all_detail_page(dbs, page, page_size)
+    filter_condition = {
+        'name': [f'.like(f"%{info.name}%")', info.name],
+        'gender': [f'=={info.gender}', info.gender],
+        'creator': [f'.like(f"%{info.creator}%")', info.creator]
+    }
+    result, count, total_page = await Users.get_all_detail_page(dbs, info.page, info.page_size, **filter_condition)
     response_json = {"total": count,
-                     "page": page,
-                     "page_size": page_size,
+                     "page": info.page,
+                     "page_size": info.page_size,
                      "total_page": total_page,
                      "data": result}
     return response_json
@@ -62,13 +67,15 @@ async def delete_users(ids: Optional[List[int]] = Query(...), dbs: AsyncSession 
 
 
 @users_router.post('/')
-async def create_user(user: AddUser, dbs: AsyncSession = Depends(db_session)):
+async def create_user(request: Request, user: AddUser, dbs: AsyncSession = Depends(db_session)):
     """
     创建用户
+    :param request:
     :param user:
     :param dbs:
     :return:
     """
+    user.creator = request.state.username
     result = await Users.add_data(dbs, user)
     if not result:
         raise HTTPException(status_code=403, detail="Duplicate account.")
@@ -114,8 +121,7 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
 async def update_password(dbs: AsyncSession = Depends(db_session)):
     """
     登录
-    :param info:
     :param dbs:
     :return:
     """
-    return 123
+    return dbs

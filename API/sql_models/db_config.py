@@ -54,10 +54,15 @@ class PBaseModel(Base):
         return await dbs.get(cls, data_id)
 
     @classmethod
-    async def get_all_detail_page(cls, dbs, page, page_size):
+    async def get_all_detail_page(cls, dbs, page, page_size, **kwargs):
         """获取所有数据-分页"""
+        # 构建查询条件
+        filter_condition = [cls.is_delete == 0]
+        for k, v in kwargs.items():
+            if v[1] is not None:
+                filter_condition.append(eval(f'cls.{k}{v[0]}'))
         # 处理分页
-        count = await cls.get_data_count(dbs)
+        count = await cls.get_data_count(dbs, *filter_condition)
         remainder = count % page_size
         if remainder == 0:
             total_page = int(count // page_size)
@@ -65,7 +70,7 @@ class PBaseModel(Base):
             total_page = int(count // page_size) + 1
 
         # 查询数据
-        _orm = select(cls).where(cls.is_delete == 0).order_by().limit(page_size).offset((page - 1) * page)
+        _orm = select(cls).where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page)
         result = (await dbs.execute(_orm)).scalars().all()
         return result, count, total_page
 
@@ -77,9 +82,9 @@ class PBaseModel(Base):
         return result
 
     @classmethod
-    async def get_data_count(cls, dbs):
+    async def get_data_count(cls, dbs, *args):
         """获取数据量"""
-        _orm = select(func.count()).where(cls.is_delete == 0)
+        _orm = select(func.count()).where(*args)
         total = (await dbs.execute(_orm)).scalar()
         return total
 
@@ -109,7 +114,7 @@ class PBaseModel(Base):
 
     @classmethod
     async def add_data(cls, dbs, info):
-        """添加单挑数据"""
+        """添加单条数据"""
         data = cls(**info.dict())
         dbs.add(data)
         await dbs.flush()

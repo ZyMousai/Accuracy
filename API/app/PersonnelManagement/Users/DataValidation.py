@@ -17,6 +17,7 @@ class AddUser(BaseModel):
     entry_time: datetime.date
     phone: str
     address: str
+    creator: Optional[str] = Query(None)
 
 
 class UpdateUser(BaseModel):
@@ -33,3 +34,11 @@ class UpdatePassword(BaseModel):
     id: int
     password: Optional[str] = Query(..., min_length=6, max_length=16)
     update_password_time: Optional[datetime.datetime] = Query(datetime.datetime.now())
+
+
+class SearchUser(BaseModel):
+    name: Optional[str] = Query(None)
+    gender: Optional[bool] = Query(None)
+    creator: Optional[str] = Query(None)
+    page: Optional[int] = 1
+    page_size: Optional[int] = 10
