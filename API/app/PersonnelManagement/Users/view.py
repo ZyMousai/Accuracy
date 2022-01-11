@@ -25,7 +25,8 @@ async def get_user(info: SearchUser = Depends(SearchUser),
     filter_condition = {
         'name': [f'.like(f"%{info.name}%")', info.name],
         'gender': [f'=={info.gender}', info.gender],
-        'creator': [f'.like(f"%{info.creator}%")', info.creator]
+        'creator': [f'.like(f"%{info.creator}%")', info.creator],
+        'is_delete': ['==0', 0]
     }
     result, count, total_page = await Users.get_all_detail_page(dbs, info.page, info.page_size, **filter_condition)
     response_json = {"total": count,
@@ -93,7 +94,7 @@ async def update_user(user: UpdateUser, dbs: AsyncSession = Depends(db_session))
     """
     update_data_dict = user.dict(exclude_unset=True)
     if len(update_data_dict) > 1:
-        result = await Users.update_data(dbs, update_data_dict)
+        result = await Users.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
             raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": update_data_dict}

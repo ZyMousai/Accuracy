@@ -57,7 +57,7 @@ class PBaseModel(Base):
     async def get_all_detail_page(cls, dbs, page, page_size, **kwargs):
         """获取所有数据-分页"""
         # 构建查询条件
-        filter_condition = [cls.is_delete == 0]
+        filter_condition = list()
         for k, v in kwargs.items():
             if v[1] is not None:
                 filter_condition.append(eval(f'cls.{k}{v[0]}'))
@@ -73,13 +73,6 @@ class PBaseModel(Base):
         _orm = select(cls).where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page)
         result = (await dbs.execute(_orm)).scalars().all()
         return result, count, total_page
-
-    @classmethod
-    async def get_all_detail(cls, dbs):
-        """获取所有数据"""
-        _orm = select(cls).where(cls.is_delete == 0)
-        result = (await dbs.execute(_orm)).scalars().all()
-        return result
 
     @classmethod
     async def get_data_count(cls, dbs, *args):
@@ -123,8 +116,8 @@ class PBaseModel(Base):
         return uid
 
     @classmethod
-    async def update_data(cls, dbs, info):
-        _orm = select(cls).where(cls.is_delete == 0, cls.id == info['id'])
+    async def update_data(cls, dbs, info, is_delete):
+        _orm = select(cls).where(cls.is_delete == is_delete, cls.id == info['id'])
         result = (await dbs.execute(_orm)).scalars().first()
 
         if result:
