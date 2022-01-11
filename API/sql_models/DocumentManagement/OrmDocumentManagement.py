@@ -3,7 +3,7 @@ from fastapi_pagination.bases import AbstractParams, RawParams
 from sql_models import create_table
 from sql_models.db_config import PBaseModel, BaseType
 from sqlalchemy import select
-from sql_models.PersonnelManagement.OrmUsers import Users
+from sql_models.PersonnelManagement.OrmUsers import Roles, RoleUserMapping
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 
 
@@ -19,11 +19,9 @@ class DocumentManagement(PBaseModel):
     @classmethod
     async def search(cls, data: dict, dbs):
         filter_parm = []
-        # page_size = data.get("page_size")
-        # page = data.get(("page"))
 
         if "filename" in data and data.get("filename"):
-            filter_parm.append(cls.filename == data.get("filename"))
+            filter_parm.append(cls.filename.like(f'%{data.get("filename")}%'))
         if "user_name" in data and data.get("user_name"):
             pass
         if "start_time" in data and data.get("start_time") and "end_time" in data and data.get("end_time"):
@@ -35,7 +33,6 @@ class DocumentManagement(PBaseModel):
             filter_parm.append(cls.created_time < data.get("end_time"))
         if "is_delete" in data and str(data.get("is_delete")):
             filter_parm.append(cls.is_delete == data.get("is_delete"))
-        # _orm = await select(self).where(*filter_parm).order_by().limit(page_size).offset((page - 1) * page)
         _orm = select(cls).where(*filter_parm).order_by()
         return await paginate(dbs, _orm)
 
