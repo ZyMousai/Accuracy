@@ -22,13 +22,13 @@ async def get_user(info: SearchUser = Depends(SearchUser),
     :param dbs:
     :return:
     """
-    filter_condition = {
-        'name': [f'.like(f"%{info.name}%")', info.name],
-        'gender': [f'=={info.gender}', info.gender],
-        'creator': [f'.like(f"%{info.creator}%")', info.creator],
-        'is_delete': ['==0', 0]
-    }
-    result, count, total_page = await Users.get_all_detail_page(dbs, info.page, info.page_size, **filter_condition)
+    filter_condition = [
+        ('name', f'.like(f"%{info.name}%")', info.name),
+        ('gender', f'=={info.gender}', info.gender),
+        ('creator', f'.like(f"%{info.creator}%")', info.creator),
+        ('is_delete', '==0', 0)
+    ]
+    result, count, total_page = await Users.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -111,7 +111,7 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
     """
     info.password = sha1_encode(info.password)
     update_data_dict = info.dict()
-    result = await Users.update_data(dbs, update_data_dict)
+    result = await Users.update_data(dbs, update_data_dict, is_delete=0)
     if not result:
         raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": info.id}

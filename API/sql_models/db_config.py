@@ -54,13 +54,13 @@ class PBaseModel(Base):
         return await dbs.get(cls, data_id)
 
     @classmethod
-    async def get_all_detail_page(cls, dbs, page, page_size, **kwargs):
+    async def get_all_detail_page(cls, dbs, page, page_size, *args):
         """获取所有数据-分页"""
         # 构建查询条件
         filter_condition = list()
-        for k, v in kwargs.items():
-            if v[1] is not None:
-                filter_condition.append(eval(f'cls.{k}{v[0]}'))
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
         # 处理分页
         count = await cls.get_data_count(dbs, *filter_condition)
         remainder = count % page_size
