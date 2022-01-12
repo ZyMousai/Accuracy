@@ -54,6 +54,18 @@ class PBaseModel(Base):
         return await dbs.get(cls, data_id)
 
     @classmethod
+    async def get_one(cls, dbs, *args):
+        """以一些特定属性来获取一条数据"""
+        filter_condition = list()
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+        _orm = select(cls).where(*filter_condition)
+        result = (await dbs.execute(_orm)).scalars().first()
+
+        return result
+
+    @classmethod
     async def get_all_detail_page(cls, dbs, page, page_size, *args):
         """获取所有数据-分页"""
         # 构建查询条件
@@ -117,6 +129,7 @@ class PBaseModel(Base):
 
     @classmethod
     async def update_data(cls, dbs, info, is_delete):
+        """更新数据"""
         _orm = select(cls).where(cls.is_delete == is_delete, cls.id == info['id'])
         result = (await dbs.execute(_orm)).scalars().first()
 

@@ -1,17 +1,16 @@
 # Users 视图
+
 from fastapi import APIRouter, Depends, Query, HTTPException, Request
 
 from typing import Optional, List
+
+from fastapi.security import OAuth2PasswordRequestForm
+from app.PersonnelManagement.Users.permissions import Permissions
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
-from sql_models.PersonnelManagement.OrmUsers import Users
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Users
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
-
-from fastapi import Body
-from sqlalchemy import select
-from app.PersonnelManagement.Users.permissions import create_jwt_token
-from fastapi import Request
 
 users_router = APIRouter(
     prefix="/users/v1",
@@ -20,7 +19,7 @@ users_router = APIRouter(
 
 @users_router.get('/')
 async def get_user(info: SearchUser = Depends(SearchUser),
-                   dbs: AsyncSession = Depends(db_session)):
+                   dbs: AsyncSession = Depends(db_session), ):
     """
     获取用户列表
     :param info:
@@ -123,53 +122,46 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
     return response_json
 
 
-async def get_user_id(dbs: AsyncSession = Depends(db_session), user_name: str = Body(...), password: str = Body(...)):
-    """
-    验证用户密码
-    :param dbs:
-    :param user_name:
-    :param password:
-    :return:
-    """
+async def authenticate(dbs, username: str, password: str):
+    """用户校验"""
+    filter_condition = [
+        ('account', f'=="{username}"', username),
+        ('is_delete', '==0', 0)
+    ]
 
-    # 查找数据库中此账号
-    _orm = select(Users).where(Users.account == user_name)
-    result = (await dbs.execute(_orm)).scalars().first()
-    print(result)
-    if result:
-        print(sha1_encode(password))
-        print(result.password)
-        if result.password == sha1_encode(password):
-            return result
-        else:
-            raise HTTPException(status_code=403, detail="密码输入错误")
-    else:
-        raise HTTPException(status_code=403, detail="用户不存在")
+    user = await Users.get_one(dbs, *filter_condition)
+
+    if not user:
+        return False
+    if not sha1_encode(password) == user.password:
+        return False
+    return user
 
 
 @users_router.post('/login')
-async def login(request: Request, dbs: AsyncSession = Depends(db_session),
-                user_name: str = Body(...), password: str = Body(...)):
+async def login(dbs: AsyncSession = Depends(db_session),
+                form_data: OAuth2PasswordRequestForm = Depends()):
     """
     登录
-    :param request:
     :param dbs:
-    :param user_name:
-    :param password:
+    :param form_data:
     :return:
     """
     # 校验用户密码逻辑, 返回user_id
-    user = await get_user_id(dbs, user_name, password)
+    user: Users = await authenticate(dbs, form_data.username, form_data.password)
+
+    if not user:
+        raise HTTPException(status_code=401, detail='Account password verification failed.')
+
     # 使用user_id生成jwt token
     data = {'user_id': user.id, "account": user.account, "name": user.name}
-    token = await create_jwt_token(data)
+    token = await Permissions.create_jwt_token(data)
     # 存到redis有效期三天
     # await request.app.state.redis.get(token)
-    print("正在把token加入redis中: "+token)
-    await request.app.state.redis.set(key=token, value=data, seconds=24 * 60 * 60 * 3)
+    # print("正在把token加入redis中: " + token)
+    # await request.app.state.redis.set(key=token, value=data, seconds=24 * 60 * 60 * 3)
     # await request.app.state.redis.expire(token, 24 * 60 * 60 * 3)
-    print("加入完成")
+    # print("加入完成")
     # await request.app.state.redis.get(user.email)
     # noinspection PyArgumentList
-    return token
-
+    return {"access_token": token, "token_type": "bearer"}
