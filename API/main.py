@@ -5,6 +5,7 @@ from initialize import init_app
 
 app = FastAPI(title="Accuracy", version="1.0")
 
+
 # 初始化app
 init_app(app)
 
