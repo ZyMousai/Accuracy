@@ -17,7 +17,7 @@ class Users(PBaseModel):
     phone = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 电话
     address = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 地址
     avatar = BaseType.BaseColumn(BaseType.BaseString(88), nullable=True, default='0')  # 头像的路径
-    # creator = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 创建人
+    creator = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False, default='admin')  # 创建人
     update_password_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False,
                                                default=datetime.datetime.now() - datetime.timedelta(days=30))  # 密码修改时间
 

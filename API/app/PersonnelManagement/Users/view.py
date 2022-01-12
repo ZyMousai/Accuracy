@@ -1,6 +1,6 @@
 # Users 视图
 
-from fastapi import APIRouter, Depends, Query, HTTPException, Request
+from fastapi import APIRouter, Depends, Query, HTTPException
 
 from typing import Optional, List
 
@@ -72,15 +72,13 @@ async def delete_users(ids: Optional[List[int]] = Query(...), dbs: AsyncSession 
 
 
 @users_router.post('/')
-async def create_user(request: Request, user: AddUser, dbs: AsyncSession = Depends(db_session)):
+async def create_user(user: AddUser, dbs: AsyncSession = Depends(db_session)):
     """
     创建用户
-    :param request:
     :param user:
     :param dbs:
     :return:
     """
-    user.creator = request.state.username
     result = await Users.add_data(dbs, user)
     if not result:
         raise HTTPException(status_code=403, detail="Duplicate account.")
