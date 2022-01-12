@@ -8,6 +8,11 @@ from sql_models.PersonnelManagement.OrmUsers import Users
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 
+from fastapi import Body
+from sqlalchemy import select
+from app.PersonnelManagement.Users.permissions import create_jwt_token
+from fastapi import Request
+
 users_router = APIRouter(
     prefix="/users/v1",
     responses={404: {"description": "Not found"}}, )
@@ -118,11 +123,53 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
     return response_json
 
 
-@users_router.post('/login')
-async def update_password(dbs: AsyncSession = Depends(db_session)):
+async def get_user_id(dbs: AsyncSession = Depends(db_session), user_name: str = Body(...), password: str = Body(...)):
     """
-    登录
+    验证用户密码
     :param dbs:
+    :param user_name:
+    :param password:
     :return:
     """
-    return dbs
+
+    # 查找数据库中此账号
+    _orm = select(Users).where(Users.account == user_name)
+    result = (await dbs.execute(_orm)).scalars().first()
+    print(result)
+    if result:
+        print(sha1_encode(password))
+        print(result.password)
+        if result.password == sha1_encode(password):
+            return result
+        else:
+            raise HTTPException(status_code=403, detail="密码输入错误")
+    else:
+        raise HTTPException(status_code=403, detail="用户不存在")
+
+
+@users_router.post('/login')
+async def login(request: Request, dbs: AsyncSession = Depends(db_session),
+                user_name: str = Body(...), password: str = Body(...)):
+    """
+    登录
+    :param request:
+    :param dbs:
+    :param user_name:
+    :param password:
+    :return:
+    """
+    # 校验用户密码逻辑, 返回user_id
+    user = await get_user_id(dbs, user_name, password)
+    # 使用user_id生成jwt token
+    data = {'user_id': user.id, "account": user.account, "name": user.name}
+    token = await create_jwt_token(data)
+    # 存到redis有效期三天
+    # await request.app.state.redis.get(token)
+    print("正在把token加入redis中: "+token)
+    await request.app.state.redis.set(key=token, value=data, seconds=24 * 60 * 60 * 3)
+    # await request.app.state.redis.expire(token, 24 * 60 * 60 * 3)
+    print("加入完成")
+    # await request.app.state.redis.get(user.email)
+    # noinspection PyArgumentList
+    return token
+
