@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.PersonnelManagement.Users.permissions import Permissions
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
-from sql_models.PersonnelManagement.OrmPersonnelManagement import Users
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 
@@ -19,7 +19,7 @@ users_router = APIRouter(
 
 @users_router.get('/')
 async def get_user(info: SearchUser = Depends(SearchUser),
-                   dbs: AsyncSession = Depends(db_session), ):
+                   dbs: AsyncSession = Depends(db_session)):
     """
     获取用户列表
     :param info:
@@ -151,8 +151,10 @@ async def login(dbs: AsyncSession = Depends(db_session),
     if not user:
         raise HTTPException(status_code=401, detail='Account password verification failed.')
 
+    role: Roles = await Roles.get_role_user(dbs, user.id)
+
     # 使用user_id生成jwt token
-    data = {'user_id': user.id, "account": user.account, "name": user.name}
+    data = {'user_id': user.id, "account": user.account, "name": user.name, "role_id": role.id, "role": role.role}
     token = await Permissions.create_jwt_token(data)
     # 存到redis有效期三天
     # await request.app.state.redis.get(token)

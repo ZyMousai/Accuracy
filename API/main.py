@@ -4,6 +4,7 @@ from starlette.responses import JSONResponse
 from fastapi import FastAPI, Request
 from initialize import init_app
 from app.PersonnelManagement.Users.permissions import Permissions
+from sql_models.db_config import async_session_local
 
 app = FastAPI(title="Accuracy",
               version="1.0")
@@ -20,23 +21,27 @@ async def read_root():
 # 中间件
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
+    # 请求校验
+    # path = str(request.url.path)
+    # if path == '/api/PersonnelManagement/users/v1/login' \
+    #         or path == '/docs' or path == '/redocs' or path == '/openapi.json':
+    #     pass
+    # else:
+    #     try:
+    #         # 验证token
+    #         token = request.headers.get('Authorization')
+    #         assert token, "Can't get Authorization."
+    #         payload = await Permissions.verify(token)
+    #         request.state.user_id = payload.get("user_id")
+    #         request.state.account =  payload.get("account")
+    #         request.state.username =  payload.get("username")
+    #         request.state.role_id =  payload.get("role_id")
+    #         request.state.role =  payload.get("role")
+    #         # todo 鉴权
+    #     except Exception as e:
+    #         return JSONResponse(status_code=401, content={"detail": str(e)})
+
     response = await call_next(request)
-    # # 判断不是登录接口的链接就验证token
-    path = str(request.url.path)
-    if path == '/api/PersonnelManagement/users/v1/login' \
-            or path == '/docs' or path == '/redocs' or path == '/openapi.json':
-        return response
-
-    try:
-        token = request.headers["Authorization"]
-        user_id, account, name = await Permissions.verify(token)
-        request.state.user_id = user_id
-        request.state.account = account
-        request.state.username = name
-    except Exception as e:
-
-        return JSONResponse(status_code=401, content={"detail": str(e)})
-
     return response
 
 

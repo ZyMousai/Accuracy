@@ -19,7 +19,7 @@ def create_eng(config):
 
 
 async def db_session() -> AsyncSession:
-    '''session生成器 作为fastapi的Depends选项'''
+    """session生成器 作为fastapi的Depends选项"""
     async with async_session_local() as session:
         yield session
 
@@ -117,15 +117,43 @@ class PBaseModel(Base):
         await dbs.flush()
         await dbs.commit()
 
+        return ids
+
     @classmethod
-    async def add_data(cls, dbs, info):
+    async def filter_delete_data(cls, dbs, *args):
+        """真实删除"""
+
+        filter_condition = list()
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+        _orm = delete(cls).where(*filter_condition)
+        await dbs.execute(_orm)
+
+        await dbs.flush()
+        await dbs.commit()
+
+    @classmethod
+    async def add_data(cls, dbs, info, auto_commit=True):
         """添加单条数据"""
-        data = cls(**info.dict())
+        if not isinstance(info, dict):
+            info = info.dict()
+        data = cls(**info)
         dbs.add(data)
         await dbs.flush()
         uid = data.id
-        await dbs.commit()
+        if auto_commit:
+            await dbs.commit()
         return uid
+
+    @classmethod
+    async def add_data_many(cls, dbs, info_list):
+        uid_list = []
+        for info in info_list:
+            uid = await cls.add_data(dbs, info, auto_commit=False)
+            uid_list.append(uid)
+        await dbs.commit()
+        return uid_list
 
     @classmethod
     async def update_data(cls, dbs, info, is_delete):
