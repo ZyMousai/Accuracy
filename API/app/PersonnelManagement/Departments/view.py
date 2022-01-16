@@ -1,5 +1,4 @@
 # Departments 视图
-from fastapi import APIRouter
 from sql_models.PersonnelManagement.OrmPersonnelManagement import Departments
 from app.PersonnelManagement.Departments.DataValidation import AddDepartments, UpdateDepartment, SearchDepartment
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,11 +9,6 @@ from typing import Optional, List
 departments_router = APIRouter(
     prefix="/departments/v1",
     responses={404: {"description": "Not found"}}, )
-
-
-@departments_router.get("/123")
-async def read_root():
-    return {"Hello": "World"}
 
 
 @departments_router.get('/')
@@ -100,4 +94,3 @@ async def update_departments(user: UpdateDepartment, dbs: AsyncSession = Depends
             raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
-

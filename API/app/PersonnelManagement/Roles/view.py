@@ -41,7 +41,7 @@ async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends
                         "menu_name": s.menu_name,
                         "menu_path": s.menu_path,
                     }
-                    p_menu['son_menu'].append(s_menu)
+                    p_menu.get("son_menu").append(s_menu)
             p_menu['son_menu'] = sorted(p_menu['son_menu'], key=lambda x: x['id'])
             response_data.append(p_menu)
 

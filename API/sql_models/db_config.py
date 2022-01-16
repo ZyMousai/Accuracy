@@ -121,7 +121,7 @@ class PBaseModel(Base):
 
     @classmethod
     async def filter_delete_data(cls, dbs, *args):
-        """真实删除"""
+        """通过条件真实删除"""
 
         filter_condition = list()
         for x in args:
@@ -148,6 +148,7 @@ class PBaseModel(Base):
 
     @classmethod
     async def add_data_many(cls, dbs, info_list):
+        """添加多条数据"""
         uid_list = []
         for info in info_list:
             uid = await cls.add_data(dbs, info, auto_commit=False)
