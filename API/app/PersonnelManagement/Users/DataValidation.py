@@ -17,7 +17,7 @@ class AddUser(BaseModel):
     entry_time: datetime.date
     phone: str
     address: str
-    creator: Optional[str] = Query(None)
+    creator: Optional[str] = Query(...)
 
 
 class UpdateUser(BaseModel):

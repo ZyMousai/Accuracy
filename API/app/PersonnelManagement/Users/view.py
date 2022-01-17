@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.PersonnelManagement.Users.permissions import Permissions
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
-from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles, RoleUserMapping, DepartmentUserMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 
@@ -64,9 +64,17 @@ async def delete_users(ids: Optional[List[int]] = Query(...), dbs: AsyncSession 
     :param dbs:
     :return:
     """
-    result = await Users.delete_data_logic(dbs, tuple(ids))
+    result = await Users.delete_data_logic(dbs, tuple(ids), auto_commit=False)
+
     if not result:
         raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+    filter_condition = [
+        ("user_id", f".in_({ids})", ids)
+    ]
+    # 删除角色关联
+    await RoleUserMapping.filter_delete_data(dbs, *filter_condition, auto_commit=False)
+    # 删除部门关联
+    await DepartmentUserMapping.filter_delete_data(dbs, *filter_condition, auto_commit=True)
     response_json = {"data": ids}
     return response_json
 

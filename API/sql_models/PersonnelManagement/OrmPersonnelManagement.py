@@ -1,11 +1,9 @@
 import datetime
 
-from sqlalchemy.orm import selectinload
-
 from sql_models import create_table
 from sql_models.db_config import BaseType, PBaseModel
 
-from sqlalchemy import select, join
+from sqlalchemy import select
 
 
 class Users(PBaseModel):
@@ -24,7 +22,7 @@ class Users(PBaseModel):
                                                default=datetime.datetime.now() - datetime.timedelta(days=30))  # 密码修改时间
 
     @classmethod
-    async def add_data(cls, dbs, info):
+    async def add_data(cls, dbs, info, auto_commit=True):
         _orm = select(cls).where(cls.is_delete == 0, cls.account == info.account)
         result = (await dbs.execute(_orm)).scalars().first()
         uid = 0
@@ -33,7 +31,8 @@ class Users(PBaseModel):
             dbs.add(user)
             await dbs.flush()
             uid = user.id
-            await dbs.commit()
+            if auto_commit:
+                await dbs.commit()
         return uid
 
 
@@ -71,6 +70,26 @@ class RolePermissionMapping(PBaseModel):
     role_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 角色id
     permission_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 权限id
 
+    @classmethod
+    async def filter_add_data_many_(cls, dbs, role_id, ids, auto_commit=True):
+        # 先查询出有没有相关数据
+        add_list = [{"role_id": role_id, "permission_id": x} for x in ids]
+        add_menu_id_list = []
+        exist_list = []
+        _orm = select(cls).where(cls.is_delete == 0, cls.role_id == role_id, cls.permission_id.in_(ids))
+        exist_data = (await dbs.execute(_orm)).scalars().all()
+        exist_data_id = [o.menu_id for o in exist_data]
+        # 只会插入不存在的数据
+        for info in add_list:
+            if info.get('permission_id') not in exist_data_id:
+                await cls.add_data(dbs, info, auto_commit=False)
+                add_menu_id_list.append(info.get('permission_id'))
+            else:
+                exist_list.append(info.get('permission_id'))
+        if auto_commit:
+            await dbs.commit()
+        return add_menu_id_list, exist_data_id
+
 
 class Menu(PBaseModel):
     __tablename__ = 'menu'
@@ -93,7 +112,7 @@ class RoleMenuMapping(PBaseModel):
     role_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 角色id
 
     @classmethod
-    async def add_data_many_(cls, dbs, role_id, ids):
+    async def filter_add_data_many_(cls, dbs, role_id, ids, auto_commit=True):
         # 先查询出有没有相关数据
         add_list = [{"role_id": role_id, "menu_id": x} for x in ids]
         add_menu_id_list = []
@@ -108,7 +127,8 @@ class RoleMenuMapping(PBaseModel):
                 add_menu_id_list.append(info.get('menu_id'))
             else:
                 exist_list.append(info.get('menu_id'))
-        await dbs.commit()
+        if auto_commit:
+            await dbs.commit()
         return add_menu_id_list, exist_data_id
 
 

@@ -95,7 +95,7 @@ class PBaseModel(Base):
         return total
 
     @classmethod
-    async def delete_data_logic(cls, dbs, ids):
+    async def delete_data_logic(cls, dbs, ids, auto_commit=True):
         """逻辑删除"""
         _orm = select(cls).where(cls.id.in_(ids))
         result = (await dbs.execute(_orm)).scalars().all()
@@ -105,23 +105,25 @@ class PBaseModel(Base):
                 r.is_delete = 1
 
             await dbs.flush()
-            await dbs.commit()
+            if auto_commit:
+                await dbs.commit()
 
         return result
 
     @classmethod
-    async def delete_data(cls, dbs, ids):
+    async def delete_data(cls, dbs, ids, auto_commit=True):
         """真实删除"""
         _orm = delete(cls).where(cls.id.in_(ids))
         (await dbs.execute(_orm))
 
         await dbs.flush()
-        await dbs.commit()
+        if auto_commit:
+            await dbs.commit()
 
         return ids
 
     @classmethod
-    async def filter_delete_data(cls, dbs, *args):
+    async def filter_delete_data(cls, dbs, *args, auto_commit=True):
         """通过条件真实删除"""
 
         filter_condition = list()
@@ -132,7 +134,8 @@ class PBaseModel(Base):
         await dbs.execute(_orm)
 
         await dbs.flush()
-        await dbs.commit()
+        if auto_commit:
+            await dbs.commit()
 
     @classmethod
     async def add_data(cls, dbs, info, auto_commit=True):
