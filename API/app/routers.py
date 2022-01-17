@@ -2,6 +2,8 @@
 from fastapi import APIRouter
 from app.AccountManagement.Account.view import account_router
 from app.Clerk.VoluumSiteId.view import voluum_router
+from app.Clerk.Account.view import clerk_account_router
+from app.Clerk.Alliance.view import alliance_router
 from app.DocumentManagement.Documents.view import documents_router
 from app.DocumentManagement.Recycle.view import recycle_router
 from app.PersonnelManagement.Departments.view import departments_router
@@ -18,6 +20,8 @@ acc_man_router.include_router(account_router)
 # ### Clerk
 clerk_router = APIRouter(prefix="/api/Clerk", tags=["Clerk"])
 clerk_router.include_router(voluum_router)
+clerk_router.include_router(clerk_account_router)
+clerk_router.include_router(alliance_router)
 
 # ### DocumentManagement
 doc_man_router = APIRouter(prefix="/api/DocumentManagement", tags=["DocumentManagement"])

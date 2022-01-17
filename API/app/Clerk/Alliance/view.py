@@ -92,5 +92,3 @@ async def update_departments(user: UpdateAlliance, dbs: AsyncSession = Depends(d
             raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
-
-

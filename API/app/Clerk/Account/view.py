@@ -6,12 +6,12 @@ from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional, List
 
-account_router = APIRouter(
+clerk_account_router = APIRouter(
     prefix="/account/v1",
     responses={404: {"account": "Not found"}}, )
 
 
-@account_router.get('/')
+@clerk_account_router.get('/')
 async def get_departments(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSession = Depends(db_session), ):
     """
     获取账号列表
@@ -32,7 +32,7 @@ async def get_departments(info: SearchAccount = Depends(SearchAccount), dbs: Asy
     return response_json
 
 
-@account_router.get('/{account_id}')
+@clerk_account_router.get('/{account_id}')
 async def get_departments_one(account_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个账号的信息
@@ -47,7 +47,7 @@ async def get_departments_one(account_id: Optional[int] = Query(None), dbs: Asyn
     return response_json
 
 
-@account_router.delete('/')
+@clerk_account_router.delete('/')
 async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
     删除账号 可批量
@@ -62,7 +62,7 @@ async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSe
     return response_json
 
 
-@account_router.post('/')
+@clerk_account_router.post('/')
 async def create_departments(user: AddAccount, dbs: AsyncSession = Depends(db_session)):
     """
     创建账号
@@ -77,7 +77,7 @@ async def create_departments(user: AddAccount, dbs: AsyncSession = Depends(db_se
     return response_json
 
 
-@account_router.patch('/')
+@clerk_account_router.patch('/')
 async def update_departments(user: UpdateAccount, dbs: AsyncSession = Depends(db_session)):
     """
     修改账号信息
