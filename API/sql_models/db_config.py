@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
-from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime
+from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float
 from sqlalchemy import select, func, delete
 
 async_session_local = None
@@ -36,6 +36,7 @@ class BaseType(object):
     BaseBoolean = Boolean
     BaseDate = Date
     BaseDateTime = DateTime
+    BaseFloat = Float
 
 
 class PBaseModel(Base):
