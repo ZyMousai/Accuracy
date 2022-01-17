@@ -124,11 +124,49 @@ class DepartmentUserMapping(PBaseModel):
     department_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 部门id
     user_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 用户id
 
+    @classmethod
+    async def add_data_many_(cls, dbs, user_id, ids):
+        # 先查询出有没有相关数据
+        add_list = [{"user_id": user_id, "department_id": x} for x in ids]
+        add_department_list = []
+        exist_list = []
+        _orm = select(cls).where(cls.is_delete == 0, cls.user_id == user_id, cls.department_id.in_(ids))
+        exist_data = (await dbs.execute(_orm)).scalars().all()
+        exist_data_id = [o.department_id for o in exist_data]
+        # 只会插入不存在的数据
+        for info in add_list:
+            if info.get('department_id') not in exist_data_id:
+                await cls.add_data(dbs, info, auto_commit=False)
+                add_department_list.append(info.get('department_id'))
+            else:
+                exist_list.append(info.get('department_id'))
+        await dbs.commit()
+        return add_department_list, exist_data_id
+
 
 class DepartmentRoleMapping(PBaseModel):
     __tablename__ = 'department_role_mapping'
     department_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 部门id
     role_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 角色id
+
+    @classmethod
+    async def add_data_many_(cls, dbs, role_id, ids):
+        # 先查询出有没有相关数据
+        add_list = [{"role_id": role_id, "department_id": x} for x in ids]
+        add_department_list = []
+        exist_list = []
+        _orm = select(cls).where(cls.is_delete == 0, cls.role_id == role_id, cls.department_id.in_(ids))
+        exist_data = (await dbs.execute(_orm)).scalars().all()
+        exist_data_id = [o.department_id for o in exist_data]
+        # 只会插入不存在的数据
+        for info in add_list:
+            if info.get('department_id') not in exist_data_id:
+                await cls.add_data(dbs, info, auto_commit=False)
+                add_department_list.append(info.get('department_id'))
+            else:
+                exist_list.append(info.get('department_id'))
+        await dbs.commit()
+        return add_department_list, exist_data_id
 
 
 if __name__ == '__main__':

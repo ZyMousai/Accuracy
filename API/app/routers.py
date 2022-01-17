@@ -7,6 +7,8 @@ from app.Clerk.Alliance.view import alliance_router
 from app.DocumentManagement.Documents.view import documents_router
 from app.DocumentManagement.Recycle.view import recycle_router
 from app.PersonnelManagement.Departments.view import departments_router
+from app.PersonnelManagement.DepartmentRoleMapping.view import departments_role_mapping_router
+from app.PersonnelManagement.DepartmentUserMapping.view import departments_user_mapping_router
 from app.PersonnelManagement.Roles.view import roles_router
 from app.PersonnelManagement.Users.view import users_router
 
@@ -31,5 +33,7 @@ doc_man_router.include_router(recycle_router)
 # ### PersonnelManagement
 per_man_router = APIRouter(prefix="/api/PersonnelManagement", tags=["PersonnelManagement"])
 per_man_router.include_router(departments_router)
+per_man_router.include_router(departments_role_mapping_router)
+per_man_router.include_router(departments_user_mapping_router)
 per_man_router.include_router(roles_router)
 per_man_router.include_router(users_router)
