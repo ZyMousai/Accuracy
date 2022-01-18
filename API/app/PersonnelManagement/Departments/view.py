@@ -13,7 +13,7 @@ departments_router = APIRouter(
     responses={404: {"description": "Not found"}}, )
 
 
-@departments_router.get('/')
+@departments_router.get('/department')
 async def get_departments(info: SearchDepartment = Depends(SearchDepartment),
                           dbs: AsyncSession = Depends(db_session), ):
     """
@@ -36,7 +36,7 @@ async def get_departments(info: SearchDepartment = Depends(SearchDepartment),
     return response_json
 
 
-@departments_router.get('/{department_id}')
+@departments_router.get('/department/{department_id}')
 async def get_departments_one(department_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个部门的信息
@@ -51,7 +51,7 @@ async def get_departments_one(department_id: Optional[int] = Query(None), dbs: A
     return response_json
 
 
-@departments_router.delete('/')
+@departments_router.delete('/department')
 async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
     删除部门 可批量
@@ -72,7 +72,7 @@ async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSe
     return response_json
 
 
-@departments_router.post('/')
+@departments_router.post('/department')
 async def create_departments(department_id: AddDepartments, dbs: AsyncSession = Depends(db_session)):
     """
     创建部门
@@ -87,7 +87,7 @@ async def create_departments(department_id: AddDepartments, dbs: AsyncSession = 
     return response_json
 
 
-@departments_router.patch('/')
+@departments_router.patch('/department')
 async def update_departments(department_id: UpdateDepartment, dbs: AsyncSession = Depends(db_session)):
     """
     修改部门信息
@@ -101,6 +101,23 @@ async def update_departments(department_id: UpdateDepartment, dbs: AsyncSession 
         if not result:
             raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": update_data_dict}
+    return response_json
+
+
+@departments_router.get("/DepartmentUserMapping")
+async def get_department_user(dbs: AsyncSession = Depends(db_session), department_id: int = Query(...)):
+    """获取用户  根据部门 """
+    user_list = await Users.get_user_department(dbs, department_id)
+    response_data = []
+    for p in user_list:
+        p_user = {
+            "id": p.id,
+            "account": p.account,
+            "name": p.name,
+            "entry_time": p.entry_time,
+        }
+        response_data.append(p_user)
+    response_json = {"data": response_data}
     return response_json
 
 
@@ -124,21 +141,18 @@ async def delete_user_department(info: DepartmentAbout, dbs: AsyncSession = Depe
     return response_json
 
 
-@departments_router.get("/DepartmentUserMapping_")
-async def get_department_user(dbs: AsyncSession = Depends(db_session)):
-    """获取用户  根据部门 """
-    print(123)
-    department_id=4
-    user_list = await Users.get_user_department(dbs, department_id)
+@departments_router.get("/DepartmentRoleMapping")
+async def get_department_role(dbs: AsyncSession = Depends(db_session), department_id: int = Query(...)):
+    """获取角色 根据部门 """
+    role_list = await Roles.get_role_department(dbs, department_id)
     response_data = []
-    for p in user_list:
-        p_user = {
+    for p in role_list:
+        p_role = {
             "id": p.id,
-            "account": p.account,
-            "name": p.name,
-            "entry_time": p.entry_time,
+            "role": p.role,
+            "create_time": p.create_time,
         }
-        response_data.append(p_user)
+        response_data.append(p_role)
     response_json = {"data": response_data}
     return response_json
 
@@ -160,21 +174,4 @@ async def delete_role_department(info: DepartmentAbout, dbs: AsyncSession = Depe
     ]
     await DepartmentRoleMapping.filter_delete_data(dbs, *filter_condition)
     response_json = {"data": info.ids}
-    return response_json
-
-
-@departments_router.get("/DepartmentRoleMapping")
-async def get_department_role(dbs: AsyncSession = Depends(db_session), department_id=Depends(DepartmentGet)):
-    """获取角色 根据部门 """
-    role_list = await Roles.get_role_department(dbs, department_id)
-    response_data = []
-    for p in role_list:
-        p_role = {
-            "id": p.id,
-            "role": p.role,
-            "create_time": p.create_time,
-            "entry_time": p.entry_time,
-        }
-        response_data.append(p_role)
-    response_json = {"data": response_data}
     return response_json
