@@ -2,9 +2,11 @@ import uvicorn
 # import aioredis
 from starlette.responses import JSONResponse
 from fastapi import FastAPI, Request
+
+from app.Clerk.VoluumSiteId.VoluumSpider import VoluumData
 from initialize import init_app
 from app.PersonnelManagement.Users.permissions import Permissions
-from sql_models.db_config import async_session_local
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = FastAPI(title="Accuracy",
               version="1.0")
@@ -55,6 +57,18 @@ async def add_process_time_header(request: Request, call_next):
 #     app.state.redis.close()
 #     await app.state.redis.wait_closed()
 
+# ==================分割线==================
+# 定时任务
+# ax = VoluumData()
+#
+# master_scheduler = BackgroundScheduler(timezone='Pacific/Pitcairn',
+#                                        job_defaults={'coalesce': True, 'misfire_grace_time': 60 * 60 * 2},
+#                                        SCHEDULER_API_ENABLED=True)
+#
+# # 定时刷新库里的campaign信息
+# master_scheduler.add_job(ax.add_campaign, "interval", seconds=600)
+#
+# master_scheduler.start()
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)

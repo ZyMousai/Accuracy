@@ -14,7 +14,7 @@ departments_user_mapping_router = APIRouter(
 
 @departments_user_mapping_router.get('/')
 async def get_departments_user_mapping(info: SearchDepartmentUserMapping = Depends(SearchDepartmentUserMapping),
-                          dbs: AsyncSession = Depends(db_session), ):
+                                       dbs: AsyncSession = Depends(db_session), ):
     """
     获取部门用户映射
     :param info:
@@ -26,7 +26,8 @@ async def get_departments_user_mapping(info: SearchDepartmentUserMapping = Depen
         ('user_id', f'=={info.user_id}', info.user_id),
         ('is_delete', '==0', 0)
     ]
-    result, count, total_page = await DepartmentUserMapping.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+    result, count, total_page = await DepartmentUserMapping.get_all_detail_page(dbs, info.page, info.page_size,
+                                                                                *filter_condition)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -36,7 +37,8 @@ async def get_departments_user_mapping(info: SearchDepartmentUserMapping = Depen
 
 
 @departments_user_mapping_router.get('/{dum_id}')
-async def get_departments_user_mapping_one(dum_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
+async def get_departments_user_mapping_one(dum_id: Optional[int] = Query(None),
+                                           dbs: AsyncSession = Depends(db_session)):
     """
     获取某个部门用户映射的信息
     :param dum_id:
@@ -51,7 +53,8 @@ async def get_departments_user_mapping_one(dum_id: Optional[int] = Query(None), 
 
 
 @departments_user_mapping_router.delete('/')
-async def delete_departments_user_mapping(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
+async def delete_departments_user_mapping(ids: Optional[List[int]] = Query(...),
+                                          dbs: AsyncSession = Depends(db_session)):
     """
     删除部门用户映射 可批量
     :param ids:
