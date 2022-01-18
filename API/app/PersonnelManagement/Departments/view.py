@@ -1,5 +1,6 @@
 # Departments 视图
-from sql_models.PersonnelManagement.OrmPersonnelManagement import Departments
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Departments, DepartmentRoleMapping, \
+    DepartmentUserMapping
 from app.PersonnelManagement.Departments.DataValidation import AddDepartments, UpdateDepartment, SearchDepartment
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
@@ -57,22 +58,28 @@ async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSe
     :param dbs:
     :return:
     """
-    result = await Departments.delete_data_logic(dbs, tuple(ids))
-    if not result:
-        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+    # 真实删除部门表
+    await Departments.delete_data(dbs, tuple(ids))
+    # 删除菜单关联 根据role
+    filter_condition = [
+        ("department_id", f".in_({ids})", ids)
+    ]
+    await DepartmentRoleMapping.filter_delete_data(dbs, *filter_condition)
+    await DepartmentUserMapping.filter_delete_data(dbs, *filter_condition)
+
     response_json = {"data": ids}
     return response_json
 
 
 @departments_router.post('/')
-async def create_departments(user: AddDepartments, dbs: AsyncSession = Depends(db_session)):
+async def create_departments(department_id: AddDepartments, dbs: AsyncSession = Depends(db_session)):
     """
     创建部门
-    :param user:
+    :param department_id:
     :param dbs:
     :return:
     """
-    result = await Departments.add_data(dbs, user)
+    result = await Departments.add_data(dbs, department_id)
     if not result:
         raise HTTPException(status_code=403, detail="Duplicate account.")
     response_json = {"data": result}
@@ -80,14 +87,14 @@ async def create_departments(user: AddDepartments, dbs: AsyncSession = Depends(d
 
 
 @departments_router.patch('/')
-async def update_departments(user: UpdateDepartment, dbs: AsyncSession = Depends(db_session)):
+async def update_departments(department_id: UpdateDepartment, dbs: AsyncSession = Depends(db_session)):
     """
     修改部门信息
-    :param user:
+    :param department_id:
     :param dbs:
     :return:
     """
-    update_data_dict = user.dict(exclude_unset=True)
+    update_data_dict = department_id.dict(exclude_unset=True)
     if len(update_data_dict) > 1:
         result = await Departments.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
