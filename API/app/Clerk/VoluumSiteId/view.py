@@ -14,7 +14,8 @@ from util.mongo_c.MongoClient import MongoClient
 
 voluum_router = APIRouter(
     prefix="/voluum/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Voluum"])
 
 
 @voluum_router.get('/campaign_site_url/{m_id}/{s_id}')

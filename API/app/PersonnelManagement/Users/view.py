@@ -14,7 +14,8 @@ from sql_models.db_config import db_session
 
 users_router = APIRouter(
     prefix="/users/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Users"])
 
 
 @users_router.get('/')

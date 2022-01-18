@@ -10,7 +10,8 @@ from typing import Optional, List
 
 departments_router = APIRouter(
     prefix="/departments/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Departments"])
 
 
 @departments_router.get('/Department')

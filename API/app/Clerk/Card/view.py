@@ -1,14 +1,15 @@
-# Departments 视图
-from sql_models.CardManagement.OrmCardManagement import *
+# Card视图
+from sql_models.Clerk.OrmCardManagement import *
 from app.Clerk.Card.DataValidation import *
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, Query, HTTPException, Path
-from typing import Optional, List
+from typing import List
 
 clerk_card_router = APIRouter(
     prefix="/card/v1",
-    responses={404: {"card": "Not found"}}, )
+    responses={404: {"card": "Not found"}},
+    tags=["Card"])
 
 
 @clerk_card_router.get('/card')
