@@ -1,6 +1,4 @@
 # 数据校验模型
-import datetime
-
 from pydantic import BaseModel
 from typing import Optional, List
 from fastapi import Query
