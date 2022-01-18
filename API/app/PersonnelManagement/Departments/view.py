@@ -13,7 +13,7 @@ departments_router = APIRouter(
     responses={404: {"description": "Not found"}}, )
 
 
-@departments_router.get('/department')
+@departments_router.get('/Department')
 async def get_departments(info: SearchDepartment = Depends(SearchDepartment),
                           dbs: AsyncSession = Depends(db_session), ):
     """
@@ -36,7 +36,7 @@ async def get_departments(info: SearchDepartment = Depends(SearchDepartment),
     return response_json
 
 
-@departments_router.get('/department/{department_id}')
+@departments_router.get('/Department/{department_id}')
 async def get_departments_one(department_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个部门的信息
@@ -51,7 +51,7 @@ async def get_departments_one(department_id: Optional[int] = Query(None), dbs: A
     return response_json
 
 
-@departments_router.delete('/department')
+@departments_router.delete('/Department')
 async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
     删除部门 可批量
@@ -72,7 +72,7 @@ async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSe
     return response_json
 
 
-@departments_router.post('/department')
+@departments_router.post('/Department')
 async def create_departments(department_id: AddDepartments, dbs: AsyncSession = Depends(db_session)):
     """
     创建部门
@@ -87,7 +87,7 @@ async def create_departments(department_id: AddDepartments, dbs: AsyncSession = 
     return response_json
 
 
-@departments_router.patch('/department')
+@departments_router.patch('/Department')
 async def update_departments(department_id: UpdateDepartment, dbs: AsyncSession = Depends(db_session)):
     """
     修改部门信息
