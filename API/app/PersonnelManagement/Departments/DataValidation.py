@@ -1,6 +1,6 @@
 # 数据校验模型
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from fastapi import Query
 
 
@@ -19,3 +19,13 @@ class SearchDepartment(BaseModel):
     creator: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
+
+
+class DepartmentAbout(BaseModel):
+    department_id: int
+    ids: Optional[List] = Query(...)
+
+
+class DepartmentGet(BaseModel):
+    department_id: int
+

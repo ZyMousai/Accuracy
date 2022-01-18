@@ -1,7 +1,8 @@
 # Departments 视图
 from sql_models.PersonnelManagement.OrmPersonnelManagement import Departments, DepartmentRoleMapping, \
-    DepartmentUserMapping
-from app.PersonnelManagement.Departments.DataValidation import AddDepartments, UpdateDepartment, SearchDepartment
+    DepartmentUserMapping, Users, Roles
+from app.PersonnelManagement.Departments.DataValidation import AddDepartments, UpdateDepartment, SearchDepartment, \
+    DepartmentAbout, DepartmentGet
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, Query, HTTPException
@@ -100,4 +101,80 @@ async def update_departments(department_id: UpdateDepartment, dbs: AsyncSession 
         if not result:
             raise HTTPException(status_code=403, detail="User does not exist.")
     response_json = {"data": update_data_dict}
+    return response_json
+
+
+@departments_router.post('/DepartmentUserMapping')
+async def add_user_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
+    """增加用户关联 根据部门"""
+    uid_list, exist_list = await DepartmentUserMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@departments_router.delete("/DepartmentUserMapping")
+async def delete_user_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
+    """删除用户关联 根据部门"""
+    filter_condition = [
+        ("department_id", f"=='{info.department_id}'", info.department_id),
+        ("user_id", f".in_({info.ids})", info.ids)
+    ]
+    await DepartmentUserMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
+
+
+@departments_router.get("/DepartmentUserMapping_")
+async def get_department_user(dbs: AsyncSession = Depends(db_session)):
+    """获取用户  根据部门 """
+    print(123)
+    department_id=4
+    user_list = await Users.get_user_department(dbs, department_id)
+    response_data = []
+    for p in user_list:
+        p_user = {
+            "id": p.id,
+            "account": p.account,
+            "name": p.name,
+            "entry_time": p.entry_time,
+        }
+        response_data.append(p_user)
+    response_json = {"data": response_data}
+    return response_json
+
+
+@departments_router.post('/DepartmentRoleMapping')
+async def add_role_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
+    """增加角色关联 根据部门"""
+    uid_list, exist_list = await DepartmentRoleMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@departments_router.delete("/DepartmentRoleMapping")
+async def delete_role_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
+    """删除角色关联 根据部门"""
+    filter_condition = [
+        ("department_id", f"=='{info.department_id}'", info.department_id),
+        ("role_id", f".in_({info.ids})", info.ids)
+    ]
+    await DepartmentRoleMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
+
+
+@departments_router.get("/DepartmentRoleMapping")
+async def get_department_role(dbs: AsyncSession = Depends(db_session), department_id=Depends(DepartmentGet)):
+    """获取角色 根据部门 """
+    role_list = await Roles.get_role_department(dbs, department_id)
+    response_data = []
+    for p in role_list:
+        p_role = {
+            "id": p.id,
+            "role": p.role,
+            "create_time": p.create_time,
+            "entry_time": p.entry_time,
+        }
+        response_data.append(p_role)
+    response_json = {"data": response_data}
     return response_json

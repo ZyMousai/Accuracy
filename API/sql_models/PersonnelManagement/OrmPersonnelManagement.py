@@ -35,6 +35,13 @@ class Users(PBaseModel):
                 await dbs.commit()
         return uid
 
+    @classmethod
+    async def get_user_department(cls, dbs, department_id):
+        _orm = select(cls).outerjoin(DepartmentUserMapping, cls.id == DepartmentUserMapping.user_id).\
+            where(cls.is_delete == 0, DepartmentUserMapping.department_id == department_id)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
+
 
 class Roles(PBaseModel):
     __tablename__ = 'roles'
@@ -49,6 +56,13 @@ class Roles(PBaseModel):
                                      cls.id == RoleUserMapping.role_id).where(cls.is_delete == 0,
                                                                               RoleUserMapping.user_id == user_id)
         result = (await dbs.execute(_orm)).scalars().first()
+        return result
+
+    @classmethod
+    async def get_role_department(cls, dbs, department_id):
+        _orm = select(cls).outerjoin(DepartmentRoleMapping, cls.id == DepartmentRoleMapping.role_id).\
+            where(cls.is_delete == 0, DepartmentRoleMapping.department_id == department_id)
+        result = (await dbs.execute(_orm)).scalars().all()
         return result
 
 
@@ -139,29 +153,39 @@ class Departments(PBaseModel):
     create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
 
 
+    @classmethod
+    async def get_department_role(cls, dbs, role_id):
+        _orm = select(cls).outerjoin(DepartmentRoleMapping,
+                                     cls.id == DepartmentRoleMapping.department_id).where(cls.is_delete == 0,
+                                                                              DepartmentRoleMapping.role_id == role_id)
+        result = (await dbs.execute(_orm)).scalars().first()
+        return result
+
+
 class DepartmentUserMapping(PBaseModel):
     __tablename__ = 'department_user_mapping'
     department_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 部门id
     user_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 用户id
 
     @classmethod
-    async def add_data_many_(cls, dbs, user_id, ids):
+    async def filter_add_data_many_(cls, dbs, department_id, ids, auto_commit=True):
         # 先查询出有没有相关数据
-        add_list = [{"user_id": user_id, "department_id": x} for x in ids]
-        add_department_list = []
+        add_list = [{"department_id": department_id, "user_id": x} for x in ids]
+        add_user_id_list = []
         exist_list = []
-        _orm = select(cls).where(cls.is_delete == 0, cls.user_id == user_id, cls.department_id.in_(ids))
+        _orm = select(cls).where(cls.is_delete == 0, cls.department_id == department_id, cls.user_id.in_(ids))
         exist_data = (await dbs.execute(_orm)).scalars().all()
-        exist_data_id = [o.department_id for o in exist_data]
+        exist_data_id = [o.user_id for o in exist_data]
         # 只会插入不存在的数据
         for info in add_list:
-            if info.get('department_id') not in exist_data_id:
+            if info.get('user_id') not in exist_data_id:
                 await cls.add_data(dbs, info, auto_commit=False)
-                add_department_list.append(info.get('department_id'))
+                add_user_id_list.append(info.get('user_id'))
             else:
-                exist_list.append(info.get('department_id'))
-        await dbs.commit()
-        return add_department_list, exist_data_id
+                exist_list.append(info.get('user_id'))
+        if auto_commit:
+            await dbs.commit()
+        return add_user_id_list, exist_data_id
 
 
 class DepartmentRoleMapping(PBaseModel):
@@ -170,23 +194,24 @@ class DepartmentRoleMapping(PBaseModel):
     role_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 角色id
 
     @classmethod
-    async def add_data_many_(cls, dbs, role_id, ids):
+    async def filter_add_data_many_(cls, dbs, department_id, ids, auto_commit=True):
         # 先查询出有没有相关数据
-        add_list = [{"role_id": role_id, "department_id": x} for x in ids]
-        add_department_list = []
+        add_list = [{"department_id": department_id, "role_id": x} for x in ids]
+        add_role_id_list = []
         exist_list = []
-        _orm = select(cls).where(cls.is_delete == 0, cls.role_id == role_id, cls.department_id.in_(ids))
+        _orm = select(cls).where(cls.is_delete == 0, cls.department_id == department_id, cls.role_id.in_(ids))
         exist_data = (await dbs.execute(_orm)).scalars().all()
-        exist_data_id = [o.department_id for o in exist_data]
+        exist_data_id = [o.role_id for o in exist_data]
         # 只会插入不存在的数据
         for info in add_list:
-            if info.get('department_id') not in exist_data_id:
+            if info.get('role_id') not in exist_data_id:
                 await cls.add_data(dbs, info, auto_commit=False)
-                add_department_list.append(info.get('department_id'))
+                add_role_id_list.append(info.get('role_id'))
             else:
-                exist_list.append(info.get('department_id'))
-        await dbs.commit()
-        return add_department_list, exist_data_id
+                exist_list.append(info.get('role_id'))
+        if auto_commit:
+            await dbs.commit()
+        return add_role_id_list, exist_data_id
 
 
 if __name__ == '__main__':
