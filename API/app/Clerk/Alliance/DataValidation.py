@@ -8,12 +8,15 @@ class AddAlliance(BaseModel):
     alliance_name: str
 
 
-class UpdateAlliance(BaseModel):
-    id: int
-    alliance_name: Optional[str] = Query(None)
-
-
 class SearchAlliance(BaseModel):
     alliance_name: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateAlliance(AddAlliance):
+    id: int
+    alliance_name: str = Query(None)

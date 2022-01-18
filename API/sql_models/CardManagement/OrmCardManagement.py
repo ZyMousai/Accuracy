@@ -3,6 +3,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from sql_models.db_config import BaseType, PBaseModel
 import datetime
+from sql_models import create_table
 
 
 class TbAccount(PBaseModel):
@@ -49,3 +50,7 @@ class TbTask(PBaseModel):
     account = relationship('TbAccount')
     alliance = relationship('TbAlliance')
     card = relationship('TbCard')
+
+
+if __name__ == '__main__':
+    create_table()

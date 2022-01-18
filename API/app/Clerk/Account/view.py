@@ -3,7 +3,7 @@ from sql_models.CardManagement.OrmCardManagement import TbAccount
 from app.Clerk.Account.DataValidation import AddAccount, UpdateAccount, SearchAccount
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Path
 from typing import Optional, List
 
 clerk_account_router = APIRouter(
@@ -12,7 +12,7 @@ clerk_account_router = APIRouter(
 
 
 @clerk_account_router.get('/')
-async def get_departments(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSession = Depends(db_session), ):
+async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSession = Depends(db_session), ):
     """
     获取账号列表
     :param info:
@@ -20,7 +20,7 @@ async def get_departments(info: SearchAccount = Depends(SearchAccount), dbs: Asy
     :return:
     """
     filter_condition = [
-        ('department', f'.like(f"%{info.account_name}%")', info.account_name),
+        ('account_name', f'.like(f"%{info.account_name}%")', info.account_name),
         ('is_delete', '==0', 0)
     ]
     result, count, total_page = await TbAccount.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
@@ -33,7 +33,8 @@ async def get_departments(info: SearchAccount = Depends(SearchAccount), dbs: Asy
 
 
 @clerk_account_router.get('/{account_id}')
-async def get_departments_one(account_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
+async def get_account_one(account_id: int = Path(..., title='账号id', description="账号id", ge=1),
+                          dbs: AsyncSession = Depends(db_session)):
     """
     获取某个账号的信息
     :param account_id:
@@ -48,7 +49,7 @@ async def get_departments_one(account_id: Optional[int] = Query(None), dbs: Asyn
 
 
 @clerk_account_router.delete('/')
-async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
+async def delete_account(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
     删除账号 可批量
     :param ids:
@@ -63,22 +64,26 @@ async def delete_departments(ids: Optional[List[int]] = Query(...), dbs: AsyncSe
 
 
 @clerk_account_router.post('/')
-async def create_departments(user: AddAccount, dbs: AsyncSession = Depends(db_session)):
+async def create_account(user: AddAccount, dbs: AsyncSession = Depends(db_session)):
     """
     创建账号
     :param user:
     :param dbs:
     :return:
     """
-    result = await TbAccount.add_data(dbs, user)
-    if not result:
+    filter_condition = [
+        ('account_name', f'=="{user.account_name}"', user.account_name)
+    ]
+    result = await TbAccount.get_one(dbs, *filter_condition)
+    if result:
         raise HTTPException(status_code=403, detail="Duplicate account.")
+    result = await TbAccount.add_data(dbs, user)
     response_json = {"data": result}
     return response_json
 
 
 @clerk_account_router.patch('/')
-async def update_departments(user: UpdateAccount, dbs: AsyncSession = Depends(db_session)):
+async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_session)):
     """
     修改账号信息
     :param user:
@@ -86,6 +91,12 @@ async def update_departments(user: UpdateAccount, dbs: AsyncSession = Depends(db
     :return:
     """
     update_data_dict = user.dict(exclude_unset=True)
+    filter_condition = [
+        ('account_name', f'=="{user.account_name}"', user.account_name)
+    ]
+    result = await TbAccount.get_one(dbs, *filter_condition)
+    if result:
+        raise HTTPException(status_code=403, detail="Duplicate account.")
     if len(update_data_dict) > 1:
         result = await TbAccount.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
