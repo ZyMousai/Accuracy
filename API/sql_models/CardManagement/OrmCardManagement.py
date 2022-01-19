@@ -31,7 +31,7 @@ class TbCard(PBaseModel):
     note = BaseType.BaseColumn(BaseType.BaseString(255))  # 备注
     card_name = BaseType.BaseColumn(BaseType.BaseString(255))  # 卡名称
     create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
-    retain = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 是否保留 0-否,1-是
+    retain = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=False)  # 是否保留 0-否,1-是
 
 
 class TbTask(PBaseModel):
