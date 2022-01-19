@@ -11,7 +11,8 @@ from sql_models.db_config import db_session
 
 roles_router = APIRouter(
     prefix="/roles/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Roles"])
 
 
 def get_role_id(request: Request):

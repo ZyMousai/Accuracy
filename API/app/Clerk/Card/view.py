@@ -9,7 +9,8 @@ from sql_models.db_config import db_session
 
 clerk_card_router = APIRouter(
     prefix="/card/v1",
-    responses={404: {"card": "Not found"}}, )
+    responses={404: {"card": "Not found"}},
+    tags=["Card"])
 
 
 @clerk_card_router.get('/card')

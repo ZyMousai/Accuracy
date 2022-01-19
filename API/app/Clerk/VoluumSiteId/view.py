@@ -1,9 +1,10 @@
 # VoluumSiteId 视图
-from random import random
+import random
 from typing import Optional, List
 
 from app.Clerk.VoluumSiteId.DataValidation import AddCampaignMapping, SearchCampaignMapping
 from app.Clerk.VoluumSiteId.VoluumSpider import VoluumSpider
+from config import globals_config
 from sql_models.Clerk.OrmVoluumSiteId import DBCampaignMapping
 from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, Query
@@ -13,7 +14,8 @@ from util.mongo_c.MongoClient import MongoClient
 
 voluum_router = APIRouter(
     prefix="/voluum/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Voluum"])
 
 
 @voluum_router.get('/campaign_site_url/{m_id}/{s_id}')
@@ -46,13 +48,13 @@ async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depend
 
     # 3. 根据campaigns-id获取url
     # 通过主id拿到从id，查询主id最近的site，但是更换的链接是从id
-    filter_c = [
-        ("m_id", f"=='{m_id}'", m_id),
-        ("s_id", f"=='{s_id}'", s_id)
-    ]
-    cam_m_s_mapping = await DBCampaignMapping.get_one(dbs, *filter_c)
-    mongo = MongoClient()
-    query_ = mongo.select('voluum_campaigns', **{'id': cam_m_s_mapping.s_id})[0]
+    # filter_c = [
+    #     ("m_id", f"=='{m_id}'", m_id),
+    #     ("s_id", f"=='{s_id}'", s_id)
+    # ]
+    # cam_m_s_mapping = await DBCampaignMapping.get_one(dbs, *filter_c)
+    mongo = MongoClient(**globals_config.MONGO_INFO.__dict__)
+    query_ = mongo.select('voluum_campaigns', **{'id': s_id})[0]
     url = query_['impressionUrl'].replace('{site_id}', site_id)
     if '/impression' in url:
         url = url.replace('/impression', '')
@@ -61,7 +63,8 @@ async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depend
 
 
 @voluum_router.get('/campaign_mapping')
-async def get_campaign_mapping(info: SearchCampaignMapping, dbs: AsyncSession = Depends(db_session)):
+async def get_campaign_mapping(info: SearchCampaignMapping = Depends(SearchCampaignMapping),
+                               dbs: AsyncSession = Depends(db_session)):
     """
     获取角色列表
     :param info:

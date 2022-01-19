@@ -13,11 +13,11 @@ from app.PersonnelManagement.Users.view import users_router
 # ### AccountManagement
 
 
-acc_man_router = APIRouter(prefix="/api/AccountManagement", tags=["AccountManagement"])
+acc_man_router = APIRouter(prefix="/api/AccountManagement")
 acc_man_router.include_router(account_router)
 
 # ### Clerk
-clerk_router = APIRouter(prefix="/api/Clerk", tags=["Clerk"])
+clerk_router = APIRouter(prefix="/api/Clerk")
 clerk_router.include_router(voluum_router)
 clerk_router.include_router(clerk_card_router)
 
@@ -27,7 +27,7 @@ doc_man_router.include_router(documents_router)
 doc_man_router.include_router(recycle_router)
 
 # ### PersonnelManagement
-per_man_router = APIRouter(prefix="/api/PersonnelManagement", tags=["PersonnelManagement"])
+per_man_router = APIRouter(prefix="/api/PersonnelManagement")
 per_man_router.include_router(departments_router)
 # per_man_router.include_router(departments_role_mapping_router)
 # per_man_router.include_router(departments_user_mapping_router)
