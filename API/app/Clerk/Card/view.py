@@ -1,16 +1,18 @@
+# 文员卡号，联盟，任务，账号视图
 import pandas as pd
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Query, HTTPException, Path, UploadFile, File
 
-from sql_models.CardManagement.OrmCardManagement import *
+from sql_models.Clerk.OrmCardManagement import *
 from app.Clerk.Card.DataValidation import *
 from sql_models.db_config import db_session
 
 clerk_card_router = APIRouter(
     prefix="/card/v1",
     responses={404: {"card": "Not found"}},
-    tags=["Card"])
+    tags=["Card"]
+)
 
 
 @clerk_card_router.get('/card')
@@ -119,14 +121,14 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
     header = df.columns.values.tolist()
     set_header = set(header)
     sql_list = []
-    if not "面值" in set_header and not "信用卡开卡额度($)" in set_header and not "总余额" in set_header:
+    if "面值" not in set_header and not "信用卡开卡额度($)" in set_header and not "总余额" in set_header:
         return HTTPException(status_code=501, detail="数据表中没有面值、总余额、信用卡开卡额度($)中的一个")
-    if not "平台" in set_header:
+    if "平台" not in set_header:
         return HTTPException(status_code=501, detail="数据表中缺少字段:平台")
     else:
         platform_ind = header.index("平台")
     if {'名称', '卡号', '过期时间', '安全码', "面值"} <= set_header:
-        if not "卡姓名地址" in set_header:
+        if "卡姓名地址" not in set_header:
             return HTTPException(status_code=501, detail="数据表中缺少字段:卡姓名地址")
         card_name_ind = header.index("名称")  # 卡名称
         card_number_ind = header.index("卡号")
@@ -216,7 +218,7 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
         response_json = {"data": result}
     elif {'卡ID', '任务ID', "唯一标识", '信用卡卡号', "安全码", "信用卡到期日", "信用卡开卡额度($)", "信用卡余额", "卡段类型",
           "添加时间", "状态", "卡备注"} <= set_header:
-        if not "卡姓名地址" in set_header:
+        if "卡姓名地址" not in set_header:
             return HTTPException(status_code=501, detail="数据表中缺少字段:卡姓名地址")
         # print("excel3")
         card_number_ind = header.index("信用卡卡号")  # 卡号
