@@ -24,8 +24,8 @@ class Permissions(object):
         token = jwt.encode(claims=data, key=SECRET_KEY, algorithm="HS256")
         return token
 
-    @classmethod
-    async def verify(cls, token: str):
+    @staticmethod
+    async def verify(token: str):
         """
         验证token
         :param token:
@@ -44,12 +44,12 @@ class Permissions(object):
             # 若没有user_id等数据, 则返回认证异常
 
         except JWTError:
-            raise JWTError("Invalid token")
+            raise JWTError("Invalid token.")
         else:
             if not user_id or not account or not name:
-                raise JWTError("Invalid token")
+                raise JWTError("Invalid token.")
 
-        return user_id, account, name
+        return payload
 
         # 当解密不出来时，给出指令到redis中检测
 

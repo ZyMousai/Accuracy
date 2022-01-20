@@ -1,4 +1,3 @@
-# Accuracy
+项目启动
 
-启动命令 npm run dev
-
+npm run serve

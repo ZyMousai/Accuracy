@@ -1,11 +1,231 @@
 # Roles 视图
-from fastapi import APIRouter
+from typing import Optional, List
+
+from fastapi import APIRouter, Depends, Request, Query, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.PersonnelManagement.Roles.DataValidation import SearchRole, AddRole, UpdateRole, RoleAbout
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Roles, Menu, RoleMenuMapping, DepartmentRoleMapping, \
+    RoleUserMapping, RolePermissionMapping, RoleAccountMapping
+from sql_models.db_config import db_session
 
 roles_router = APIRouter(
     prefix="/roles/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Roles"])
 
 
-@roles_router.get("/123")
-async def read_root():
-    return {"Hello": "World"}
+def get_role_id(request: Request):
+    # return request.state.role_id
+    return 1
+
+
+@roles_router.get("/RoleMenu")
+async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends(get_role_id)):
+    """获取菜单 根据role"""
+
+    # 根据role获取菜单
+    menu_list = await Menu.get_menu_role(dbs, role_id)
+    response_data = []
+    for p in menu_list:
+        if p.pid == 0:
+            p_menu = {
+                "id": p.id,
+                "pid": p.pid,
+                "menu_name": p.menu_name,
+                "menu_path": p.menu_path,
+                "son_menu": list()
+            }
+            for s in menu_list:
+                if p.id == s.pid:
+                    s_menu = {
+                        "id": s.id,
+                        "pid": s.pid,
+                        "menu_name": s.menu_name,
+                        "menu_path": s.menu_path,
+                    }
+                    p_menu.get("son_menu").append(s_menu)
+            p_menu['son_menu'] = sorted(p_menu['son_menu'], key=lambda x: x['id'])
+            response_data.append(p_menu)
+
+    response_json = {"data": response_data}
+    return response_json
+
+
+@roles_router.delete("/RoleMenu")
+async def delete_role_menu(info: RoleAbout,
+                           dbs: AsyncSession = Depends(db_session)):
+    """删除菜单关联 根据role"""
+    filter_condition = [
+        ("role_id", f"=='{info.role_id}'", info.role_id),
+        ("menu_id", f".in_({info.ids})", info.ids)
+    ]
+    await RoleMenuMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
+
+
+@roles_router.post("/RoleMenu")
+async def add_role_menu(info: RoleAbout, dbs: AsyncSession = Depends(db_session)):
+    """增加菜单关联 根据role"""
+    uid_list, exist_list = await RoleMenuMapping.filter_add_data_many(dbs, "role_id", info.role_id, "menu_id", info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@roles_router.get('/')
+async def get_roles(info: SearchRole = Depends(SearchRole),
+                    dbs: AsyncSession = Depends(db_session)):
+    """
+    获取角色列表
+    :param info:
+    :param dbs:
+    :return:
+    """
+    filter_condition = [
+        ('role', f'.like(f"%{info.role}%")', info.role),
+        ('creator', f'.like(f"%{info.creator}%")', info.creator),
+        ('is_delete', '==0', 0)
+    ]
+    result, count, total_page = await Roles.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+    response_json = {"total": count,
+                     "page": info.page,
+                     "page_size": info.page_size,
+                     "total_page": total_page,
+                     "data": result}
+    return response_json
+
+
+@roles_router.get('/{role_id}')
+async def get_role_one(role_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
+    """
+    获取某个角色的信息
+    :param role_id:
+    :param dbs:
+    :return:
+    """
+    return {"data": await Roles.get_one_detail(dbs, role_id)}
+
+
+@roles_router.delete('/')
+async def delete_roles(ids: Optional[List[int]] = Query(...), dbs: AsyncSession = Depends(db_session)):
+    """
+    删除角色 可批量
+    :param ids:
+    :param dbs:
+    :return:
+    """
+    result = await Roles.delete_data(dbs, tuple(ids), auto_commit=False)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+    filter_condition = [
+        ("role_id", f".in_({ids})", ids)
+    ]
+    # 删除用户关联
+    await RoleUserMapping.filter_delete_data(dbs, *filter_condition, auto_commit=False)
+    # 删除部门关联
+    await DepartmentRoleMapping.filter_delete_data(dbs, *filter_condition, auto_commit=False)
+    # 删除菜单关联
+    await RoleMenuMapping.filter_delete_data(dbs, *filter_condition, auto_commit=False)
+    # 删除权限关联
+    await RolePermissionMapping.filter_delete_data(dbs, *filter_condition, auto_commit=True)
+    response_json = {"data": ids}
+    return response_json
+
+
+@roles_router.post('/')
+async def create_role(role: AddRole, dbs: AsyncSession = Depends(db_session)):
+    """
+    创建角色
+    :param role:
+    :param dbs:
+    :return:
+    """
+    role_add = {"role": role.role, "creator": role.creator}
+    # 添加角色
+    role_uid = await Roles.add_data(dbs, role_add)
+    response_json = role.dict()
+    response_json["id"] = role_uid
+    return response_json
+
+
+@roles_router.patch('/')
+async def update_role(role: UpdateRole, dbs: AsyncSession = Depends(db_session)):
+    """
+    修改角色信息
+    :param role:
+    :param dbs:
+    :return:
+    """
+    role_data_dict = role.dict(exclude_unset=True)
+    result = await Roles.update_data(dbs, role_data_dict, is_delete=0)
+    if not result:
+        raise HTTPException(status_code=403, detail="User does not exist.")
+    response_json = {"data": role_data_dict}
+    return response_json
+
+
+@roles_router.post('/RolePermission')
+async def add_role_permission(info: RoleAbout, dbs: AsyncSession = Depends(db_session)):
+    """增加权限关联 根据role"""
+    uid_list, exist_list = await RolePermissionMapping.filter_add_data_many(dbs, "role_id", info.role_id,
+                                                                            "permission_id", info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@roles_router.delete("/RolePermission")
+async def delete_role_permission(info: RoleAbout,
+                                 dbs: AsyncSession = Depends(db_session)):
+    """删除权限关联 根据role"""
+    filter_condition = [
+        ("role_id", f"=='{info.role_id}'", info.role_id),
+        ("permission_id", f".in_({info.ids})", info.ids)
+    ]
+    await RolePermissionMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
+
+
+@roles_router.post("/RoleUser")
+async def add_role_user(info: RoleAbout, dbs: AsyncSession = Depends(db_session)):
+    """增加用户关联 根据role"""
+    uid_list, exist_list = await RoleUserMapping.filter_add_data_many(dbs, "role_id", info.role_id, "user_id",
+                                                                      info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@roles_router.delete("/RoleUser")
+async def delete_role_user(info: RoleAbout,
+                           dbs: AsyncSession = Depends(db_session)):
+    """删除权限关联 根据role"""
+    filter_condition = [
+        ("role_id", f"=='{info.role_id}'", info.role_id),
+        ("user_id", f".in_({info.ids})", info.ids)
+    ]
+    await RoleUserMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
+
+
+@roles_router.post("/RoleAccount")
+async def add_role_account(info: RoleAbout, dbs: AsyncSession = Depends(db_session)):
+    """添加账号模块关联 根据role"""
+    uid_list, exist_list = await RoleAccountMapping.filter_add_data_many(dbs, "role_id", info.role_id, "account_id",
+                                                                         info.ids)
+    response_json = {"data": uid_list, "exist_data": exist_list}
+    return response_json
+
+
+@roles_router.delete("/RoleAccount")
+async def delete_role_account(info: RoleAbout, dbs: AsyncSession = Depends(db_session)):
+    """删除账号模块关联 根据role"""
+    filter_condition = [
+        ("role_id", f"=='{info.role_id}'", info.role_id),
+        ("account_id", f".in_({info.ids})", info.ids)
+    ]
+    await RoleAccountMapping.filter_delete_data(dbs, *filter_condition)
+    response_json = {"data": info.ids}
+    return response_json
