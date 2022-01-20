@@ -88,10 +88,11 @@ async def create_user(user: AddUser, dbs: AsyncSession = Depends(db_session)):
     :param dbs:
     :return:
     """
-    result = await Users.add_data(dbs, user)
-    if not result:
+    user_id = await Users.add_data(dbs, user)
+    if not user_id:
         raise HTTPException(status_code=403, detail="Duplicate account.")
-    response_json = {"data": result}
+    response_json = user.dict()
+    response_json["id"] = user_id
     return response_json
 
 

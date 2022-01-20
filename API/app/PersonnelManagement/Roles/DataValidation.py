@@ -23,4 +23,4 @@ class UpdateRole(BaseModel):
 
 class RoleAbout(BaseModel):
     role_id: int
-    ids: Optional[List] = Query(...)
+    ids: Optional[List[int]] = Query(...)

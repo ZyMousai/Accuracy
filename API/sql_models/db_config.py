@@ -174,3 +174,41 @@ class PBaseModel(Base):
         else:
             info = 0
         return info
+
+    @classmethod
+    async def filter_add_data_many(cls, dbs, id1, id1_value, id2, ids, auto_commit=True):
+        """
+        添加关联信息
+        id1 一对多 id2
+        :param dbs:
+        :param id1: 主关联id
+        :param id1_value: 主关联id得value
+        :param id2: 副关联id
+        :param ids: 副关联id得value
+        :param auto_commit:
+        :return:
+        """
+        # 先查询出有没有相关数据
+        add_list = [{f"{id1}": id1_value, f"{id2}": x} for x in ids]
+        add_menu_id_list = []
+        exist_list = []
+
+        # 组建查询条件
+        filter_condition = [eval(f"cls.{id1} == {id1_value}"), eval(f"cls.{id2}.in_({ids})"), cls.is_delete == 0]
+        _orm = select(cls).where(*filter_condition)
+
+        # 把所有查询出来得数据id做为一个list
+        exist_data = (await dbs.execute(_orm)).scalars().all()
+        exist_data_id = [eval(f"o.{id2}") for o in exist_data]
+
+        # 判断id2是否在已存在得id-list里
+        # 只会插入不存在的数据
+        for info in add_list:
+            if info.get(id2) not in exist_data_id:
+                await cls.add_data(dbs, info, auto_commit=False)
+                add_menu_id_list.append(info.get(id2))
+            else:
+                exist_list.append(info.get(id2))
+        if auto_commit:
+            await dbs.commit()
+        return add_menu_id_list, exist_data_id
