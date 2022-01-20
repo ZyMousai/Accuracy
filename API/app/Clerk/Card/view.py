@@ -121,7 +121,7 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
     header = df.columns.values.tolist()
     set_header = set(header)
     sql_list = []
-    if "面值" not in set_header and not "信用卡开卡额度($)" in set_header and not "总余额" in set_header:
+    if "面值" not in set_header and "信用卡开卡额度($)" not in set_header and "总余额" not in set_header:
         return HTTPException(status_code=501, detail="数据表中没有面值、总余额、信用卡开卡额度($)中的一个")
     if "平台" not in set_header:
         return HTTPException(status_code=501, detail="数据表中缺少字段:平台")
