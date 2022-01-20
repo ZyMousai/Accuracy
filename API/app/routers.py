@@ -7,6 +7,7 @@ from app.DocumentManagement.Recycle.view import recycle_router
 from app.PersonnelManagement.Departments.view import departments_router
 from app.PersonnelManagement.Roles.view import roles_router
 from app.PersonnelManagement.Users.view import users_router
+from app.PcTrackDomain.TrackingLink.view import trackingLink_router
 
 # =====注册二级路由=====
 # ### AccountManagement
@@ -29,3 +30,7 @@ per_man_router = APIRouter(prefix="/api/PersonnelManagement", tags=["PersonnelMa
 per_man_router.include_router(departments_router)
 per_man_router.include_router(roles_router)
 per_man_router.include_router(users_router)
+
+# ### PcTrackDomain
+track_man_router = APIRouter(prefix="/api/PcTrackDomain", tags=["PcTrackDomain"])
+track_man_router.include_router(trackingLink_router)

@@ -55,9 +55,9 @@ async def get_doc_one(file_id: int, dbs: AsyncSession = Depends(db_session)):
 
 
 @documents_router.delete('/')
-async def delete_doc(ids: Optional[List[int]] = Query(...),
+async def delete_doc(ids: List[int] = Query(...),
                      is_logic_del: int = Query(ge=0, le=1, default=0),
-                     dbs: AsyncSession = Depends(db_session)):
+                     dbs: AsyncSession = Depends(db_session, use_cache=True)):
     """
     逻辑删除和真实删除
     """
@@ -90,11 +90,11 @@ async def upload_doc(user_id: int, files: List[UploadFile] = File(...), dbs: Asy
     await dbs.commit()
 
 
-@documents_router.post('/')
-async def update_doc(ids: Optional[List[int]] = Query(...),
-                     is_logicdel: int = Query(ge=0, le=1, default=0),
-                     dbs: AsyncSession = Depends(db_session)):
-    if is_logicdel:
-        return await DocumentManagement.delete_data_logic(dbs, ids)
-    else:
-        return await DocumentManagement.delete_data(dbs, ids)
+# @documents_router.post('/')
+# async def update_doc(ids: Optional[List[int]] = Query(...),
+#                      is_logicdel: int = Query(ge=0, le=1, default=0),
+#                      dbs: AsyncSession = Depends(db_session)):
+#     if is_logicdel:
+#         return await DocumentManagement.delete_data_logic(dbs, ids)
+#     else:
+#         return await DocumentManagement.delete_data(dbs, ids)
