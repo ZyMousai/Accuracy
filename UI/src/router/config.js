@@ -104,6 +104,42 @@ const options = {
                             name: '部门管理',
                             component: () =>
                                 import ('@/pages/personnelmanagement/departmentmanagement'),
+                        },
+                        {
+                            path: 'addrole',
+                            name: '角色新增',
+                            meta: {
+                                invisible: true,
+                            },
+                            component: () =>
+                                import ('@/pages/personnelmanagement/rolemanagement/roleaddform'),
+                        },
+                        {
+                            path: 'editrole',
+                            name: '角色权限编辑',
+                            meta: {
+                                invisible: true,
+                            },
+                            component: () =>
+                                import ('@/pages/personnelmanagement/rolemanagement/roleaddform'),
+                        },
+                        {
+                            path: 'adddepartment',
+                            name: '新增部门',
+                            meta: {
+                                invisible: true,
+                            },
+                            component: () =>
+                                import ('@/pages/personnelmanagement/departmentmanagement/departmentaddform'),
+                        },
+                        {
+                            path: 'editdepartment',
+                            name: '部门权限修改',
+                            meta: {
+                                invisible: true,
+                            },
+                            component: () =>
+                                import ('@/pages/personnelmanagement/departmentmanagement/departmentaddform'),
                         }
                     ]
                 },
@@ -115,11 +151,39 @@ const options = {
                     },
                     component: BlankView,
                     children: [{
-                        path: 'voluumsiteId',
-                        name: 'Voluum-SiteId',
-                        component: () =>
-                            import ('@/pages/assistantfunction/voluumsiteId'),
-                    }]
+                            path: 'voluumsiteId',
+                            name: 'Voluum-SiteId',
+                            component: () =>
+                                import ('@/pages/assistantfunction/voluumsiteId'),
+                        },
+                        {
+                            path: 'statisticscardinformation',
+                            name: '统计卡情况',
+                            component: () =>
+                                import ('@/pages/assistantfunction/statisticscardinformation'),
+                        }
+                    ]
+                },
+                {
+                    path: 'domainnamemanagement',
+                    name: '域名管理',
+                    meta: {
+                        icon: 'appstore',
+                    },
+                    component: BlankView,
+                    children: [{
+                            path: 'followlink',
+                            name: '跟踪链接',
+                            component: () =>
+                                import ('@/pages/domainnamemanagement/followlink'),
+                        },
+                        {
+                            path: 'affiliatelist',
+                            name: '联盟列表',
+                            component: () =>
+                                import ('@/pages/domainnamemanagement/affiliatelist'),
+                        }
+                    ]
                 },
                 {
                     name: '验权页面',
