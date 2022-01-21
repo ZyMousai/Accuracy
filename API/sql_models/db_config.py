@@ -88,6 +88,20 @@ class PBaseModel(Base):
         return result, count, total_page
 
     @classmethod
+    async def get_all(cls, dbs, *args):
+        """获取有此关键词的所有数据"""
+        # 构建查询条件
+        filter_condition = list()
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+
+        # 查询数据
+        _orm = select(cls).where(*filter_condition)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
+
+    @classmethod
     async def get_data_count(cls, dbs, *args):
         """获取数据量"""
         _orm = select(func.count()).where(*args)

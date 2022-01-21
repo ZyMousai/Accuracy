@@ -30,11 +30,55 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
         ('card_status', f'=={info.card_status}', info.card_status),
     ]
     result, count, total_page = await TbCard.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+
+    # 获取所以卡id
+    all_card_id = []
+    for res in result:
+        all_card_id.append(res.id)
+    print(all_card_id)
+    # 获取对应卡id的所有任务
+    filter_condition = [
+        ('card_id', f'.in_(' + str(all_card_id) + ')', all_card_id),
+        ('is_delete', '==0', 0)
+    ]
+    task_result = await TbTask.get_all(dbs, *filter_condition)
+    # 把获取到的任务以卡id为key建立dick
+    task_di = {}
+    for ta in task_result:
+        ta_card_id = ta.card_id
+        if ta.card_id not in task_di.keys():
+            task_di[ta_card_id] = [ta]
+        else:
+            task_di[ta_card_id].append(ta)
+    print(task_di)
+    # 对卡数据进行重新归纳赋值
+    new_result = []
+    task_di_keys = task_di.keys()
+    for res in result:
+        res_id = res.id
+        new_res = {
+            "card_number": res.card_number,
+            "face_value": res.face_value,
+            "valid_period": res.valid_period,
+            "cvv": res.cvv,
+            "card_status": res.card_status,
+            "name": res.name,
+            "platform": res.platform,
+            "note": res.note,
+            "card_name": res.card_name,
+            "create_time": res.create_time,
+            "retain": res.retain,
+        }
+        if res_id in task_di_keys:
+            new_res["task_set"] = task_di[res_id]
+        else:
+            new_res["task_set"] = []
+        new_result.append(new_res)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
                      "total_page": total_page,
-                     "data": result}
+                     "data": new_result}
     return response_json
 
 
