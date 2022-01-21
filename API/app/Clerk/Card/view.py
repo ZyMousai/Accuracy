@@ -35,13 +35,13 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     all_card_id = []
     for res in result:
         all_card_id.append(res.id)
-    print(all_card_id)
     # 获取对应卡id的所有任务
     filter_condition = [
         ('card_id', f'.in_(' + str(all_card_id) + ')', all_card_id),
         ('is_delete', '==0', 0)
     ]
     task_result = await TbTask.get_all(dbs, *filter_condition)
+
     # 把获取到的任务以卡id为key建立dick
     task_di = {}
     for ta in task_result:
@@ -50,7 +50,7 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             task_di[ta_card_id] = [ta]
         else:
             task_di[ta_card_id].append(ta)
-    print(task_di)
+
     # 对卡数据进行重新归纳赋值
     new_result = []
     task_di_keys = task_di.keys()
