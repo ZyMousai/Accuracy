@@ -83,6 +83,7 @@ class PBaseModel(Base):
             total_page = int(count // page_size) + 1
 
         # 查询数据
+        # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
         _orm = select(cls).where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
         result = (await dbs.execute(_orm)).scalars().all()
         return result, count, total_page
