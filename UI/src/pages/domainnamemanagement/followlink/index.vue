@@ -6,7 +6,7 @@
           <a-row >
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="文件名"
+              label="Offer链接"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
@@ -15,35 +15,28 @@
           </a-col>
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="上传用户"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-input v-model="query.uploadusers" style="width: 100%" placeholder="请输入" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="部门选择"
+              label="设备类型"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
               <a-select v-model="query.department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
+                <a-select-option v-for="item in devicetypelist" :key="item" :value="item">
                   {{item}}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
-        </a-row>
-          <a-row v-if="advanced">
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="上传日期"
+              label="国家"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-date-picker v-model="query.uploaddate" style="width: 100%" placeholder="请输入更新日期" />
+              <a-select v-model="query.department" placeholder="请选择">
+                <a-select-option v-for="item in countrylist" :key="item" :value="item">
+                  {{item}}
+                </a-select-option>
+              </a-select>
             </a-form-item>
           </a-col>
         </a-row>
@@ -60,18 +53,9 @@
     </div>
     <div>
       <a-space class="operator">
-        <a-upload
-          name="file"
-          :multiple="true"
-          action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-          :headers="headers"
-          :showUploadList="false"
-          @change="handleChange"
-        >
-        <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
-        </a-upload>
-        <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
+        <a-button type="primary"><a-icon type="cloud-download" />批量恢复</a-button>
         <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
+        <span>小提示：回收站文件系统会至多保留7天</span>
       </a-space>
       <standard-table
         :columns="columns"
@@ -85,57 +69,16 @@
         </div>
         <div slot="action" slot-scope="{record}">
           <a style="margin-right: 8px">
-            <a-icon type="cloud-download"/>下载
-          </a>
-          <a @click="showModal(record.key)" style="margin-right: 8px">
-            <a-icon type="edit"/>修改
+            <a-icon type="cloud-download"/>恢复
           </a>
           <a @click="showdeleConfirm(record.ne)">
-            <a-icon type="delete" />删除
+            <a-icon type="delete" />彻底删除
           </a>
         </div>
         <template slot="statusTitle">
           <a-icon @click.native="onStatusTitleClick" type="info-circle" />
         </template>
       </standard-table>
-      <!-- 编辑表单 -->
-      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
-      <template slot="footer">
-        <a-button key="back" @click="handleCancel">
-          取消
-        </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
-          提交
-        </a-button>
-      </template>
-      <template>
-        <a-form-model
-          ref="ruleForm"
-          :model="editform"
-          :rules="editrules"
-          :label-col="{ span: 4 }"
-          :wrapper-col="{ span: 14 }"
-        >
-          <a-form-model-item ref="filename" label="文件名" prop="filename">
-            <a-input
-              v-model="editform.filename"
-            />
-          </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department">
-            <a-radio-group v-model="editform.department">
-              <a-radio value="1">
-                运营部
-              </a-radio>
-              <a-radio value="2">
-                技术部
-              </a-radio>
-            </a-radio-group>
-          </a-form-model-item>
-        </a-form-model>
-      </template>
-    </a-modal>
-    <!-- 删除确认对话框 -->
-
     </div>
   </a-card>
 </template>
@@ -194,27 +137,14 @@ export default {
       query: {
         filename: '',
         uploadusers: '',
-        department: '',
         uploaddate: ''
-      },
-      editform: {
-        filename: '',
-        department: ''
       },
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      visible: false,
-      loading: false,
-      departmentoptions: ['商务部', '技术部'],
-      editrules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
-      },
-      headers: {
-        authorization: 'authorization-text',
-      }
+      devicetypelist: ['iphone', 'android', 'ipad', 'desktop'],
+      countrylist: ['jp', 'us', 'tw', 'gb', 'de'],
     }
   },
   methods: {
@@ -253,31 +183,11 @@ export default {
         this.query[key] = ''
       }
     },
-    // 打开编辑表单
-    showModal(id) {
-      console.log(id);
-      this.visible = true;
-    },
-    // 提交编辑表单
-    handleOk() {
-      this.$refs.ruleForm.validate(valid => {
-        if (valid) {
-          this.loading = true;
-          console.log('ok');
-        }
-      })
-    },
-    // 关闭编辑表单
-    handleCancel() {
-      this.visible = false;
-      this.$refs.ruleForm.resetFields();
-      console.log('ok');
-    },
     // 删除对话框
     showdeleConfirm(id) {
       this.$confirm({
         title: '是否删除所选项?',
-        content: '删除之后会放在回收站',
+        content: '删除之后无法恢复！',
         onOk() {
           return new Promise((resolve, reject) => {
             console.log(id);
@@ -286,17 +196,6 @@ export default {
         },
         onCancel() {},
       })
-    },
-    // 上传文件
-    handleChange(info) {
-      if (info.file.status !== 'uploading') {
-        console.log(info.file, info.fileList);
-      }
-      if (info.file.status === 'done') {
-        this.$message.success(`${info.file.name} file uploaded successfully`);
-      } else if (info.file.status === 'error') {
-        this.$message.error(`${info.file.name} file upload failed.`);
-      }
     }
   }
 }

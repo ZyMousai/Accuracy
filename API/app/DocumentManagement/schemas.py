@@ -34,7 +34,13 @@ class CreateDocumentManagement(BaseModel):
 class SearchDocumentManagement(BaseModel):
     page: int = 1
     page_size: int = 10
-    filename: Optional[str]
+    filename: Optional[str] = None
     user_name: Optional[str]
     start_time: Optional[str]
     end_time: Optional[str]
+    department_id: Optional[str] = None
+
+
+class UpdateDocumentManagement(BaseModel):
+    id: int
+    department_id: Optional[str] = None

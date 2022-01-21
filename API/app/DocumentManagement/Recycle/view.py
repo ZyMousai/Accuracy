@@ -1,7 +1,10 @@
 # Recycle 视图
-from typing import Optional
-from fastapi import APIRouter, Depends
+import os
+from typing import Optional, List
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from config import globals_config
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
 from sql_models.db_config import db_session
 
@@ -64,3 +67,19 @@ async def get_recycle_page(file_id: int, dbs: AsyncSession = Depends(db_session)
     file.is_delete = 0
     await dbs.flush()
     await dbs.commit()
+
+
+@recycle_router.delete('/')
+async def delete_doc(ids: Optional[List[int]] = Query(...),
+                     dbs: AsyncSession = Depends(db_session)):
+    """
+    真实删除
+    """
+    for doc_id in ids:
+        doc_info = await DocumentManagement.get_one_detail(dbs, doc_id)
+        filename = doc_info.filename
+        try:
+            os.remove(os.path.join(globals_config.DocumentStoragePath, filename))
+        except:
+            print('可能是文件未同步导致的删除失败')
+    return await DocumentManagement.delete_data(dbs, ids)
