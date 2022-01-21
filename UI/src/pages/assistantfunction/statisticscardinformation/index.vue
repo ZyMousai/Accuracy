@@ -73,31 +73,21 @@
         <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
         <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
-      <standard-table
-        :columns="columns"
-        :dataSource="dataSource"
-        :selectedRows.sync="selectedRows"
-        @clear="onClear"
-        @change="onChange"
-      >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
-        <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px">
-            <a-icon type="cloud-download"/>下载
-          </a>
-          <a @click="showModal(record.key)" style="margin-right: 8px">
-            <a-icon type="edit"/>修改
-          </a>
-          <a @click="showdeleConfirm(record.ne)">
-            <a-icon type="delete" />删除
-          </a>
-        </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
-      </standard-table>
+      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested">
+        <a slot="operation" >编辑</a>
+        <a slot="operation" style="margin-left: 5px;">删除</a>
+        <a-table
+          slot="expandedRowRender"
+          :columns="innerColumns"
+          :data-source="innerData"
+          :pagination="false"
+        >
+          <span slot="operation" class="table-operation">
+            <a>编辑</a>
+            <a style="margin-left: 5px;">删除</a>
+          </span>
+        </a-table>
+      </a-table>
       <!-- 编辑表单 -->
       <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
       <template slot="footer">
@@ -141,56 +131,69 @@
 </template>
 
 <script>
-import StandardTable from '@/components/table/StandardTable'
 const columns = [
-  {
-    title: '规则编号',
-    dataIndex: 'ne'
-  },
-  {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
-  },
-  {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
-  },
-  {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
-  },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
-  },
+  { title: '卡号', dataIndex: 'name', key: 'name' },
+  { title: '有效期', dataIndex: 'platform', key: 'platform' },
+  { title: 'cvv', dataIndex: 'version', key: 'version' },
+  { title: '面值', dataIndex: 'upgradeNum', key: 'upgradeNum' },
+  { title: '余额', dataIndex: 'creator', key: 'creator' },
+  { title: '卡姓名地址', dataIndex: 'creator', key: 'creator' },
+  { title: '备注', dataIndex: 'creator', key: 'creator' },
+  { title: '平台', dataIndex: 'creator', key: 'creator' },
+  { title: '卡状态', dataIndex: 'creator', key: 'creator' },
+  { title: '保留', dataIndex: 'creator', key: 'creator' },
+  { title: '创建日期', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '操作', key: 'operation', scopedSlots: { customRender: 'operation' } },
+];
+
+const data = [];
+for (let i = 0; i < 3; ++i) {
+  data.push({
+    key: i,
+    name: 'Screem',
+    platform: 'iOS',
+    version: '10.3.4.5654',
+    upgradeNum: 500,
+    creator: 'Jack',
+    createdAt: '2014-12-24 23:12:00',
+  });
+}
+
+const innerColumns = [
+  { title: '联盟', dataIndex: 'date', key: 'date' },
+  { title: '账号', dataIndex: 'name', key: 'name' },
+  { title: '任务', dataIndex: 'name', key: 'name' },
+  { title: '佣金', dataIndex: 'name', key: 'name' },
+  { title: '消耗', dataIndex: 'name', key: 'name' },
+  { title: '使用人', dataIndex: 'name', key: 'name' },
+  { title: '二次消费', dataIndex: 'name', key: 'name' },
+  { title: '使用日期', dataIndex: 'name', key: 'name' },
   {
     title: '操作',
-    scopedSlots: { customRender: 'action' }
-  }
-]
+    dataIndex: 'operation',
+    key: 'operation',
+    scopedSlots: { customRender: 'operation' },
+  },
+];
 
-const dataSource = []
-
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
+const innerData = [];
+for (let i = 0; i < 3; ++i) {
+  innerData.push({
     key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
+    date: '2014-12-24 23:12:00',
+    name: 'This is production name',
+    upgradeNum: 'Upgraded: 56',
+  });
 }
 
 export default {
   name: 'QueryList',
-  components: {StandardTable},
   data () {
     return {
+      data,
+      columns,
+      innerColumns,
+      innerData,
       query: {
         filename: '',
         uploadusers: '',
@@ -202,8 +205,6 @@ export default {
         department: ''
       },
       advanced: true,
-      columns: columns,
-      dataSource: dataSource,
       selectedRows: [],
       visible: false,
       loading: false,
@@ -220,24 +221,6 @@ export default {
   methods: {
     toggleAdvanced () {
       this.advanced = !this.advanced
-    },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
-    },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
     },
     // 查询
     queryevents() {

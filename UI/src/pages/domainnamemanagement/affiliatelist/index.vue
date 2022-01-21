@@ -6,44 +6,20 @@
           <a-row >
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="文件名"
+              label="联盟名称或链接"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.filename" placeholder="请输入" />
+              <a-input v-model="query.platform" placeholder="请输入" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="上传用户"
+              label="跟踪域链接"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.uploadusers" style="width: 100%" placeholder="请输入" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="部门选择"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-select v-model="query.department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                  {{item}}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-          <a-row v-if="advanced">
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="上传日期"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-date-picker v-model="query.uploaddate" style="width: 100%" placeholder="请输入更新日期" />
+              <a-input v-model="query.account" style="width: 100%" placeholder="请输入" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -60,17 +36,7 @@
     </div>
     <div>
       <a-space class="operator">
-        <a-upload
-          name="file"
-          :multiple="true"
-          action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-          :headers="headers"
-          :showUploadList="false"
-          @change="handleChange"
-        >
-        <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
-        </a-upload>
-        <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
+        <a-button type="primary" @click="showModal"><a-icon type="plus-circle" />新增</a-button>
         <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
       <standard-table
@@ -84,9 +50,6 @@
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px">
-            <a-icon type="cloud-download"/>下载
-          </a>
           <a @click="showModal(record.key)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
@@ -98,8 +61,8 @@
           <a-icon @click.native="onStatusTitleClick" type="info-circle" />
         </template>
       </standard-table>
-      <!-- 编辑表单 -->
-      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
+      <!-- 表单 -->
+      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
         <a-button key="back" @click="handleCancel">
           取消
@@ -111,31 +74,29 @@
       <template>
         <a-form-model
           ref="ruleForm"
-          :model="editform"
-          :rules="editrules"
-          :label-col="{ span: 4 }"
-          :wrapper-col="{ span: 14 }"
+          :model="form"
+          :rules="rules"
+          :label-col="{ span: 3 }"
+          :wrapper-col="{ span: 18 }"
+          :layout="form.layout"
         >
-          <a-form-model-item ref="filename" label="文件名" prop="filename">
-            <a-input
-              v-model="editform.filename"
-            />
+        <a-row>
+          <a-col>
+            <a-form-model-item ref="filename" label="联盟名称" prop="filename">
+              <a-input v-model="form.filename" />
+            </a-form-model-item>
+          </a-col>
+        </a-row>
+        <a-row>
+          <a-col>
+            <a-form-model-item label="联盟链接" prop="desc" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
+            <a-input v-model="form.desc" type="textarea" />
           </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department">
-            <a-radio-group v-model="editform.department">
-              <a-radio value="1">
-                运营部
-              </a-radio>
-              <a-radio value="2">
-                技术部
-              </a-radio>
-            </a-radio-group>
-          </a-form-model-item>
+          </a-col>
+        </a-row>
         </a-form-model>
       </template>
     </a-modal>
-    <!-- 删除确认对话框 -->
-
     </div>
   </a-card>
 </template>
@@ -182,7 +143,22 @@ for (let i = 0; i < 100; i++) {
     description: '这是一段描述',
     callNo: Math.floor(Math.random() * 1000),
     status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
+    updatedAt: '2018-07-26',
+    children: [{
+      key: i + 100,
+      ne: 'Ne ' + i,
+      description: '这是一段描述',
+      callNo: Math.floor(Math.random() * 1000),
+      status: Math.floor(Math.random() * 10) % 4,
+      updatedAt: '2018-07-26',
+    }, {
+      key: i + 200,
+      ne: 'Ne ' + i,
+      description: '这是一段描述',
+      callNo: Math.floor(Math.random() * 1000),
+      status: Math.floor(Math.random() * 10) % 4,
+      updatedAt: '2018-07-26',
+    },]
   })
 }
 
@@ -192,28 +168,27 @@ export default {
   data () {
     return {
       query: {
-        filename: '',
-        uploadusers: '',
-        department: '',
-        uploaddate: ''
+        platform: '',
+        account: '',
       },
-      editform: {
+      form: {
+        layout: 'vertical',
         filename: '',
-        department: ''
+        department: '',
+        desc: ''
       },
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
+      departmentoptions: ['商务部', "技术部"],
+      tablename: '',
       visible: false,
       loading: false,
-      departmentoptions: ['商务部', '技术部'],
-      editrules: {
+      rules: {
         filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
-      },
-      headers: {
-        authorization: 'authorization-text',
+        department: [{ required: true, message: '请选择部门', trigger: 'change' }],
+        desc: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
       }
     }
   },
@@ -255,7 +230,7 @@ export default {
     },
     // 打开编辑表单
     showModal(id) {
-      console.log(id);
+      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
       this.visible = true;
     },
     // 提交编辑表单
@@ -277,7 +252,7 @@ export default {
     showdeleConfirm(id) {
       this.$confirm({
         title: '是否删除所选项?',
-        content: '删除之后会放在回收站',
+        content: '删除之后无法恢复！',
         onOk() {
           return new Promise((resolve, reject) => {
             console.log(id);
@@ -286,17 +261,6 @@ export default {
         },
         onCancel() {},
       })
-    },
-    // 上传文件
-    handleChange(info) {
-      if (info.file.status !== 'uploading') {
-        console.log(info.file, info.fileList);
-      }
-      if (info.file.status === 'done') {
-        this.$message.success(`${info.file.name} file uploaded successfully`);
-      } else if (info.file.status === 'error') {
-        this.$message.error(`${info.file.name} file upload failed.`);
-      }
     }
   }
 }
