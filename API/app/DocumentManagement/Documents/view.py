@@ -1,17 +1,31 @@
 # Documents 视图
-from fastapi import APIRouter, Depends, Query, File, UploadFile, Path, HTTPException
-from typing import Optional, List
-from sql_models.db_config import db_session
+import os
 from datetime import datetime
+from typing import Optional, List, Any
+
+from fastapi import APIRouter, Depends, Query, File, UploadFile, Path, HTTPException
+from starlette.responses import FileResponse
+from sql_models.db_config import db_session
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
 from app.DocumentManagement.schemas import *
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import globals_config
-import os
 
 documents_router = APIRouter(
     prefix="/documents/v1",
     responses={404: {"description": "Not found"}}, )
+
+
+@documents_router.get("/download/{file_name}")
+async def download_file(file_name: Any):
+    """
+    下载文件
+    :param file_name: 下载的文件名
+    :return: 返回文件流，直接下载，下载后的文件名与显示的文件名一样。
+    """
+    final_file = os.path.join(globals_config.DocumentStoragePath, file_name)
+    file_response = FileResponse(final_file, filename=file_name)
+    return file_response
 
 
 @documents_router.get('/')
@@ -21,8 +35,6 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
     默认获取文档页当前第一页数据
     """
     # 站点域名和端口配置
-    SITE_DOMAIN_PORT = "http://192.168.50.115:8000/"
-    file_path = "app/DocumentManagement/DocumentStorage/"
     filter_condition = [
         ("filename", f'.like(f"%{query.filename}%")', query.filename),
         # ("filename",f'.like(f"%{query.filename}%")',query.filename),
@@ -37,6 +49,7 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
     # 对卡数据进行重新归纳赋值
     new_result = []
     for res in result:
+        uploader_name = await DocumentManagement.get_document_user(dbs, res.user_id)
         new_res = {
             "filename": res.filename,
             "id": res.id,
@@ -46,7 +59,8 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
             "file_size": res.file_size,
             "updated_time": res.updated_time,
             "department_id": res.department_id,
-            "file_url": SITE_DOMAIN_PORT + file_path + res.filename,
+            "file_url": 'http://127.0.0.1:8000/api/DocumentManagement/documents/v1/download/' + res.filename,
+            "uploader_name": uploader_name,
         }
         new_result.append(new_res)
 
