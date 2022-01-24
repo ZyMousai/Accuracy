@@ -31,6 +31,8 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
 
     result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
                                                                              *filter_condition)
+    for i in result:
+        i.created_time = i.created_time.strftime("%Y-%m-%d")
     response_json = {"total": count,
                      "page": query.page,
                      "page_size": query.page_size,
