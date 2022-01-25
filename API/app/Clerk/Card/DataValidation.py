@@ -1,6 +1,6 @@
 # 数据校验模型
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from fastapi import Query
 from datetime import date
 
@@ -72,6 +72,7 @@ class AddTask(BaseModel):
     account_id: int
     alliance_id: int
     task: str
+    note: Optional[str] = None
     commission: float
     consume: float
     user: Optional[str] = Query(None)
@@ -84,6 +85,7 @@ class UpdateTask(BaseModel):
     account_id: Optional[int] = Query(None)
     alliance_id: Optional[int] = Query(None)
     task: Optional[str] = Query(None)
+    note: Optional[str] = Query(None)
     commission: Optional[float] = Query(None)
     consume: Optional[float] = Query(None)
     user: Optional[str] = Query(None)

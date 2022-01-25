@@ -46,6 +46,7 @@ class TbTask(PBaseModel):
     consume = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True), nullable=False)  # 消耗
     user = BaseType.BaseColumn(BaseType.BaseString(255))  # 使用人
     secondary_consumption = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 是否二次消费 0-否,1-是
+    note = BaseType.BaseColumn(BaseType.BaseString(255))  # 备注
 
     account = relationship('TbAccount')
     alliance = relationship('TbAlliance')
