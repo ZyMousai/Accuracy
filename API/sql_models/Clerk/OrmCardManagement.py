@@ -1,8 +1,11 @@
 # coding: utf-8
+import datetime
+
+from sqlalchemy import select
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
+
 from sql_models.db_config import BaseType, PBaseModel
-import datetime
 from sql_models import create_table
 
 
@@ -32,6 +35,13 @@ class TbCard(PBaseModel):
     card_name = BaseType.BaseColumn(BaseType.BaseString(255))  # 卡名称
     create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
     retain = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=False)  # 是否保留 0-否,1-是
+
+    @classmethod
+    async def get_card_task(cls, dbs, card_id):
+        _orm = select(cls).outerjoin(TbTask, cls.id == TbTask.card_id). \
+            where(cls.is_delete == 0, TbTask.card_id == card_id)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
 
 
 class TbTask(PBaseModel):

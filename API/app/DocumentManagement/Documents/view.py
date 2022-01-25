@@ -46,7 +46,7 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
 
     result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
                                                                              *filter_condition)
-    # 对卡数据进行重新归纳赋值
+    # 对文档数据进行重新归纳赋值
     new_result = []
     for res in result:
         uploader_name = await DocumentManagement.get_document_user(dbs, res.user_id)

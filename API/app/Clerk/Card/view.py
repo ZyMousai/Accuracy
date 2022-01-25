@@ -25,13 +25,14 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     """
     filter_condition = [
         ('card_number', f'.like("%{info.card_number}%")', info.card_number),
+        ('platform', f'.like("%{info.platform}%")', info.platform),
         ('is_delete', '==0', 0),
         ('retain', f'=={info.retain}', info.retain),
         ('card_status', f'=={info.card_status}', info.card_status),
     ]
     result, count, total_page = await TbCard.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
 
-    # 获取所以卡id
+    # 获取所有卡id
     all_card_id = []
     for res in result:
         all_card_id.append(res.id)
@@ -42,18 +43,32 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     ]
     task_result = await TbTask.get_all(dbs, *filter_condition)
 
-    # 把获取到的任务以卡id为key建立dick
-    task_di = {}
-    for ta in task_result:
-        ta_card_id = ta.card_id
-        if ta.card_id not in task_di.keys():
-            task_di[ta_card_id] = [ta]
+    # 把获取到的任务以卡id为key建立dict
+    task_dict = {}
+    for task in task_result:
+        # 获取对应每个任务的
+        task_card_id = task.card_id
+        new_task_dict = {
+            "id": task.id,
+            "alliance_id": task.account_id,
+            "user": task.user,
+            "is_delete": task.is_delete,
+            "task": task.task,
+            "consume": task.consume,
+            "card_id": task.card_id,
+            "commission": task.commission,
+            "secondary_consumption": task.secondary_consumption,
+            "account_id": task.account_id,
+            "creation_date": task.creation_date.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        if task.card_id not in task_dict.keys():
+            task_dict[task_card_id] = [new_task_dict]
         else:
-            task_di[ta_card_id].append(ta)
+            task_dict[task_card_id].append(new_task_dict)
 
     # 对卡数据进行重新归纳赋值
     new_result = []
-    task_di_keys = task_di.keys()
+    task_di_keys = task_dict.keys()
     for res in result:
         res_id = res.id
         new_res = {
@@ -66,11 +81,12 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             "platform": res.platform,
             "note": res.note,
             "card_name": res.card_name,
-            "create_time": res.create_time,
+            "create_time": res.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             "retain": res.retain,
         }
+
         if res_id in task_di_keys:
-            new_res["task_set"] = task_di[res_id]
+            new_res["task_set"] = task_dict[res_id]
         else:
             new_res["task_set"] = []
         new_result.append(new_res)
