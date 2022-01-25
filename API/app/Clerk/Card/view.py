@@ -1,8 +1,8 @@
 # 文员卡号，联盟，任务，账号视图
 import pandas as pd
-from typing import Optional, List
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, Query, HTTPException, Path, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File
 
 from sql_models.Clerk.OrmCardManagement import *
 from app.Clerk.Card.DataValidation import *
@@ -149,21 +149,21 @@ async def create_card(info: AddCard, dbs: AsyncSession = Depends(db_session)):
 
 
 @clerk_card_router.post('/cards')
-async def create_cards(infos: List[AddCard], dbs: AsyncSession = Depends(db_session)):
+async def create_cards(information: List[AddCard], dbs: AsyncSession = Depends(db_session)):
     """
     创建单条或者多条卡号
-    :param info:
+    :param information:
     :param dbs:
     :return:
     """
-    for info in infos:
+    for info in information:
         filter_condition = [
             ('card_number', f'=="{info.card_number}"', info.card_number)
         ]
         result = await TbCard.get_one(dbs, *filter_condition)
         if result:
             raise HTTPException(status_code=403, detail="Duplicate card.")
-    result = await TbCard.add_data_many(dbs, infos)
+    result = await TbCard.add_data_many(dbs, information)
     response_json = {"data": result}
     return response_json
 
@@ -224,26 +224,30 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
         valid_period_ind = header.index("有效期")
         cvv_ind = header.index("安全码")  # cvv
         zip_ind = ""
+        # noinspection PyBroadException
         try:
             zip_ind = header.index("zip")
             zip_bool = True
-        except:
+        except Exception:
             zip_bool = False
         note_ind = header.index("备注")
         name_address_ind = ""
         name_ind = ""
         address_ind = ""
+        # noinspection PyBroadException
         try:
             name_address_ind = header.index("卡姓名地址")  # 卡姓名地址
             name_address_bool = True
-        except:
+        except Exception:
+            # noinspection PyBroadException
             try:
                 name_ind = header.index("Name")  # 卡拥有人名称
                 address_ind = header.index("address")  # 地址
                 name_address_bool = False
-            except:
+            except Exception:
                 return HTTPException(status_code=501, detail="数据表中缺少字段:卡姓名地址")
         content = df.values
+        card_name_address = ""
         for i in content:
             if zip_bool:
                 card_zip = str(i[zip_ind]).zfill(5)
@@ -349,6 +353,7 @@ async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSe
     """
     filter_condition = [
         ('account_name', f'.like("%{info.account_name}%")', info.account_name),
+        ('uid', f'.like("%{info.uid}%")', info.uid),
         ('is_delete', '==0', 0)
     ]
     result, count, total_page = await TbAccount.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
@@ -535,11 +540,43 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
     :param dbs:
     :return:
     """
-    filter_condition = [
+    args = [
         ('task', f'.like("%{info.task}%")', info.task),
-        ('is_delete', '==0', 0)
+        ('is_delete', '==0', 0),
     ]
-    result, count, total_page = await TbTask.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+
+    filter_condition = list()
+    for x in args:
+        if x[2] is not None:
+            filter_condition.append(eval(f'TbTask.{x[0]}{x[1]}'))
+    # 处理分页
+    count = await TbTask.get_data_count(dbs, *filter_condition)
+    remainder = count % info.page_size
+    if remainder == 0:
+        total_page = int(count // info.page_size)
+    else:
+        total_page = int(count // info.page_size) + 1
+
+    # 查询数据
+    # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
+    _orm = select(
+        TbTask.id,
+        TbTask.is_delete,
+        TbTask.card_id,
+        TbTask.account_id,
+        TbTask.creation_date,
+        TbTask.commission,
+        TbTask.user,
+        TbTask.note,
+        TbTask.alliance_id,
+        TbTask.task,
+        TbTask.consume,
+        TbTask.secondary_consumption,
+        TbAccount.uid,
+        TbAccount.account_name,
+    ).where(*filter_condition).join(TbTask.account).order_by().limit(info.page_size)\
+        .offset((info.page - 1) * info.page_size)
+    result = (await dbs.execute(_orm)).all()
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -548,12 +585,33 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
     return response_json
 
 
+# @clerk_card_router.get('/task')
+# async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = Depends(db_session), ):
+#     """
+#     获取任务列表
+#     :param info:
+#     :param dbs:
+#     :return:
+#     """
+#     filter_condition = [
+#         ('task', f'.like("%{info.task}%")', info.task),
+#         ('is_delete', '==0', 0)
+#     ]
+#     result, count, total_page = await TbTask.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+#     response_json = {"total": count,
+#                      "page": info.page,
+#                      "page_size": info.page_size,
+#                      "total_page": total_page,
+#                      "data": result}
+#     return response_json
+
+
 @clerk_card_router.get('/task/{task_id}')
 async def get_task_one(task_id: int = Path(..., title='任务id', description="任务id", ge=1),
                        dbs: AsyncSession = Depends(db_session)):
     """
     获取某个任务的信息
-    :param Task_id:
+    :param task_id:
     :param dbs:
     :return:
     """

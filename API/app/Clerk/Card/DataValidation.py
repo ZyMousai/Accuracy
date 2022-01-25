@@ -33,10 +33,12 @@ class SearchCard(AddCard):
 
 class AddAccount(BaseModel):
     account_name: str
+    uid: str
 
 
 class SearchAccount(BaseModel):
     account_name: Optional[str] = Query(None)
+    uid: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
 
@@ -47,6 +49,7 @@ class SearchAccount(BaseModel):
 class UpdateAccount(AddAccount):
     id: int
     account_name: str = Query(None)
+    uid: str = Query(None)
 
 
 class AddAlliance(BaseModel):
