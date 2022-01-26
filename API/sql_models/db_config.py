@@ -24,6 +24,11 @@ async def db_session() -> AsyncSession:
         yield session
 
 
+async def db_session2() -> AsyncSession:
+    async with async_session_local() as session:
+        return session
+
+
 # mapper_registry.metadata即为MetaData单例
 mapper_registry = registry()
 Base = mapper_registry.generate_base()

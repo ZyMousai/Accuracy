@@ -21,26 +21,35 @@ async def read_root():
 
 
 # 中间件
-# @app.middleware("http")
-# async def add_process_time_header(request: Request, call_next):
-#     response = await call_next(request)
-#     # # 判断不是登录接口的链接就验证token
-#     path = str(request.url.path)
-#     if path == '/api/PersonnelManagement/users/v1/login' \
-#             or path == '/docs' or path == '/redocs' or path == '/openapi.json':
-#         return response
-#
-#     try:
-#         token = request.headers["Authorization"]
-#         user_id, account, name = await Permissions.verify(token)
-#         request.state.user_id = user_id
-#         request.state.account = account
-#         request.state.username = name
-#     except Exception as e:
-#
-#         return JSONResponse(status_code=401, content={"detail": str(e)})
-#
-#     return response
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    response = await call_next(request)
+    # # 判断不是登录接口的链接就验证token
+    path = str(request.url.path)
+    if path == '/api/PersonnelManagement/users/v1/login' \
+            or path == '/docs' or path == '/redocs' or path == '/openapi.json':
+        return response
+
+    try:
+        token = request.headers["Authorization"]
+        payload = await Permissions.verify(token)
+        request.state.user_id = payload.get("user_id")
+        request.state.account = payload.get("account")
+        request.state.username = payload.get("username")
+        request.state.role = payload.get("role")
+        request.state.role_id = payload.get("role_id")
+
+    except Exception as e:
+
+        return JSONResponse(status_code=401, content={"detail": str(e)})
+
+    # 权限验证
+
+    from app.PersonnelManagement.Roles.AuthPermissions import AuthPermissions
+    auth_tag = await AuthPermissions.auth(request)
+    if not auth_tag:
+        return JSONResponse(status_code=403, content={"detail": "Authorization authentication failed."})
+    return response
 
 
 # # 在FastAPI创建前创建Redis连接

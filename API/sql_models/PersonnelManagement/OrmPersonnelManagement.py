@@ -78,6 +78,17 @@ class Permission(PBaseModel):
     p_method = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False)  # 方法
     operate = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 操作 1.新增 2.修改 3.查看 4.删除
 
+    @classmethod
+    async def filter_get_permission(cls, dbs, role_id, url, method):
+        filter_c = [
+            cls.is_delete == 0, RolePermissionMapping.role_id == role_id,
+            cls.p_url == url, cls.p_method == method
+        ]
+        _orm = select(cls).outerjoin(RolePermissionMapping, cls.id == RolePermissionMapping.permission_id).where(
+            *filter_c)
+        result = (await dbs.execute(_orm)).first()
+        return result
+
 
 class RolePermissionMapping(PBaseModel):
     __tablename__ = 'role_permission_mapping'
