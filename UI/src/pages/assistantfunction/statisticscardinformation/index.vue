@@ -71,15 +71,16 @@
         <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
         </a-upload>
         <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
-        <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
+        <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
       </a-space>
-      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested">
+      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" >
         <a slot="operation" >编辑</a>
         <a slot="operation" style="margin-left: 5px;">删除</a>
         <a-table
           slot="expandedRowRender"
+          slot-scope="record"
           :columns="innerColumns"
-          :data-source="innerData"
+          :data-source="record.task_set"
           :pagination="false"
         >
           <span slot="operation" class="table-operation">
@@ -131,43 +132,33 @@
 </template>
 
 <script>
+import {CreditCardListData} from '@/services/statisticscardinformation'
 const columns = [
-  { title: '卡号', dataIndex: 'name', key: 'name' },
-  { title: '有效期', dataIndex: 'platform', key: 'platform' },
-  { title: 'cvv', dataIndex: 'version', key: 'version' },
-  { title: '面值', dataIndex: 'upgradeNum', key: 'upgradeNum' },
-  { title: '余额', dataIndex: 'creator', key: 'creator' },
-  { title: '卡姓名地址', dataIndex: 'creator', key: 'creator' },
-  { title: '备注', dataIndex: 'creator', key: 'creator' },
-  { title: '平台', dataIndex: 'creator', key: 'creator' },
-  { title: '卡状态', dataIndex: 'creator', key: 'creator' },
-  { title: '保留', dataIndex: 'creator', key: 'creator' },
-  { title: '创建日期', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '卡号', dataIndex: 'card_number', key: 'card_number' },
+  { title: '有效期', dataIndex: 'valid_period', key: 'valid_period' },
+  { title: 'cvv', dataIndex: 'cvv', key: 'cvv' },
+  { title: '面值', dataIndex: 'face_value', key: 'face_value' },
+  { title: '余额', dataIndex: '', key: '' },
+  { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
+  { title: '备注', dataIndex: 'note', key: 'note' },
+  { title: '平台', dataIndex: 'platform', key: 'platform' },
+  { title: '卡状态', dataIndex: 'card_status', key: 'card_status' },
+  { title: '保留', dataIndex: 'retain', key: 'retain' },
+  { title: '创建时间', dataIndex: 'create_time', key: 'create_time' },
   { title: '操作', key: 'operation', scopedSlots: { customRender: 'operation' } },
 ];
 
 const data = [];
-for (let i = 0; i < 3; ++i) {
-  data.push({
-    key: i,
-    name: 'Screem',
-    platform: 'iOS',
-    version: '10.3.4.5654',
-    upgradeNum: 500,
-    creator: 'Jack',
-    createdAt: '2014-12-24 23:12:00',
-  });
-}
 
 const innerColumns = [
-  { title: '联盟', dataIndex: 'date', key: 'date' },
-  { title: '账号', dataIndex: 'name', key: 'name' },
-  { title: '任务', dataIndex: 'name', key: 'name' },
-  { title: '佣金', dataIndex: 'name', key: 'name' },
-  { title: '消耗', dataIndex: 'name', key: 'name' },
-  { title: '使用人', dataIndex: 'name', key: 'name' },
-  { title: '二次消费', dataIndex: 'name', key: 'name' },
-  { title: '使用日期', dataIndex: 'name', key: 'name' },
+  { title: '联盟', dataIndex: 'alliance_id', key: 'alliance_id' },
+  { title: '账号', dataIndex: 'account_id', key: 'account_id' },
+  { title: '任务', dataIndex: 'task', key: 'task' },
+  { title: '佣金', dataIndex: 'commission', key: 'commission' },
+  { title: '消耗', dataIndex: 'consume', key: 'consume' },
+  { title: '使用人', dataIndex: 'user', key: 'user' },
+  { title: '二次消费', dataIndex: 'secondary_consumption', key: 'secondary_consumption' },
+  { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
   {
     title: '操作',
     dataIndex: 'operation',
@@ -177,14 +168,6 @@ const innerColumns = [
 ];
 
 const innerData = [];
-for (let i = 0; i < 3; ++i) {
-  innerData.push({
-    key: i,
-    date: '2014-12-24 23:12:00',
-    name: 'This is production name',
-    upgradeNum: 'Upgraded: 56',
-  });
-}
 
 export default {
   name: 'QueryList',
@@ -208,6 +191,7 @@ export default {
       selectedRows: [],
       visible: false,
       loading: false,
+      expandedRowKeys: [],
       departmentoptions: ['商务部', '技术部'],
       editrules: {
         filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
@@ -218,7 +202,16 @@ export default {
       }
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    gettabledata() {
+      CreditCardListData(this.query).then(res => {
+        this.data = res.data.data
+        console.log(res);
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },

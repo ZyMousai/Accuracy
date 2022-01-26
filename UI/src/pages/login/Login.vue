@@ -15,8 +15,7 @@
               <a-input
                 autocomplete="autocomplete"
                 size="large"
-                placeholder="admin"
-                v-decorator="['name', {rules: [{ required: true, message: '请输入账户名', whitespace: true}]}]"
+                v-decorator="['username ', {rules: [{ required: true, message: '请输入账户名', whitespace: true}]}]"
               >
                 <a-icon slot="prefix" type="user" />
               </a-input>
@@ -24,7 +23,6 @@
             <a-form-item>
               <a-input
                 size="large"
-                placeholder="888888"
                 autocomplete="autocomplete"
                 type="password"
                 v-decorator="['password', {rules: [{ required: true, message: '请输入密码', whitespace: true}]}]"
@@ -53,9 +51,9 @@
             </a-form-item>
           </a-tab-pane> -->
         </a-tabs>
-        <div>
+        <!-- <div>
           <a-checkbox :checked="true" >自动登录</a-checkbox>
-        </div>
+        </div> -->
         <a-form-item>
           <a-button :loading="logging" style="width: 100%;margin-top: 24px" size="large" htmlType="submit" type="primary">登录</a-button>
         </a-form-item>
@@ -73,13 +71,14 @@
 
 <script>
 import CommonLayout from '@/layouts/CommonLayout'
-import {login, getRoutesConfig} from '@/services/user'
+// import {login, getRoutesConfig} from '@/services/user'
+import {login} from '@/services/user'
 import {setAuthorization} from '@/utils/request'
-import {loadRoutes} from '@/utils/routerUtil'
+// import {loadRoutes} from '@/utils/routerUtil'
 import {mapMutations} from 'vuex'
 
 export default {
-  name: 'Login',
+  username : 'Login',
   components: {CommonLayout},
   data () {
     return {
@@ -100,28 +99,33 @@ export default {
       this.form.validateFields((err) => {
         if (!err) {
           this.logging = true
-          const name = this.form.getFieldValue('name')
+          const username  = this.form.getFieldValue('username ')
           const password = this.form.getFieldValue('password')
-          login(name, password).then(this.afterLogin)
+          login(username , password).then(this.afterLogin)
         }
       })
     },
     afterLogin(res) {
       this.logging = false
       const loginRes = res.data
-      if (loginRes.code >= 0) {
-        const {user, permissions, roles} = loginRes.data
-        this.setUser(user)
-        this.setPermissions(permissions)
-        this.setRoles(roles)
-        setAuthorization({token: loginRes.data.token, expireAt: new Date(loginRes.data.expireAt)})
+      console.log(res.data);
+      if (loginRes.access_token) {
+        console.log('ok');
+        // const {user, permissions, roles} = loginRes.data
+        // this.setUser(user)
+        // this.setPermissions(permissions)
+        // this.setRoles(roles)
+        // setAuthorization({token: loginRes.access_token, expireAt: new Date(loginRes.data.expireAt)})
+        setAuthorization({token: loginRes.access_token})
+        this.$router.push('/dashboard')
+        this.$message.success("欢迎回来！", 3)
         // 获取路由配置
-        getRoutesConfig().then(result => {
-          const routesConfig = result.data.data
-          loadRoutes(routesConfig)
-          this.$router.push('/dashboard')
-          this.$message.success(loginRes.message, 3)
-        })
+        // getRoutesConfig().then(result => {
+        //   const routesConfig = result.data.data
+        //   loadRoutes(routesConfig)
+        //   this.$router.push('/dashboard')
+        //   this.$message.success(loginRes.message, 3)
+        // })
       } else {
         this.error = loginRes.message
       }

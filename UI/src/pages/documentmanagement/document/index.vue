@@ -19,7 +19,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.uploadusers" style="width: 100%" placeholder="请输入" />
+              <a-input v-model="query.user_name" style="width: 100%" placeholder="请输入" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -28,7 +28,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
+              <a-select v-model="query.department_id" placeholder="请选择">
                 <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
                   {{item}}
                 </a-select-option>
@@ -39,11 +39,20 @@
           <a-row v-if="advanced">
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="上传日期"
+              label="开始日期"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-date-picker v-model="query.uploaddate" style="width: 100%" placeholder="请输入更新日期" />
+              <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :sm="24" >
+            <a-form-item
+              label="结束日期"
+              :labelCol="{span: 5}"
+              :wrapperCol="{span: 18, offset: 1}"
+            >
+              <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -61,9 +70,9 @@
     <div>
       <a-space class="operator">
         <a-upload
-          name="file"
+          name="files"
           :multiple="true"
-          action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+          action="http://192.168.50.115:8000/api/DocumentManagement/documents/v1/upload?user_id=1&department_id=2"
           :headers="headers"
           :showUploadList="false"
           @change="handleChange"
@@ -79,6 +88,7 @@
         :selectedRows.sync="selectedRows"
         @clear="onClear"
         @change="onChange"
+        :rowKey='record=>record.id'
       >
         <div slot="description" slot-scope="{text}">
           {{text}}
@@ -87,24 +97,21 @@
           <a style="margin-right: 8px">
             <a-icon type="cloud-download"/>下载
           </a>
-          <a @click="showModal(record.key)" style="margin-right: 8px">
+          <a @click="showModal(record.id)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="deletedialog(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
       <!-- 编辑表单 -->
-      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
+      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
       <template slot="footer">
-        <a-button key="back" @click="handleCancel">
+        <a-button key="back" @click="closeform">
           取消
         </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+        <a-button key="submit" type="primary" :loading="loading" @click="submitform">
           提交
         </a-button>
       </template>
@@ -135,37 +142,38 @@
       </template>
     </a-modal>
     <!-- 删除确认对话框 -->
-
+    <a-modal
+     title="是否将所选项放入回收站"
+     :visible="dialogvisible"
+     ok-text="是"
+     cancel-text="否"
+     @ok="onok"
+     @cancel="onno">
+      <p>如果不放入回收站则直接删除，无法恢复</p>
+    </a-modal>
     </div>
   </a-card>
 </template>
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {DocumentDate, DeleteDocuments} from '@/services/documentmanagement'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '上传时间',
+    dataIndex: 'created_time'
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '文件名',
+    dataIndex: 'filename'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '文件大小',
+    dataIndex: 'file_size'
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
-  },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+    title: '上传人',
+    dataIndex: 'uploader_name'
   },
   {
     title: '操作',
@@ -175,27 +183,19 @@ const columns = [
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
-
 export default {
   name: 'QueryList',
   components: {StandardTable},
   data () {
     return {
       query: {
-        filename: '',
-        uploadusers: '',
-        department: '',
-        uploaddate: ''
+        page: '1',
+        page_size: '10',
+        filename: null,
+        user_name: null,
+        department_id: null,
+        start_time: null,
+        end_time: null,
       },
       editform: {
         filename: '',
@@ -205,53 +205,66 @@ export default {
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
+      ids: [],
       visible: false,
       loading: false,
+      start_time: '',
+      end_time: '',
+      dialogvisible: false,
       departmentoptions: ['商务部', '技术部'],
       editrules: {
         filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
         department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
       },
       headers: {
+        accept: 'application/json',
         authorization: 'authorization-text',
       }
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    // 获取表格数据
+    gettabledata () {
+      DocumentDate(this.query).then(res => {
+        this.dataSource = res.data.data
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
-    },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
     },
     onClear() {
       this.$message.info('您清空了勾选的所有行')
     },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
+    onChange(current) {
+      this.query.page = current.current
+      this.gettabledata()
       this.$message.info('表格状态改变了')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
     },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.query.start_time = this.start_time ? this.start_time.format('YYYY-MM-DD') : null
+      this.query.end_time = this.end_time ? this.end_time.format('YYYY-MM-DD') : null
+      this.gettabledata()
     },
     // 批量删除
     Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      this.dialogvisible = true
+      console.log(this.selectedRows);
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
     },
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = '1'
+      this.query.page_size = '10'
+      this.gettabledata()
     },
     // 打开编辑表单
     showModal(id) {
@@ -259,7 +272,7 @@ export default {
       this.visible = true;
     },
     // 提交编辑表单
-    handleOk() {
+    submitform() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
@@ -268,24 +281,36 @@ export default {
       })
     },
     // 关闭编辑表单
-    handleCancel() {
+    closeform() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
       console.log('ok');
     },
-    // 删除对话框
-    showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后会放在回收站',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
+    deletedialog(id) {
+      this.ids.push(id)
+      this.dialogvisible = true
+    },
+    async onok() {
+      let is_logic_del = '0'
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
+          console.log(res);
+          })
+      }
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
+    },
+    async onno() {
+      let is_logic_del = '1'
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
+          console.log(res);
+          })
+      }
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
     },
     // 上传文件
     handleChange(info) {
@@ -294,6 +319,7 @@ export default {
       }
       if (info.file.status === 'done') {
         this.$message.success(`${info.file.name} file uploaded successfully`);
+        this.gettabledata()
       } else if (info.file.status === 'error') {
         this.$message.error(`${info.file.name} file upload failed.`);
       }

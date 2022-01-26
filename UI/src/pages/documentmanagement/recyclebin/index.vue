@@ -151,7 +151,8 @@ export default {
     onStatusTitleClick() {
       this.$message.info('你点击了状态栏表头')
     },
-    onChange() {
+    onChange(current) {
+      console.log(current);
       this.$message.info('表格状态改变了')
     },
     handleMenuClick (e) {
