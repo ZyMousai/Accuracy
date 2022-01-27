@@ -263,7 +263,7 @@ export default {
 
     gettabledata () {
       UsersDate(this.query).then(res => {
-        var re_da = res.data.data
+        var re_da = res.data.data;
         // 给予序号
         for (var i = 0; i < re_da.length; i++) {
           re_da[i]["index"] = i + 1
@@ -275,7 +275,7 @@ export default {
       this.advanced = !this.advanced
     },
     remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
+      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1);
       this.selectedRows = []
     },
     onClear() {
@@ -323,7 +323,7 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          console.log('ok');
+          console.log(this.form);
         }
       })
     },
