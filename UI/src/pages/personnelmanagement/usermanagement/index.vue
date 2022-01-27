@@ -70,7 +70,7 @@
           <a @click="showModal(record.key)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="showModal" style="margin-right: 8px">
+          <a @click="resetPassword(record.key)" style="margin-right: 8px">
             <a-icon type="retweet" />重置密码
           </a>
           <a @click="showdeleConfirm(record.ne)">
@@ -172,30 +172,32 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {UsersDate} from '@/services/personnelmanagement'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index'
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '用户名',
+    dataIndex: 'account'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '姓名',
+    dataIndex: 'name',
+    // scopedSlots: { customRender: 'description' }
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
+    title: '入职时间',
+    dataIndex: 'entry_time'
   },
   {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+    title: '密码修改时间',
+    dataIndex: 'update_password_time'
+  },
+  {
+    title: '创建人',
+    dataIndex: 'creator'
   },
   {
     title: '操作',
@@ -253,7 +255,22 @@ export default {
       }
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    // 获取表格数据
+
+    gettabledata () {
+      UsersDate(this.query).then(res => {
+        var re_da = res.data.data
+        // 给予序号
+        for (var i = 0; i < re_da.length; i++) {
+          re_da[i]["index"] = i + 1
+        }
+        this.dataSource = re_da
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
@@ -291,6 +308,12 @@ export default {
     },
     // 打开编辑表单
     showModal(id) {
+      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
+      console.log(id);
+      this.visible = true;
+    },
+    // 重置密码
+    resetPassword(id) {
       typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
       console.log(id);
       this.visible = true;
