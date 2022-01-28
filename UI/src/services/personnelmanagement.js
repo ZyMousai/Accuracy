@@ -12,7 +12,7 @@ export async function UsersDate(query) {
 }
 /**
  * 用户页面
- * 获取用户列表
+ * 增加用户
  * @param query  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
@@ -28,4 +28,17 @@ export async function UsersAdd(query) {
  */
 export async function DepartmentDate(query) {
     return request(DEPARTMENTS, METHOD.GET, query)
+}
+
+/**
+ * 删除部门
+ * @param id  查新请求参数
+ * @param is_logic_del  是否是逻辑删除
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteDepartment(id, is_logic_del) {
+    return request(DEPARTMENTS, METHOD.DELETE, {
+        ids: id,
+        is_logic_del: is_logic_del
+    })
 }
