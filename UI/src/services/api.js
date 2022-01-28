@@ -10,6 +10,9 @@ module.exports = {
     GetCreditCardListData: `${BASE_URL}/Clerk/card/v1/card`,
     ROUTES: `${BASE_URL}/routes`,
     USERS: `${BASE_URL}/PersonnelManagement/users/v1/`,
+    TrackAlliance: `${BASE_URL}/Clerk/track/v1/alliance`,
+    ROLES: `${BASE_URL}/PersonnelManagement/roles/v1/`,
+    ACCOUNT: `${BASE_URL}/PersonnelManagement/roles/v1/`,
     DEPARTMENTS: `${BASE_URL}/PersonnelManagement/departments/v1/Department`,
 
 }
