@@ -37,32 +37,26 @@
     <div>
       <a-space class="operator">
         <a-button type="primary" @click="showModal"><a-icon type="plus-circle" />新增</a-button>
-        <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
-      <standard-table
-        :columns="columns"
-        :dataSource="dataSource"
-        :selectedRows.sync="selectedRows"
-        @clear="onClear"
-        @change="onChange"
-      >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
-        <div slot="action" slot-scope="{record}">
-          <a @click="showModal(record.key)" style="margin-right: 8px">
-            <a-icon type="edit"/>修改
-          </a>
-          <a @click="showdeleConfirm(record.ne)">
-            <a-icon type="delete" />删除
-          </a>
-        </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
-      </standard-table>
-      <!-- 表单 -->
-      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
+      <a-table :columns="columns" :data-source="dataSource" class="components-table-demo-nested" >
+        <a slot="operation" >编辑</a>
+        <a slot="operation" style="margin-left: 5px;">添加跟踪域</a>
+        <a slot="operation" style="margin-left: 5px;">删除</a>
+        <a-table
+          slot="expandedRowRender"
+          slot-scope="record"
+          :columns="innerColumns"
+          :data-source="record.task_ruls"
+          :pagination="false"
+          :showHeader="false"
+        >
+          <span slot="operation" class="table-operation">
+            <a style="margin-left: 5px;">删除</a>
+          </span>
+        </a-table>
+      </a-table>
+      <!-- 父表表单 -->
+      <a-modal v-model="subvisible" :title="tablename" on-ok="subhandleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
         <a-button key="back" @click="handleCancel">
           取消
@@ -78,19 +72,57 @@
           :rules="rules"
           :label-col="{ span: 3 }"
           :wrapper-col="{ span: 18 }"
-          :layout="form.layout"
+          :layout="layout"
+          childrenColumnName="track_url"
         >
         <a-row>
           <a-col>
-            <a-form-model-item ref="filename" label="联盟名称" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="name" label="联盟名称" prop="name">
+              <a-input v-model="form.name" />
             </a-form-model-item>
           </a-col>
         </a-row>
         <a-row>
           <a-col>
-            <a-form-model-item label="联盟链接" prop="desc" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
-            <a-input v-model="form.desc" type="textarea" />
+            <a-form-model-item label="联盟链接" prop="url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
+            <a-input v-model="form.url" type="textarea" />
+          </a-form-model-item>
+          </a-col>
+        </a-row>
+        </a-form-model>
+      </template>
+    </a-modal>
+    <!-- 子表表单 -->
+    <a-modal v-model="visible" title="添加跟踪域" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
+      <template slot="footer">
+        <a-button key="back" @click="handleCancel">
+          取消
+        </a-button>
+        <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+          提交
+        </a-button>
+      </template>
+      <template>
+        <a-form-model
+          ref="ruleForm"
+          :model="form"
+          :rules="rules"
+          :label-col="{ span: 3 }"
+          :wrapper-col="{ span: 18 }"
+          :layout="layout"
+          childrenColumnName="track_url"
+        >
+        <a-row>
+          <a-col>
+            <a-form-model-item ref="name" label="联盟名称" prop="name">
+              <a-input v-model="form.name" />
+            </a-form-model-item>
+          </a-col>
+        </a-row>
+        <a-row>
+          <a-col>
+            <a-form-model-item label="联盟链接" prop="url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
+            <a-input v-model="form.url" type="textarea" />
           </a-form-model-item>
           </a-col>
         </a-row>
@@ -102,97 +134,102 @@
 </template>
 
 <script>
-import StandardTable from '@/components/table/StandardTable'
+import {GetAffiliatelistDate, AddDate} from '@/services/affiliatelist'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index',
+    key: 'index',
+    width: 80
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '联盟名称',
+    key: 'name',
+    dataIndex: 'name'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '链接',
+    key: 'url',
+    dataIndex: 'url'
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
+    title: '创建时间',
+    dataIndex: ''
   },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+  { title: '操作',
+    key: 'operation',
+    scopedSlots: { customRender: 'operation' } 
   },
-  {
-    title: '操作',
-    scopedSlots: { customRender: 'action' }
-  }
 ]
+
+const innerColumns = [{
+  title: '链接',
+  dataIndex: 'urls',
+  key: 'urls',
+  width: 1025
+  },
+  { title: '操作',
+    key: 'operation',
+    scopedSlots: { customRender: 'operation' } 
+  },]
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26',
-    children: [{
-      key: i + 100,
-      ne: 'Ne ' + i,
-      description: '这是一段描述',
-      callNo: Math.floor(Math.random() * 1000),
-      status: Math.floor(Math.random() * 10) % 4,
-      updatedAt: '2018-07-26',
-    }, {
-      key: i + 200,
-      ne: 'Ne ' + i,
-      description: '这是一段描述',
-      callNo: Math.floor(Math.random() * 1000),
-      status: Math.floor(Math.random() * 10) % 4,
-      updatedAt: '2018-07-26',
-    },]
-  })
-}
-
 export default {
   name: 'QueryList',
-  components: {StandardTable},
   data () {
     return {
       query: {
-        platform: '',
-        account: '',
+        page: '1',
+        page_size: '10',
+        name: '',
+        url: '',
       },
       form: {
-        layout: 'vertical',
-        filename: '',
-        department: '',
-        desc: ''
+        name: '',
+        url: ''
       },
+      subforms: {
+
+      },
+      layout: 'vertical',
       advanced: true,
       columns: columns,
       dataSource: dataSource,
+      innerColumns,
       selectedRows: [],
       departmentoptions: ['商务部', "技术部"],
       tablename: '',
       visible: false,
+      subvisible: false,
       loading: false,
       rules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-        desc: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
+        name: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+        url: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
       }
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    gettabledata () {
+      GetAffiliatelistDate(this.query).then(res => {
+        console.log(res);
+        res.data.data.forEach((i, y) => {
+          i['index'] = y + 1
+          i.task_ruls = []
+          i.track_url.forEach((a, b) => {
+            let obj = {}
+            obj.id = b
+            obj.urls = a
+            i.task_ruls.push(obj)
+          })
+        });
+        console.log(res.data.data);
+        this.dataSource = res.data.data
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
@@ -228,17 +265,23 @@ export default {
         this.query[key] = ''
       }
     },
-    // 打开编辑表单
+    // 打开父表表单
     showModal(id) {
       typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
       this.visible = true;
     },
-    // 提交编辑表单
+    // 提交父表表单
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          console.log('ok');
+          AddDate(this.form).then(res => {
+            console.log(res);
+            this.$message.success('添加成功！')
+            this.loading = false;
+            this.visible = false;
+            this.gettabledata();
+          })
         }
       })
     },

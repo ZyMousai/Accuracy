@@ -10,7 +10,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.filename" placeholder="请输入" />
+              <a-input v-model="query.url" placeholder="请输入" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -19,7 +19,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
+              <a-select v-model="query.platform" placeholder="请选择">
                 <a-select-option v-for="item in devicetypelist" :key="item" :value="item">
                   {{item}}
                 </a-select-option>
@@ -32,7 +32,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
+              <a-select v-model="query.country" placeholder="请选择">
                 <a-select-option v-for="item in countrylist" :key="item" :value="item">
                   {{item}}
                 </a-select-option>
@@ -52,32 +52,14 @@
       </a-form>
     </div>
     <div>
-      <a-space class="operator">
-        <a-button type="primary"><a-icon type="cloud-download" />批量恢复</a-button>
-        <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
-        <span>小提示：回收站文件系统会至多保留7天</span>
-      </a-space>
       <standard-table
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
         @clear="onClear"
         @change="onChange"
+        :rowKey='record=>record.index'
       >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
-        <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px">
-            <a-icon type="cloud-download"/>恢复
-          </a>
-          <a @click="showdeleConfirm(record.ne)">
-            <a-icon type="delete" />彻底删除
-          </a>
-        </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
     </div>
   </a-card>
@@ -85,49 +67,31 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {FollowLinkDate} from '@/services/followlink'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index',
+    width: 80
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '耗时',
+    dataIndex: 'loadTime',
+    width: 80
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '状态',
+    dataIndex: 'code',
+    width: 80
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
+    title: '追踪链接',
+    dataIndex: 'url'
   },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
-  },
-  {
-    title: '操作',
-    scopedSlots: { customRender: 'action' }
-  }
 ]
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
 
 export default {
   name: 'QueryList',
@@ -135,67 +99,49 @@ export default {
   data () {
     return {
       query: {
-        filename: '',
-        uploadusers: '',
-        uploaddate: ''
+        page: '1',
+        page_size: '10',
+        url: '',
+        platform: '',
+        country: '',
       },
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      devicetypelist: ['iphone', 'android', 'ipad', 'desktop'],
-      countrylist: ['jp', 'us', 'tw', 'gb', 'de'],
+      departmentoptions: ['iphone', "android", "ipad", "desktop"],
+      devicetypelist: ['iphone', "android", "ipad", "desktop"],
+      countrylist: ['jp', "us", "tw", "gb", "de"],
     }
   },
   methods: {
+    // 获取表格数据
+    gettabledata () {
+      FollowLinkDate(this.query).then(res => {
+        for (let i = 0; i < res.data.urls.length; i++) {
+          res.data.urls[i]['index'] = i + 1
+        }
+        this.dataSource = res.data.urls
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
-    },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
     },
     onClear() {
       this.$message.info('您清空了勾选的所有行')
     },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
     onChange() {
       this.$message.info('表格状态改变了')
     },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
-    },
     // 查询
     queryevents() {
-      console.log(this.query);
-    },
-    // 批量删除
-    Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      this.gettabledata()
     },
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
         this.query[key] = ''
       }
-    },
-    // 删除对话框
-    showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
     }
   }
 }
