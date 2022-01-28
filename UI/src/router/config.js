@@ -150,7 +150,8 @@ const options = {
                         icon: 'appstore',
                     },
                     component: BlankView,
-                    children: [{
+                    children: [
+                        {
                             path: 'voluumsiteId',
                             name: 'Voluum-SiteId',
                             component: () =>
@@ -161,17 +162,8 @@ const options = {
                             name: '统计卡情况',
                             component: () =>
                                 import ('@/pages/assistantfunction/statisticscardinformation'),
-                        }
-                    ]
-                },
-                {
-                    path: 'domainnamemanagement',
-                    name: '域名管理',
-                    meta: {
-                        icon: 'appstore',
-                    },
-                    component: BlankView,
-                    children: [{
+                        },
+                        {
                             path: 'followlink',
                             name: '跟踪链接',
                             component: () =>

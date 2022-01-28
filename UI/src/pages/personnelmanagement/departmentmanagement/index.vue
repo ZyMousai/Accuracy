@@ -36,15 +36,16 @@
         :selectedRows.sync="selectedRows"
         @clear="onClear"
         @change="onChange"
+        :rowKey='record=>record.id'
       >
         <div slot="description" slot-scope="{text}">
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a @click="editdepartment(record.key)" style="margin-right: 8px">
+          <a @click="editdepartment(record.id)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="showdeleConfirm(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
@@ -58,49 +59,70 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {DepartmentDate, } from '@/services/personnelmanagement'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index'
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '部门名称',
+    dataIndex: 'department'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '创建人',
+    dataIndex: 'creator'
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
-  },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+    title: '创建时间',
+    dataIndex: 'create_time'
   },
   {
     title: '操作',
     scopedSlots: { customRender: 'action' }
   }
+  // {
+  //   title: '规则编号',
+  //   dataIndex: 'ne'
+  // },
+  // {
+  //   title: '描述',
+  //   dataIndex: 'description',
+  //   scopedSlots: { customRender: 'description' }
+  // },
+  // {
+  //   title: '服务调用次数',
+  //   dataIndex: 'callNo',
+  //   needTotal: true,
+  //   customRender: (text) => text + ' 次'
+  // },
+  // {
+  //   dataIndex: 'status',
+  //   needTotal: true,
+  //   slots: {title: 'statusTitle'}
+  // },
+  // {
+  //   title: '更新时间',
+  //   dataIndex: 'updatedAt'
+  // },
+  // {
+  //   title: '操作',
+  //   scopedSlots: { customRender: 'action' }
+  // }
 ]
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
+// for (let i = 0; i < 100; i++) {
+//   dataSource.push({
+//     key: i,
+//     ne: 'NO ' + i,
+//     description: '这是一段描述',
+//     callNo: Math.floor(Math.random() * 1000),
+//     status: Math.floor(Math.random() * 10) % 4,
+//     updatedAt: '2018-07-26'
+//   })
+// }
 
 export default {
   name: 'QueryList',
@@ -114,10 +136,33 @@ export default {
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      departmentoptions: ['商务', "技术"]
+      dialogvisible: false,
+      ids: [],
+      departmentoptions: ['商务', "技术"],
+      headers: {
+        accept: 'application/json',
+        authorization: 'authorization-text',
+      }
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    // 获取表格数据
+    gettabledata () {
+      DepartmentDate(this.query).then(res => {
+        var re_da = res.data.data;
+        // 给予序号
+        for (var i = 0; i < re_da.length; i++) {
+          re_da[i]["index"] = i + 1
+        }
+        this.dataSource = re_da
+
+      })
+    },
+
+
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
@@ -141,11 +186,18 @@ export default {
     },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.gettabledata();
+
+
+      // console.log(this.query);
     },
     // 批量删除
     Batchdelete() {
+      console.log(this.selectedRows)
       this.showdeleConfirm(this.selectedRows)
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
     },
     // 重置查询表单
     resettingqueryform() {
