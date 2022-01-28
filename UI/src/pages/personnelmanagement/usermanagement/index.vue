@@ -20,8 +20,8 @@
               :wrapperCol="{span: 18, offset: 1}"
             >
               <a-select v-model="query.department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                  {{item}}
+                <a-select-option v-for="item in departmentoptions" :key="item['department']" :value="item['id']">
+                  {{item['department']}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -102,22 +102,22 @@
         >
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="用户名" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="account" label="用户名" prop="account">
+              <a-input v-model="form.account" />
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="姓名" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="name" label="姓名" prop="name">
+              <a-input v-model="form.name" />
             </a-form-model-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item label="性别" prop="department">
-            <a-select v-model="form.gender" placeholder="请选择部门">
-              <a-select-option v-for="item in genderlist" :key="item" :value="item">
-                {{item}}
+            <a-form-model-item label="性别" prop="gender">
+            <a-select v-model="form.gender" placeholder="请选择性别">
+              <a-select-option v-for="item in genderlist" :key="item[0]" :value="item[1]">
+                {{item[0]}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
@@ -125,8 +125,8 @@
           <a-col :span="10">
             <a-form-model-item label="部门" prop="department">
             <a-select v-model="form.department" placeholder="请选择部门">
-              <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                {{item}}
+              <a-select-option v-for="item in departmentoptions" :key="item['department']" :value="item['id']">
+                {{item['department']}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
@@ -143,20 +143,32 @@
           </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="入职时间" prop="entrytime">
-            <a-date-picker v-model="form.entrytime" style="width: 100%" placeholder="请选择入职时间" />
+            <a-form-model-item label="入职时间" prop="entry_time">
+            <a-date-picker v-model="form.entry_time" style="width: 100%" :value-format="dateFormat" placeholder="请选择入职时间" />
           </a-form-model-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item ref="contactnumbe" label="联系电话" prop="contactnumbe">
-              <a-input v-model="form.contactnumbe" />
+            <a-form-model-item ref="phone" label="联系电话" prop="phone">
+              <a-input v-model="form.phone" />
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item ref="contactaddress" label="联系地址" prop="contactaddress">
-              <a-input v-model="form.contactaddress" />
+            <a-form-model-item ref="address" label="联系地址" prop="address">
+              <a-input v-model="form.address" />
+            </a-form-model-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :span="10">
+            <a-form-model-item label="出生日期" prop="birth">
+            <a-date-picker v-model="form.birth" style="width: 100%" :value-format="dateFormat" placeholder="请选择出生日期" />
+          </a-form-model-item>
+          </a-col>
+          <a-col :span="10">
+            <a-form-model-item ref="account" label="创建人" prop="creator">
+              <a-input v-model="form.creator" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -173,6 +185,7 @@
 <script>
 import StandardTable from '@/components/table/StandardTable'
 import {UsersDate} from '@/services/personnelmanagement'
+import {DepartmentDate, UsersAdd} from "../../../services/personnelmanagement";
 const columns = [
   {
     title: '序号',
@@ -185,15 +198,23 @@ const columns = [
   {
     title: '姓名',
     dataIndex: 'name',
-    // scopedSlots: { customRender: 'description' }
   },
+  {
+    title: '性别',
+    dataIndex: 'gender',
+  },
+  // {
+  //   title: '部门',
+  //   dataIndex: '',
+  // },
+
   {
     title: '入职时间',
     dataIndex: 'entry_time'
   },
   {
-    title: '密码修改时间',
-    dataIndex: 'update_password_time'
+    title: '电话',
+    dataIndex: 'phone'
   },
   {
     title: '创建人',
@@ -223,27 +244,31 @@ export default {
   components: {StandardTable},
   data () {
     return {
+      dateFormat: 'YYYY-MM-DD',
       query: {
         platform: '',
         department: ''
       },
       form: {
         layout: 'vertical',
-        filename: '',
+        account: '',
+        name: '',
         department: '',
         gender: '',
-        entrytime: '',
-        contactnumbe: '',
-        contactaddress: '',
+        entry_time: '',
+        phone: '',
+        address: '',
+        birth: '',
+        creator: '',
         role: ''
       },
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      departmentoptions: ['商务部', "技术部"],
+      departmentoptions: [{id:"0",department:'商务部'}, {id:"1",department:"技术部"}],
       roleoptions: ['商务', "技术"],
-      genderlist: ['男', "女", '外星人'],
+      genderlist: [['男', "true"], ["女", "false"]],
       ruleslist: ['商务专员', "技术专员", '咸鱼'],
       tablename: '',
       visible: false,
@@ -257,10 +282,20 @@ export default {
   },
   created () {
     this.gettabledata()
+    this.getdepartmentoptions()
   },
   methods: {
+    //获取部门列表
+    getdepartmentoptions(){
+      console.log(222)
+      DepartmentDate().then(res => {
+        console.log(333)
+        this.departmentoptions = res.data.data
+        console.log(res)
+        console.log(111)
+      })
+    },
     // 获取表格数据
-
     gettabledata () {
       UsersDate(this.query).then(res => {
         var re_da = res.data.data;
@@ -322,8 +357,15 @@ export default {
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
+          console.log(valid)
           this.loading = true;
-          console.log(this.form);
+          console.log('ok');
+          UsersAdd(this.form).then(res => {
+            console.log(res)
+          })
+
+
+
         }
       })
     },

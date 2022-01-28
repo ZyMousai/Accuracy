@@ -1,9 +1,9 @@
-import { USERS, DEPARTMENTS } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
  * 用户页面
- * 获取用户列表
+ * 新增用户
  * @param query  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
@@ -28,6 +28,16 @@ export async function UsersAdd(query) {
  */
 export async function DepartmentDate(query) {
     return request(DEPARTMENTS, METHOD.GET, query)
+}
+
+/**
+ * 角色管理页面
+ * 获取角色列表
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function RolesDate(query) {
+    return request(ROLES, METHOD.GET, query)
 }
 
 /**

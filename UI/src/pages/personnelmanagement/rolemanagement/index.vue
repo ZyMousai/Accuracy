@@ -58,30 +58,23 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {RolesDate} from '@/services/personnelmanagement'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '角色',
+    dataIndex: 'role'
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '创建人',
+    dataIndex: 'creator'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
-  },
-  {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
+    title: '创建时间',
+    dataIndex: 'create_time'
   },
   {
     title: '更新时间',
-    dataIndex: 'updatedAt'
+    dataIndex: 'update_time'
   },
   {
     title: '操作',
@@ -117,7 +110,21 @@ export default {
       roleoptions: ['商务', "技术"]
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
+    // 获取表格数据
+    gettabledata () {
+      RolesDate(this.query).then(res => {
+        var re_da = res.data.data
+        // 给予序号
+        for (var i = 0; i < re_da.length; i++) {
+          re_da[i]["index"] = i + 1
+        }
+        this.dataSource = re_da
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
