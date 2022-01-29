@@ -34,6 +34,7 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
+        :rowKey='record=>record.id'
         @clear="onClear"
         @change="onChange"
       >
@@ -41,10 +42,10 @@
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a @click="editrole(record.key)" style="margin-right: 8px">
+          <a @click="editrole(record.id)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="showdeleConfirm(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
@@ -53,12 +54,22 @@
         </template>
       </standard-table>
     </div>
+    <!-- 删除确认对话框 -->
+    <a-modal
+     title="是否删除此用户"
+     :visible="dialogvisible"
+     ok-text="是"
+     cancel-text="否"
+     @ok="user_onok"
+     @cancel="user_onno">
+    </a-modal>
   </a-card>
 </template>
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
 import {RolesDate} from '@/services/personnelmanagement'
+import {DeleteRoles} from "../../../services/personnelmanagement";
 const columns = [
   {
     title: '角色',
@@ -104,6 +115,8 @@ export default {
         department: ''
       },
       advanced: true,
+      ids: [],
+      dialogvisible: false,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
@@ -152,7 +165,11 @@ export default {
     },
     // 批量删除
     Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      this.ids = []
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
+      this.dialogvisible = true
     },
     // 重置查询表单
     resettingqueryform() {
@@ -168,19 +185,35 @@ export default {
     editrole(id) {
       this.$router.push('/personnelmanagement/editrole/?' + id)
     },
+    async user_onok() {
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteRoles(this.ids[i]).then(res => {
+          console.log(res);
+          })
+      }
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
+    },
+    async user_onno() {
+      this.ids = []
+      this.dialogvisible = false
+    },
     // 删除对话框
     showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
+      this.ids.push(id)
+      this.dialogvisible = true
+      // this.$confirm({
+      //   title: '是否删除所选项?',
+      //   content: '删除之后无法恢复！',
+      //   onOk() {
+      //     return new Promise((resolve, reject) => {
+      //       console.log(id);
+      //       setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
+      //     }).catch(() => console.log('Oops errors!'));
+      //   },
+      //   onCancel() {},
+      // })
     }
   }
 }
