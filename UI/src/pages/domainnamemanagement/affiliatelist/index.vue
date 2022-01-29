@@ -38,10 +38,20 @@
       <a-space class="operator">
         <a-button type="primary" @click="showModal"><a-icon type="plus-circle" />新增</a-button>
       </a-space>
-      <a-table :columns="columns" :data-source="dataSource" class="components-table-demo-nested" >
-        <a slot="operation" >编辑</a>
-        <a slot="operation" style="margin-left: 5px;">添加跟踪域</a>
-        <a slot="operation" style="margin-left: 5px;">删除</a>
+      <a-table :columns="columns" :data-source="dataSource" class="components-table-demo-nested" :rowKey='record=>record.id' >
+        <div slot="action" slot-scope="record">
+          <a slot="operation" @click="showModal(record)">编辑</a>
+          <a slot="operation" style="margin-left: 5px;" @click="subshowModal(record.id)">添加跟踪域</a>
+          <a-popconfirm
+            title="你确定要删除此项?"
+            ok-text="是"
+            cancel-text="否"
+            @confirm="confirmdelete(record.id)"
+            @cancel="cancel"
+            slot="operation">
+            <a style="margin-left: 5px;">删除</a>
+          </a-popconfirm>
+        </div>
         <a-table
           slot="expandedRowRender"
           slot-scope="record"
@@ -56,7 +66,7 @@
         </a-table>
       </a-table>
       <!-- 父表表单 -->
-      <a-modal v-model="subvisible" :title="tablename" on-ok="subhandleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
+      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
         <a-button key="back" @click="handleCancel">
           取消
@@ -73,7 +83,6 @@
           :label-col="{ span: 3 }"
           :wrapper-col="{ span: 18 }"
           :layout="layout"
-          childrenColumnName="track_url"
         >
         <a-row>
           <a-col>
@@ -93,36 +102,28 @@
       </template>
     </a-modal>
     <!-- 子表表单 -->
-    <a-modal v-model="visible" title="添加跟踪域" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
+    <a-modal v-model="subvisible" title="添加跟踪域" on-ok="subhandleOk" :maskClosable="false" @afterClose="subhandleCancel()" :width='850'>
       <template slot="footer">
-        <a-button key="back" @click="handleCancel">
+        <a-button key="back" @click="subhandleCancel">
           取消
         </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+        <a-button key="submit" type="primary" :loading="loading" @click="subhandleOk">
           提交
         </a-button>
       </template>
       <template>
         <a-form-model
-          ref="ruleForm"
-          :model="form"
-          :rules="rules"
+          ref="subruleForm"
+          :model="subforms"
+          :rules="subrules"
           :label-col="{ span: 3 }"
           :wrapper-col="{ span: 18 }"
           :layout="layout"
-          childrenColumnName="track_url"
         >
         <a-row>
           <a-col>
-            <a-form-model-item ref="name" label="联盟名称" prop="name">
-              <a-input v-model="form.name" />
-            </a-form-model-item>
-          </a-col>
-        </a-row>
-        <a-row>
-          <a-col>
-            <a-form-model-item label="联盟链接" prop="url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
-            <a-input v-model="form.url" type="textarea" />
+            <a-form-model-item label="跟踪域链接" prop="track_url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
+            <a-input v-model="subforms.track_url" type="textarea" />
           </a-form-model-item>
           </a-col>
         </a-row>
@@ -134,7 +135,7 @@
 </template>
 
 <script>
-import {GetAffiliatelistDate, AddDate} from '@/services/affiliatelist'
+import {GetAffiliatelistDate, AddDate, AddTaskUrlDate, EditDate, DeleteDate} from '@/services/affiliatelist'
 const columns = [
   {
     title: '序号',
@@ -157,8 +158,8 @@ const columns = [
     dataIndex: ''
   },
   { title: '操作',
-    key: 'operation',
-    scopedSlots: { customRender: 'operation' } 
+    key: 'action',
+    scopedSlots: { customRender: 'action' } 
   },
 ]
 
@@ -190,7 +191,8 @@ export default {
         url: ''
       },
       subforms: {
-
+        track_url: '',
+        alliance_id: ''
       },
       layout: 'vertical',
       advanced: true,
@@ -204,8 +206,11 @@ export default {
       subvisible: false,
       loading: false,
       rules: {
-        name: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        url: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
+        name: [{ required: true, message: '请输入联盟名称', trigger: 'blur' }],
+        url: [{ required: false, trigger: 'blur' }],
+      },
+      subrules: {
+        track_url: [{ required: true, message: '请输入跟踪链接', trigger: 'blur' }],
       }
     }
   },
@@ -233,31 +238,12 @@ export default {
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
-    },
     onClear() {
       this.$message.info('您清空了勾选的所有行')
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
     },
     // 查询
     queryevents() {
       console.log(this.query);
-    },
-    // 批量删除
-    Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
     },
     // 重置查询表单
     resettingqueryform() {
@@ -266,45 +252,84 @@ export default {
       }
     },
     // 打开父表表单
-    showModal(id) {
-      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
+    showModal(data) {
+      data.id ? this.tablename = '编辑' : this.tablename = '新增'
+      this.form.name = data.name
+      this.form.url = data.url
+      this.form.id = data.id
       this.visible = true;
     },
     // 提交父表表单
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
+          if (!this.form.id) {
+              this.loading = true;
+              AddDate(this.form).then(res => {
+              console.log(res);
+              this.$message.success('添加成功！')
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata();
+            })
+          } else {
+            this.loading = true;
+              EditDate(this.form).then(res => {
+              console.log(res);
+              this.$message.success('编辑成功！')
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata();
+            })
+          }
+        }
+      })
+    },
+    // 关闭父表表单
+    handleCancel() {
+      this.visible = false;
+      this.$refs.ruleForm.resetFields();
+    },
+    // 打开子表表单
+    subshowModal(id) {
+      console.log(id);
+      this.subforms.alliance_id = id
+      this.subvisible = true;
+    },
+    // 关闭子表表单
+    subhandleCancel() {
+      this.subvisible = false;
+      this.$refs.subruleForm.resetFields();
+    },
+    // 提交子表表单
+    subhandleOk() {
+      this.$refs.subruleForm.validate(valid => {
+        if (valid) {
           this.loading = true;
-          AddDate(this.form).then(res => {
+          AddTaskUrlDate(this.subforms).then(res => {
             console.log(res);
             this.$message.success('添加成功！')
             this.loading = false;
-            this.visible = false;
+            this.subvisible = false;
             this.gettabledata();
           })
         }
       })
     },
-    // 关闭编辑表单
-    handleCancel() {
-      this.visible = false;
-      this.$refs.ruleForm.resetFields();
-      console.log('ok');
-    },
-    // 删除对话框
-    showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
+    // 删除确认框
+    confirmdelete(id) {
+      console.log(id);
+      const ids = []
+      ids.push(id)
+      DeleteDate(ids).then(res => {
+        console.log(ids);
+        console.log(res);
       })
-    }
+    },
+    cancel(e) {
+      console.log(e);
+      this.$message.error('取消删除！');
+    },
   }
 }
 </script>
