@@ -31,15 +31,18 @@ const METHOD = {
  * @returns {Promise<AxiosResponse<T>>}
  */
 async function request(url, method, params, config) {
+    console.log(method);
     switch (method) {
         case METHOD.GET:
             return axios.get(url, { params, ...config })
         case METHOD.POST:
             return axios.post(url, params, config)
-        case METHOD.PATCH:
+        case "PATCH":
             return axios.patch(url, params, config)
-        case METHOD.DELETE:
+        case "DELETE":
             return axios.delete(url, { params, ...config })
+        case "DELETE1":
+            return axios.delete(url, { data: params }, config)
         default:
             return axios.get(url, { params, ...config })
     }

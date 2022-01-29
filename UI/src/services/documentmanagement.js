@@ -18,7 +18,7 @@ export async function DocumentDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function DeleteDocuments(id, is_logic_del) {
-    return request(DeleteDocument, METHOD.DELETE, {
+    return request(DeleteDocument, "DELETE", {
         ids: id,
         is_logic_del: is_logic_del
     })

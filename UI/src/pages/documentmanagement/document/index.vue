@@ -90,9 +90,6 @@
         @change="onChange"
         :rowKey='record=>record.id'
       >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
         <div slot="action" slot-scope="{record}">
           <a style="margin-right: 8px">
             <a-icon type="cloud-download"/>下载
