@@ -50,11 +50,29 @@ async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocum
 
     result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
                                                                              *filter_condition)
+    # 对文档数据进行重新归纳赋值
+    new_result = []
+    for res in result:
+        uploader_name = await DocumentManagement.get_document_user(dbs, res.user_id)
+        new_res = {
+            "filename": res.filename,
+            "id": res.id,
+            "user_id": res.user_id,
+            "is_delete": False,
+            "created_time": res.created_time.strftime("%Y-%m-%d"),
+            "file_size": res.file_size,
+            "updated_time": res.updated_time,
+            "department_id": res.department_id,
+            "uploader_name": uploader_name,
+        }
+        new_result.append(new_res)
+
     response_json = {"total": count,
                      "page": query.page,
                      "page_size": query.page_size,
                      "total_page": total_page,
-                     "data": result}
+                     "data": new_result,
+                     }
     return response_json
 
 
