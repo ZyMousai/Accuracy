@@ -1,9 +1,9 @@
-import { USERS, ROLES, DEPARTMENTS } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS, UpdatePassword } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
  * 用户页面
- * 新增用户
+ * 查询用户
  * @param query  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
@@ -21,13 +21,14 @@ export async function UsersAdd(query) {
 }
 
 /**
- * 部门页面
- * 获取部门列表
- * @param query  查新请求参数
+ * 删除用户
+ * @param id  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
-export async function DepartmentDate(query) {
-    return request(DEPARTMENTS, METHOD.GET, query)
+export async function DeleteUsers(id) {
+    return request(USERS, "DELETE", {
+        ids: id,
+    })
 }
 
 /**
@@ -39,6 +40,40 @@ export async function DepartmentDate(query) {
 export async function RolesDate(query) {
     return request(ROLES, METHOD.GET, query)
 }
+
+/**
+ * 删除角色
+ * @param id  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteRoles(id) {
+    return request(ROLES, "DELETE", {
+        ids: id,
+    })
+}
+
+/**
+ * 角色管理页面
+ * 重置密码
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function RolesResetPassword(query) {
+    return request(UpdatePassword, "PATCH", query)
+}
+
+
+
+/**
+ * 部门页面
+ * 获取部门列表
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DepartmentDate(query) {
+    return request(DEPARTMENTS, METHOD.GET, query)
+}
+
 
 /**
  * 删除部门

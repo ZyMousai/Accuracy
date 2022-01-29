@@ -14,6 +14,7 @@ module.exports = {
     ROLES: `${BASE_URL}/PersonnelManagement/roles/v1/`,
     ACCOUNT: `${BASE_URL}/PersonnelManagement/roles/v1/`,
     DEPARTMENTS: `${BASE_URL}/PersonnelManagement/departments/v1/Department`,
+    UpdatePassword: `${BASE_URL}/PersonnelManagement/users/v1/password`,
     GetFollowLinkDate: `${BASE_URL}/Clerk/track/v1/execute`,
     AffiliatelistDate: `${BASE_URL}/Clerk/track/v1/alliance`,
     TaskUrl: `${BASE_URL}/Clerk/track/v1/TrackUrl`,
