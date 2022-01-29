@@ -212,7 +212,7 @@
             },
             // 查询
             queryevents() {
-                console.log(this.query);
+                this.gettabledata();
             },
 
 

@@ -145,7 +145,10 @@
      ok-text="是"
      cancel-text="否"
      @ok="onok"
-     @cancel="onno">
+     @cancel="onno"
+     :closable="false"
+     @icon="oncancel"
+    >
       <p>如果不放入回收站则直接删除，无法恢复</p>
     </a-modal>
     </div>
@@ -288,27 +291,32 @@ export default {
       this.dialogvisible = true
     },
     async onok() {
-      let is_logic_del = '0'
+      let is_logic_del = '1';
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
           console.log(res);
           })
       }
-      this.gettabledata()
-      this.ids = []
+      this.gettabledata();
+      this.ids = [];
       this.dialogvisible = false
     },
     async onno() {
-      let is_logic_del = '1'
+      let is_logic_del = '0';
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
           console.log(res);
           })
       }
-      this.gettabledata()
-      this.ids = []
+      this.gettabledata();
+      this.ids = [];
       this.dialogvisible = false
     },
+
+    async oncancel() {
+      this.dialogvisible = false
+    },
+
     // 上传文件
     handleChange(info) {
       if (info.file.status !== 'uploading') {
