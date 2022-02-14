@@ -330,12 +330,12 @@ async def update_card(info: UpdateCard, dbs: AsyncSession = Depends(db_session))
     :return:
     """
     update_data_dict = info.dict(exclude_unset=True)
-    filter_condition = [
-        ('card_number', f'=="{info.card_number}"', info.card_number)
-    ]
-    result = await TbCard.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate card.")
+    # filter_condition = [
+    #     ('card_number', f'=="{info.card_number}"', info.card_number)
+    # ]
+    # result = await TbCard.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate card.")
     if len(update_data_dict) > 1:
         result = await TbCard.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
@@ -425,12 +425,12 @@ async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_ses
     :return:
     """
     update_data_dict = user.dict(exclude_unset=True)
-    filter_condition = [
-        ('account_name', f'=="{user.account_name}"', user.account_name)
-    ]
-    result = await TbAccount.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate account.")
+    # filter_condition = [
+    #     ('account_name', f'=="{user.account_name}"', user.account_name)
+    # ]
+    # result = await TbAccount.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate account.")
     if len(update_data_dict) > 1:
         result = await TbAccount.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
@@ -666,12 +666,12 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
     :return:
     """
     update_data_dict = info.dict(exclude_unset=True)
-    filter_condition = [
-        ('task', f'=="{info.task}"', info.task)
-    ]
-    result = await TbTask.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate Task.")
+    # filter_condition = [
+    #     ('task', f'=="{info.task}"', info.task)
+    # ]
+    # result = await TbTask.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate Task.")
     if len(update_data_dict) > 1:
         result = await TbTask.update_data(dbs, update_data_dict, is_delete=0)
         if not result:

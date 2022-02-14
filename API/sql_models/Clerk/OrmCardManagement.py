@@ -29,7 +29,7 @@ class TbCard(PBaseModel):
     face_value = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True), nullable=False)  # 面值
     valid_period = BaseType.BaseColumn(BaseType.BaseString(255))  # 有效期
     cvv = BaseType.BaseColumn(BaseType.BaseString(255))  # cvv
-    card_status = BaseType.BaseColumn(BaseType.BaseInteger)  # 卡状态
+    card_status = BaseType.BaseColumn(BaseType.BaseInteger)  # 卡状态 0-不可用,1-可用
     name = BaseType.BaseColumn(BaseType.BaseString(255))  # 卡姓名地址
     platform = BaseType.BaseColumn(BaseType.BaseString(255))  # 开卡平台
     note = BaseType.BaseColumn(BaseType.BaseString(255))  # 备注
