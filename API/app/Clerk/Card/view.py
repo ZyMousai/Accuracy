@@ -72,6 +72,7 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     for res in result:
         res_id = res.id
         new_res = {
+            "id": res_id,
             "card_number": res.card_number,
             "face_value": res.face_value,
             "valid_period": res.valid_period,

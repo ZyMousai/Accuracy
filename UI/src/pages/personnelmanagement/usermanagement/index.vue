@@ -318,6 +318,7 @@ export default {
         var re_da = res.data.data;
         // 给予序号
         for (var i = 0; i < re_da.length; i++) {
+          // re_da[i]["time"] = re_da[i]["time"].split(" ")[0];
           re_da[i]["index"] = i + 1
         }
         this.dataSource = re_da

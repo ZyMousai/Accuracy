@@ -73,9 +73,14 @@
         <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
         <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
       </a-space>
-      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" >
-        <a slot="operation" >编辑</a>
-        <a slot="operation" style="margin-left: 5px;">删除</a>
+      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" :rowKey='record=>record.id' >
+        <div slot="cardstatus" slot-scope="record">
+          <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record.id)" />
+        </div>
+        <div slot="operation" slot-scope="record">
+          <a slot="operation" @click="edit(record)">编辑</a>
+          <a slot="operation" style="margin-left: 5px;">删除</a>
+        </div>
         <a-table
           slot="expandedRowRender"
           slot-scope="record"
@@ -142,7 +147,7 @@ const columns = [
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
   { title: '备注', dataIndex: 'note', key: 'note' },
   { title: '平台', dataIndex: 'platform', key: 'platform' },
-  { title: '卡状态', dataIndex: 'card_status', key: 'card_status' },
+  { title: '卡状态', key: 'cardstatus', scopedSlots: { customRender: 'cardstatus' } },
   { title: '保留', dataIndex: 'retain', key: 'retain' },
   { title: '创建时间', dataIndex: 'create_time', key: 'create_time' },
   { title: '操作', key: 'operation', scopedSlots: { customRender: 'operation' } },
@@ -263,6 +268,12 @@ export default {
         onCancel() {},
       })
     },
+    // 修改卡状态
+    card_status_change(checked,id) {
+      console.log(`a-switch to ${checked} 123 ${id}`);
+
+
+    },
     // 上传文件
     handleChange(info) {
       if (info.file.status !== 'uploading') {
@@ -273,6 +284,9 @@ export default {
       } else if (info.file.status === 'error') {
         this.$message.error(`${info.file.name} file upload failed.`);
       }
+    },
+    edit (data){
+      console.log(data)
     }
   }
 }
