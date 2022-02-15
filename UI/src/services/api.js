@@ -14,8 +14,12 @@ module.exports = {
     ROLES: `${BASE_URL}/PersonnelManagement/roles/v1/`,
     ACCOUNT: `${BASE_URL}/PersonnelManagement/roles/v1/`,
     DEPARTMENTS: `${BASE_URL}/PersonnelManagement/departments/v1/Department`,
+    UpdatePassword: `${BASE_URL}/PersonnelManagement/users/v1/password`,
     GetFollowLinkDate: `${BASE_URL}/Clerk/track/v1/execute`,
     AffiliatelistDate: `${BASE_URL}/Clerk/track/v1/alliance`,
     TaskUrl: `${BASE_URL}/Clerk/track/v1/TrackUrl`,
-    VoluumsiteIdData: `${BASE_URL}/Clerk/voluum/v1/campaign_mapping`
+    VoluumsiteIdData: `${BASE_URL}/Clerk/voluum/v1/campaign_mapping`,
+    RecycleShow: `${BASE_URL}/DocumentManagement/recycle/v1/`,
+    RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
+    RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,
 }

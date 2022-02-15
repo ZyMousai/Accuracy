@@ -60,6 +60,7 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
+        :rowKey='record=>record.id'
         @clear="onClear"
         @change="onChange"
       >
@@ -67,13 +68,13 @@
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a @click="showModal(record.key)" style="margin-right: 8px">
+          <a @click="showModal(record.id)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="resetPassword(record.key)" style="margin-right: 8px">
+          <a @click="resetPassword(record.id)" style="margin-right: 8px">
             <a-icon type="retweet" />重置密码
           </a>
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="showdeleConfirm(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
@@ -136,8 +137,8 @@
           <a-col :span="10">
             <a-form-model-item label="角色" prop="role">
             <a-select v-model="form.role" placeholder="请选择角色">
-              <a-select-option v-for="item in ruleslist" :key="item" :value="item">
-                {{item}}
+              <a-select-option v-for="item in ruleslist" :key="item.role" :value="item.id">
+                {{item.role}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
@@ -179,13 +180,28 @@
       </template>
     </a-modal>
     </div>
+    <!-- 删除确认对话框 -->
+    <a-modal
+     title="是否删除此用户"
+     :visible="dialogvisible"
+     ok-text="是"
+     cancel-text="否"
+     @ok="user_onok"
+     @cancel="user_onno">
+    </a-modal>
   </a-card>
 </template>
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
 import {UsersDate} from '@/services/personnelmanagement'
-import {DepartmentDate, UsersAdd} from "../../../services/personnelmanagement";
+import {
+  DeleteUsers,
+  DepartmentDate,
+  RolesDate,
+  RolesResetPassword,
+  UsersAdd
+} from "../../../services/personnelmanagement";
 const columns = [
   {
     title: '序号',
@@ -266,10 +282,12 @@ export default {
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
+      ids: [],
       departmentoptions: [{id:"0",department:'商务部'}, {id:"1",department:"技术部"}],
       roleoptions: ['商务', "技术"],
       genderlist: [['男', "true"], ["女", "false"]],
-      ruleslist: ['商务专员', "技术专员", '咸鱼'],
+      ruleslist: [{id: "0", role: '商务专员'}, {id: "1", role: "技术专员"}],
+      dialogvisible: false,
       tablename: '',
       visible: false,
       loading: false,
@@ -285,14 +303,13 @@ export default {
     this.getdepartmentoptions()
   },
   methods: {
-    //获取部门列表
+    //获取部门列表和角色列表
     getdepartmentoptions(){
-      console.log(222)
       DepartmentDate().then(res => {
-        console.log(333)
         this.departmentoptions = res.data.data
-        console.log(res)
-        console.log(111)
+      })
+      RolesDate().then(res => {
+        this.ruleslist = res.data.data
       })
     },
     // 获取表格数据
@@ -301,10 +318,27 @@ export default {
         var re_da = res.data.data;
         // 给予序号
         for (var i = 0; i < re_da.length; i++) {
+          // re_da[i]["time"] = re_da[i]["time"].split(" ")[0];
           re_da[i]["index"] = i + 1
         }
         this.dataSource = re_da
       })
+    },
+    async user_onok() {
+      // let is_logic_del = '0'
+      // console.log(this.ids)
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteUsers(this.ids[i]).then(res => {
+          console.log(res);
+          })
+      }
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
+    },
+    async user_onno() {
+      this.ids = []
+      this.dialogvisible = false
     },
     toggleAdvanced () {
       this.advanced = !this.advanced
@@ -333,7 +367,11 @@ export default {
     },
     // 批量删除
     Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      this.ids = []
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
+      this.dialogvisible = true
     },
     // 重置查询表单
     resettingqueryform() {
@@ -349,9 +387,16 @@ export default {
     },
     // 重置密码
     resetPassword(id) {
-      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
-      console.log(id);
-      this.visible = true;
+      RolesResetPassword({"id":id, "password": "123456"}).then(res => {
+        console.log("重置密码成功")
+        console.log(res)
+        // 提示框
+
+
+
+
+
+      })
     },
     // 提交编辑表单
     handleOk() {
@@ -363,9 +408,8 @@ export default {
           UsersAdd(this.form).then(res => {
             console.log(res)
           })
-
-
-
+          this.gettabledata()
+          this.visible = false;
         }
       })
     },
@@ -377,17 +421,8 @@ export default {
     },
     // 删除对话框
     showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
+      this.ids.push(id)
+      this.dialogvisible = true
     }
   }
 }

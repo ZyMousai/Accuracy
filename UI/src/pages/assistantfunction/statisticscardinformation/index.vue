@@ -73,9 +73,17 @@
         <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
         <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
       </a-space>
-      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" >
-        <a slot="operation" >编辑</a>
-        <a slot="operation" style="margin-left: 5px;">删除</a>
+      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" :rowKey='record=>record.id' >
+        <div slot="cardstatus" slot-scope="record">
+          <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record.id)" />
+        </div>
+        <div slot="retain_" slot-scope="record">
+          <a-switch slot="retain_" default-checked :checked="record.retain ? true : false" @change="retain_change(record.retain, record.id)" />
+        </div>
+        <div slot="operation" slot-scope="record">
+          <a slot="operation" @click="edit(record)">编辑</a>
+          <a slot="operation" style="margin-left: 5px;">删除</a>
+        </div>
         <a-table
           slot="expandedRowRender"
           slot-scope="record"
@@ -133,6 +141,7 @@
 
 <script>
 import {CreditCardListData} from '@/services/statisticscardinformation'
+import {PatchCardListData} from "../../../services/statisticscardinformation";
 const columns = [
   { title: '卡号', dataIndex: 'card_number', key: 'card_number' },
   { title: '有效期', dataIndex: 'valid_period', key: 'valid_period' },
@@ -142,8 +151,8 @@ const columns = [
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
   { title: '备注', dataIndex: 'note', key: 'note' },
   { title: '平台', dataIndex: 'platform', key: 'platform' },
-  { title: '卡状态', dataIndex: 'card_status', key: 'card_status' },
-  { title: '保留', dataIndex: 'retain', key: 'retain' },
+  { title: '卡状态', key: 'cardstatus', scopedSlots: { customRender: 'cardstatus' } },
+  { title: '保留', key: 'retain_', scopedSlots: { customRender: 'retain_' } },
   { title: '创建时间', dataIndex: 'create_time', key: 'create_time' },
   { title: '操作', key: 'operation', scopedSlots: { customRender: 'operation' } },
 ];
@@ -208,7 +217,13 @@ export default {
   methods: {
     gettabledata() {
       CreditCardListData(this.query).then(res => {
-        this.data = res.data.data
+        var re_da = res.data.data;
+        // 给予序号
+        for (var i = 0; i < re_da.length; i++) {
+          re_da[i]['create_time'] = re_da[i]['create_time'].split(' ')[0];
+          re_da[i]["index"] = i + 1
+        }
+        this.data = re_da
         console.log(res);
       })
     },
@@ -263,6 +278,23 @@ export default {
         onCancel() {},
       })
     },
+    // 修改卡状态
+    card_status_change(card_status, id) {
+      PatchCardListData({card_status: card_status ? 0 : 1, id: id}).then(res => {
+        console.log("成功")
+        console.log(res)
+        this.gettabledata()
+      })
+    },
+    // 修改是否保留
+    retain_change(retain, id) {
+      console.log(retain)
+      PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
+        console.log("成功")
+        console.log(res)
+        this.gettabledata()
+      })
+    },
     // 上传文件
     handleChange(info) {
       if (info.file.status !== 'uploading') {
@@ -273,6 +305,9 @@ export default {
       } else if (info.file.status === 'error') {
         this.$message.error(`${info.file.name} file upload failed.`);
       }
+    },
+    edit (data){
+      console.log(data)
     }
   }
 }

@@ -50,10 +50,10 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
         task_card_id = task.card_id
         new_task_dict = {
             "id": task.id,
-            "alliance_id": task.account_id,
+            # "alliance_id": task.account_id,
             "user": task.user,
             "is_delete": task.is_delete,
-            "task": task.task,
+            # "task": task.task,
             "consume": task.consume,
             "card_id": task.card_id,
             "commission": task.commission,
@@ -72,6 +72,7 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     for res in result:
         res_id = res.id
         new_res = {
+            "id": res_id,
             "card_number": res.card_number,
             "face_value": res.face_value,
             "valid_period": res.valid_period,
@@ -329,12 +330,12 @@ async def update_card(info: UpdateCard, dbs: AsyncSession = Depends(db_session))
     :return:
     """
     update_data_dict = info.dict(exclude_unset=True)
-    filter_condition = [
-        ('card_number', f'=="{info.card_number}"', info.card_number)
-    ]
-    result = await TbCard.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate card.")
+    # filter_condition = [
+    #     ('card_number', f'=="{info.card_number}"', info.card_number)
+    # ]
+    # result = await TbCard.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate card.")
     if len(update_data_dict) > 1:
         result = await TbCard.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
@@ -424,12 +425,12 @@ async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_ses
     :return:
     """
     update_data_dict = user.dict(exclude_unset=True)
-    filter_condition = [
-        ('account_name', f'=="{user.account_name}"', user.account_name)
-    ]
-    result = await TbAccount.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate account.")
+    # filter_condition = [
+    #     ('account_name', f'=="{user.account_name}"', user.account_name)
+    # ]
+    # result = await TbAccount.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate account.")
     if len(update_data_dict) > 1:
         result = await TbAccount.update_data(dbs, update_data_dict, is_delete=0)
         if not result:
@@ -438,98 +439,98 @@ async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_ses
     return response_json
 
 
-@clerk_card_router.get('/alliance')
-async def get_alliance(info: SearchAlliance = Depends(SearchAlliance), dbs: AsyncSession = Depends(db_session), ):
-    """
-    获取联盟列表
-    :param info:
-    :param dbs:
-    :return:
-    """
-    filter_condition = [
-        ('alliance_name', f'.like("%{info.alliance_name}%")', info.alliance_name),
-        ('is_delete', '==0', 0)
-    ]
-    result, count, total_page = await TbAlliance.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
-    response_json = {"total": count,
-                     "page": info.page,
-                     "page_size": info.page_size,
-                     "total_page": total_page,
-                     "data": result}
-    return response_json
-
-
-@clerk_card_router.get('/alliance/{alliance_id}')
-async def get_alliance_one(alliance_id: int = Path(..., title='联盟id', description="联盟id", ge=1),
-                           dbs: AsyncSession = Depends(db_session)):
-    """
-    获取某个联盟的信息
-    :param alliance_id:
-    :param dbs:
-    :return:
-    """
-    result = await TbAlliance.get_one_detail(dbs, alliance_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Get non-existent resources.")
-    response_json = {"data": result}
-    return response_json
-
-
-@clerk_card_router.delete('/alliance')
-async def delete_alliance(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
-    """
-    删除联盟 可批量
-    :param ids:
-    :param dbs:
-    :return:
-    """
-    result = await TbAlliance.delete_data_logic(dbs, tuple(ids))
-    if not result:
-        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
-    response_json = {"data": ids}
-    return response_json
-
-
-@clerk_card_router.post('/alliance')
-async def create_alliance(info: AddAlliance, dbs: AsyncSession = Depends(db_session)):
-    """
-    创建联盟
-    :param info:
-    :param dbs:
-    :return:
-    """
-    filter_condition = [
-        ('alliance_name', f'=="{info.alliance_name}"', info.alliance_name)
-    ]
-    result = await TbAlliance.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate alliance.")
-    result = await TbAlliance.add_data(dbs, info)
-    response_json = {"data": result}
-    return response_json
-
-
-@clerk_card_router.patch('/alliance')
-async def update_alliance(info: UpdateAlliance, dbs: AsyncSession = Depends(db_session)):
-    """
-    修改联盟信息
-    :param info:
-    :param dbs:
-    :return:
-    """
-    update_data_dict = info.dict(exclude_unset=True)
-    filter_condition = [
-        ('alliance_name', f'=="{info.alliance_name}"', info.alliance_name)
-    ]
-    result = await TbAlliance.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate alliance.")
-    if len(update_data_dict) > 1:
-        result = await TbAlliance.update_data(dbs, update_data_dict, is_delete=0)
-        if not result:
-            raise HTTPException(status_code=403, detail="alliance does not exist.")
-    response_json = {"data": update_data_dict}
-    return response_json
+# @clerk_card_router.get('/alliance')
+# async def get_alliance(info: SearchAlliance = Depends(SearchAlliance), dbs: AsyncSession = Depends(db_session), ):
+#     """
+#     获取联盟列表
+#     :param info:
+#     :param dbs:
+#     :return:
+#     """
+#     filter_condition = [
+#         ('alliance_name', f'.like("%{info.alliance_name}%")', info.alliance_name),
+#         ('is_delete', '==0', 0)
+#     ]
+#     result, count, total_page = await TbAlliance.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+#     response_json = {"total": count,
+#                      "page": info.page,
+#                      "page_size": info.page_size,
+#                      "total_page": total_page,
+#                      "data": result}
+#     return response_json
+#
+#
+# @clerk_card_router.get('/alliance/{alliance_id}')
+# async def get_alliance_one(alliance_id: int = Path(..., title='联盟id', description="联盟id", ge=1),
+#                            dbs: AsyncSession = Depends(db_session)):
+#     """
+#     获取某个联盟的信息
+#     :param alliance_id:
+#     :param dbs:
+#     :return:
+#     """
+#     result = await TbAlliance.get_one_detail(dbs, alliance_id)
+#     if not result:
+#         raise HTTPException(status_code=404, detail="Get non-existent resources.")
+#     response_json = {"data": result}
+#     return response_json
+#
+#
+# @clerk_card_router.delete('/alliance')
+# async def delete_alliance(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
+#     """
+#     删除联盟 可批量
+#     :param ids:
+#     :param dbs:
+#     :return:
+#     """
+#     result = await TbAlliance.delete_data_logic(dbs, tuple(ids))
+#     if not result:
+#         raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+#     response_json = {"data": ids}
+#     return response_json
+#
+#
+# @clerk_card_router.post('/alliance')
+# async def create_alliance(info: AddAlliance, dbs: AsyncSession = Depends(db_session)):
+#     """
+#     创建联盟
+#     :param info:
+#     :param dbs:
+#     :return:
+#     """
+#     filter_condition = [
+#         ('alliance_name', f'=="{info.alliance_name}"', info.alliance_name)
+#     ]
+#     result = await TbAlliance.get_one(dbs, *filter_condition)
+#     if result:
+#         raise HTTPException(status_code=403, detail="Duplicate alliance.")
+#     result = await TbAlliance.add_data(dbs, info)
+#     response_json = {"data": result}
+#     return response_json
+#
+#
+# @clerk_card_router.patch('/alliance')
+# async def update_alliance(info: UpdateAlliance, dbs: AsyncSession = Depends(db_session)):
+#     """
+#     修改联盟信息
+#     :param info:
+#     :param dbs:
+#     :return:
+#     """
+#     update_data_dict = info.dict(exclude_unset=True)
+#     filter_condition = [
+#         ('alliance_name', f'=="{info.alliance_name}"', info.alliance_name)
+#     ]
+#     result = await TbAlliance.get_one(dbs, *filter_condition)
+#     if result:
+#         raise HTTPException(status_code=403, detail="Duplicate alliance.")
+#     if len(update_data_dict) > 1:
+#         result = await TbAlliance.update_data(dbs, update_data_dict, is_delete=0)
+#         if not result:
+#             raise HTTPException(status_code=403, detail="alliance does not exist.")
+#     response_json = {"data": update_data_dict}
+#     return response_json
 
 
 @clerk_card_router.get('/task')
@@ -665,12 +666,12 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
     :return:
     """
     update_data_dict = info.dict(exclude_unset=True)
-    filter_condition = [
-        ('task', f'=="{info.task}"', info.task)
-    ]
-    result = await TbTask.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate Task.")
+    # filter_condition = [
+    #     ('task', f'=="{info.task}"', info.task)
+    # ]
+    # result = await TbTask.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate Task.")
     if len(update_data_dict) > 1:
         result = await TbTask.update_data(dbs, update_data_dict, is_delete=0)
         if not result:

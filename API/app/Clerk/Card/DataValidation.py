@@ -52,29 +52,29 @@ class UpdateAccount(AddAccount):
     uid: str = Query(None)
 
 
-class AddAlliance(BaseModel):
-    alliance_name: str
-
-
-class SearchAlliance(BaseModel):
-    alliance_name: Optional[str] = Query(None)
-    page: Optional[int] = 1
-    page_size: Optional[int] = 10
-
-    class Config:
-        orm_mode = True
-
-
-class UpdateAlliance(AddAlliance):
-    id: int
-    alliance_name: str = Query(None)
+# class AddAlliance(BaseModel):
+#     alliance_name: str
+#
+#
+# class SearchAlliance(BaseModel):
+#     alliance_name: Optional[str] = Query(None)
+#     page: Optional[int] = 1
+#     page_size: Optional[int] = 10
+#
+#     class Config:
+#         orm_mode = True
+#
+#
+# class UpdateAlliance(AddAlliance):
+#     id: int
+#     alliance_name: str = Query(None)
 
 
 class AddTask(BaseModel):
     card_id: int
     account_id: int
-    alliance_id: int
-    task: str
+    # alliance_id: int
+    # task: str
     note: Optional[str] = None
     commission: float
     consume: float
@@ -86,8 +86,8 @@ class UpdateTask(BaseModel):
     id: int
     card_id: Optional[int] = Query(None)
     account_id: Optional[int] = Query(None)
-    alliance_id: Optional[int] = Query(None)
-    task: Optional[str] = Query(None)
+    # alliance_id: Optional[int] = Query(None)
+    # task: Optional[str] = Query(None)
     note: Optional[str] = Query(None)
     commission: Optional[float] = Query(None)
     consume: Optional[float] = Query(None)
@@ -98,8 +98,8 @@ class UpdateTask(BaseModel):
 class SearchTask(BaseModel):
     card_id: Optional[int] = Query(None)
     account_id: Optional[int] = Query(None)
-    alliance_id: Optional[int] = Query(None)
-    task: Optional[str] = Query(None)
+    # alliance_id: Optional[int] = Query(None)
+    # task: Optional[str] = Query(None)
     user: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
