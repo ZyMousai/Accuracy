@@ -12,7 +12,7 @@ from sql_models import create_table
 class TbAccount(PBaseModel):
     __tablename__ = 'tb_Account'
 
-    account_name = BaseType.BaseColumn(BaseType.BaseString(255))  # 账号名
+    # account_name = BaseType.BaseColumn(BaseType.BaseString(255))  # 账号名
     uid = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False)  # uid
 
 
@@ -49,10 +49,10 @@ class TbTask(PBaseModel):
     __tablename__ = 'tb_Task'
 
     card_id = BaseType.BaseColumn(ForeignKey('tb_Card.id'), nullable=False, index=True)  # 卡id
-    account_id = BaseType.BaseColumn(ForeignKey('tb_Account.id'), nullable=False, index=True)  # 联盟id
+    account_id = BaseType.BaseColumn(ForeignKey('tb_Account.id'), nullable=False, index=True)  # uid => id
     # alliance_id = BaseType.BaseColumn(ForeignKey('tb_Alliance.id'), nullable=False, index=True)  # 账号id
     creation_date = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建日期
-    # task = BaseType.BaseColumn(BaseType.BaseString(255))  # 任务
+    task = BaseType.BaseColumn(BaseType.BaseString(255))  # 任务
     commission = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True))  # 佣金
     consume = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True), nullable=False)  # 消耗
     user = BaseType.BaseColumn(BaseType.BaseString(255))  # 使用人
@@ -62,6 +62,13 @@ class TbTask(PBaseModel):
     card = relationship('TbCard')
     account = relationship('TbAccount')
     # alliance = relationship('TbAlliance')
+
+    @classmethod
+    async def get_account_task(cls, dbs, uid):
+        _orm = select(cls).outerjoin(TbAccount, cls.uid == uid). \
+            where(cls.is_delete == 0)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
 
 
 if __name__ == '__main__':

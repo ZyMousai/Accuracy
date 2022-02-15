@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
-from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float
+from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float, or_
 from sqlalchemy import select, func, delete
 
 async_session_local = None
@@ -64,8 +64,11 @@ class PBaseModel(Base):
         """以一些特定属性来获取一条数据"""
         filter_condition = list()
         for x in args:
-            if x[2] is not None:
-                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+            if isinstance(x, str):
+                filter_condition.append(eval(x))
+            else:
+                if x[2] is not None:
+                    filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
         _orm = select(cls).where(*filter_condition)
         result = (await dbs.execute(_orm)).scalars().first()
 

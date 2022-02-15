@@ -15,7 +15,8 @@ class AddCard(BaseModel):
     platform: Optional[str] = None
     note: Optional[str] = None
     create_time: Optional[date] = None
-    retain: Optional[int] = 0
+    # retain: Optional[int] = 0
+    retain: Optional[int] = None
     card_name: Optional[str] = None
 
 
@@ -32,12 +33,12 @@ class SearchCard(AddCard):
 
 
 class AddAccount(BaseModel):
-    account_name: str
+    # account_name: str
     uid: str
 
 
 class SearchAccount(BaseModel):
-    account_name: Optional[str] = Query(None)
+    # account_name: Optional[str] = Query(None)
     uid: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
@@ -48,7 +49,7 @@ class SearchAccount(BaseModel):
 
 class UpdateAccount(AddAccount):
     id: int
-    account_name: str = Query(None)
+    # account_name: str = Query(None)
     uid: str = Query(None)
 
 
@@ -74,7 +75,7 @@ class AddTask(BaseModel):
     card_id: int
     account_id: int
     # alliance_id: int
-    # task: str
+    task: str
     note: Optional[str] = None
     commission: float
     consume: float
@@ -87,7 +88,7 @@ class UpdateTask(BaseModel):
     card_id: Optional[int] = Query(None)
     account_id: Optional[int] = Query(None)
     # alliance_id: Optional[int] = Query(None)
-    # task: Optional[str] = Query(None)
+    task: Optional[str] = Query(None)
     note: Optional[str] = Query(None)
     commission: Optional[float] = Query(None)
     consume: Optional[float] = Query(None)
@@ -99,7 +100,7 @@ class SearchTask(BaseModel):
     card_id: Optional[int] = Query(None)
     account_id: Optional[int] = Query(None)
     # alliance_id: Optional[int] = Query(None)
-    # task: Optional[str] = Query(None)
+    task: Optional[str] = Query(None)
     user: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10

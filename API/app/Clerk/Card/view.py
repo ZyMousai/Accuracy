@@ -48,8 +48,16 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     for task in task_result:
         # 获取对应每个任务的
         task_card_id = task.card_id
+        # 通过task.account_id获取uid的逻辑
+        args = [
+            ('id', f'=={task.account_id}', task.account_id),
+            ('is_delete', '==0', 0),
+        ]
+        account_res = await TbAccount.get_one(dbs, *args)
+
         new_task_dict = {
             "id": task.id,
+            "uid": account_res.uid,
             # "alliance_id": task.account_id,
             "user": task.user,
             "is_delete": task.is_delete,
@@ -91,6 +99,14 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
         else:
             new_res["task_set"] = []
         new_result.append(new_res)
+        # 添加余额的逻辑
+        if new_res["task_set"]:
+            consume = new_res["task_set"][0]["consume"]
+        else:
+            consume = 0
+        balance = res.face_value - consume
+        new_res['balance'] = balance
+
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -353,7 +369,7 @@ async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSe
     :return:
     """
     filter_condition = [
-        ('account_name', f'.like("%{info.account_name}%")', info.account_name),
+        # ('account_name', f'.like("%{info.account_name}%")', info.account_name),
         ('uid', f'.like("%{info.uid}%")', info.uid),
         ('is_delete', '==0', 0)
     ]
@@ -406,8 +422,13 @@ async def create_account(user: AddAccount, dbs: AsyncSession = Depends(db_sessio
     :return:
     """
     filter_condition = [
-        ('account_name', f'=="{user.account_name}"', user.account_name)
+        ('uid', f'=="{user.uid}"', user.uid),
+        # ('uid', f'=="{user.uid}"', user.uid),
     ]
+    # create_account_query = f"or_(cls.account_name=='{user.account_name}',cls.uid=='{user.uid}')"
+    # filter_condition = [
+    #     create_account_query
+    # ]
     result = await TbAccount.get_one(dbs, *filter_condition)
     if result:
         raise HTTPException(status_code=403, detail="Duplicate account.")
@@ -534,7 +555,7 @@ async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_ses
 
 
 @clerk_card_router.get('/task')
-async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = Depends(db_session), ):
+async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = Depends(db_session)):
     """
     获取任务列表
     :param info:
@@ -545,7 +566,6 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
         ('task', f'.like("%{info.task}%")', info.task),
         ('is_delete', '==0', 0),
     ]
-
     filter_condition = list()
     for x in args:
         if x[2] is not None:
@@ -569,13 +589,13 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
         TbTask.commission,
         TbTask.user,
         TbTask.note,
-        TbTask.alliance_id,
+        # TbTask.alliance_id,
         TbTask.task,
         TbTask.consume,
         TbTask.secondary_consumption,
         TbAccount.uid,
-        TbAccount.account_name,
-    ).where(*filter_condition).join(TbTask.account).order_by().limit(info.page_size)\
+        # TbAccount.account_name,
+    ).where(*filter_condition).join(TbTask.account).order_by().limit(info.page_size) \
         .offset((info.page - 1) * info.page_size)
     result = (await dbs.execute(_orm)).all()
     response_json = {"total": count,
