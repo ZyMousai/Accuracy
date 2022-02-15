@@ -10,9 +10,9 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                  {{item}}
+              <a-select v-model="department" placeholder="请选择">
+                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id" @change="tasknamechange">
+                  {{item.s_name}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -32,7 +32,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" :offset="1" style="margin-top: 3px;">
-            <a-button type="primary">获取URL</a-button>
+            <a-button type="primary" @click="getURL">获取URL</a-button>
             <a-button type="primary" style="margin-left: 15px" v-clipboard:copy="teakURL" v-clipboard:success="onCopy" v-clipboard:error="onError">复制URL</a-button>
           </a-col>
         </a-row>
@@ -48,20 +48,16 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
-        @clear="onClear"
-        @change="onChange"
+        :rowKey='record=>record.id'
       >
         <div slot="description" slot-scope="{text}">
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="DeleteDate(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
       <!-- 表单 -->
       <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='750'>
@@ -82,20 +78,30 @@
           :wrapper-col="{ span: 18 }"
           :layout="form.layout"
         >
-            <a-form-model-item ref="filename" label="主任务ID" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="m_id" label="主任务ID" prop="m_id">
+              <a-input v-model="form.m_id" />
             </a-form-model-item>
-            <a-form-model-item ref="filename" label="主任务名" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="m_name" label="主任务名" prop="m_name">
+              <a-input v-model="form.m_name" />
             </a-form-model-item>
-            <a-form-model-item ref="filename" label="从任务ID" prop="filename">
-            <a-input v-model="form.filename" />
+            <a-form-model-item ref="s_id" label="从任务ID" prop="s_id">
+            <a-input v-model="form.s_id" />
           </a-form-model-item>
-            <a-form-model-item ref="filename" label="从任务名" prop="filename">
-            <a-input v-model="form.filename" />
+            <a-form-model-item ref="s_name" label="从任务名" prop="s_name">
+            <a-input v-model="form.s_name" />
           </a-form-model-item>
         </a-form-model>
       </template>
+    </a-modal>
+    <!-- 删除确认对话框 -->
+    <a-modal
+     title="是否删除所选项？"
+     :visible="dialogvisible"
+     ok-text="是"
+     cancel-text="否"
+     @ok="onok"
+     @cancel="onno">
+      <p>删除后将无法恢复！</p>
     </a-modal>
     </div>
   </a-card>
@@ -103,49 +109,42 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {GetVoluumsiteIdData, AddDate, DeleteDate} from '@/services/voluumsiteId'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index',
+    key: 'index',
+    width: 80
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '主任务ID',
+    dataIndex: 'm_id',
+    key: 'm_id'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '主任务名',
+    dataIndex: 'm_name',
+    key: 'm_name'
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
+    title: '从任务ID',
+    dataIndex: 's_id',
+    key: 's_id'
   },
   {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+    title: '从任务名',
+    dataIndex: 's_name',
+    key: 's_name'
   },
   {
     title: '操作',
-    scopedSlots: { customRender: 'action' }
+    scopedSlots: { customRender: 'action' },
+    width: 100
   }
 ]
 
 const dataSource = []
-
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
 
 export default {
   name: 'QueryList',
@@ -159,50 +158,52 @@ export default {
       form: {
         layout: 'vertical',
         filename: '',
-        department: '',
         desc: ''
       },
+      department: '',
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      departmentoptions: ['商务部', "技术部"],
+      departmentoptions: [],
       tablename: '',
       visible: false,
       loading: false,
       teakURL: 'sssss',
       rules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-        desc: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
-      }
+        m_id: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+        m_name: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+        s_id: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+        s_name: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+      },
+      ids: [],
+      dialogvisible: false,
+      m_taskid: '',
+      s_taskid: ''
     }
   },
+  created () {
+    this.gettabledata()
+  },
   methods: {
-    toggleAdvanced () {
-      this.advanced = !this.advanced
-    },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
-    },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
+    gettabledata() {
+      GetVoluumsiteIdData(this.query).then(res => {
+        console.log(res);
+        res.data.data.forEach((i, y) => {
+          i['index'] = y + 1
+        });
+        console.log(res.data.data);
+        this.dataSource = res.data.data
+        this.departmentoptions = res.data.data
+      })
     },
     // 批量删除
     Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      console.log(this.selectedRows);
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
+      this.dialogvisible = true
     },
     // 打开编辑表单
     showModal(id) {
@@ -214,7 +215,14 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          console.log('ok');
+              AddDate(this.form).then(res => {
+              console.log(res);
+              this.$message.success('添加成功！')
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata();
+              this.handleCancel();
+          })
         }
       })
     },
@@ -222,7 +230,6 @@ export default {
     handleCancel() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
-      console.log('ok');
     },
     onCopy () {
       this.$message.success('复制成功！')
@@ -231,19 +238,35 @@ export default {
       this.$message.error('复制失败！')
     },
     // 删除对话框
-    showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
-    }
+    DeleteDate(id) {
+      this.ids.push(id);
+      this.dialogvisible = true;
+    },
+    async onok() {
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteDate(this.ids[i]).then(res => {
+          console.log(res);
+          })
+      }
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
+    },
+    onno() {
+      this.ids = [];
+      this.dialogvisible = false
+    },
+    tasknamechange(value) {
+      const rule = this.options.find(item => item.id === value)
+      this.m_taskid = rule.m_id
+      this.s_taskid = rule.s_id
+      console.log(this.m_taskid);
+      console.log(this.s_taskid);
+    },
+    // 获取URL
+    getURL() {
+      console.log(this.department);
+    },
   }
 }
 </script>

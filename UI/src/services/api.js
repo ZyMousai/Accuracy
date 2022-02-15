@@ -1,5 +1,5 @@
 //跨域代理前缀
-const API_PROXY_PREFIX = 'http://192.168.50.115:8000/api'
+const API_PROXY_PREFIX = 'http://192.168.50.49:8000/api'
     // const API_PROXY_PREFIX = 'http://127.0.0.1:8000/api'
 const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API_BASE_URL : API_PROXY_PREFIX
     // const BASE_URL = process.env.VUE_APP_API_BASE_URL
@@ -18,6 +18,7 @@ module.exports = {
     GetFollowLinkDate: `${BASE_URL}/Clerk/track/v1/execute`,
     AffiliatelistDate: `${BASE_URL}/Clerk/track/v1/alliance`,
     TaskUrl: `${BASE_URL}/Clerk/track/v1/TrackUrl`,
+    VoluumsiteIdData: `${BASE_URL}/Clerk/voluum/v1/campaign_mapping`,
     RecycleShow: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,

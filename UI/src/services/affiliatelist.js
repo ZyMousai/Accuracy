@@ -50,3 +50,13 @@ export async function DeleteDate(ids) {
 export async function AddTaskUrlDate(form) {
     return request(TaskUrl, METHOD.POST, form)
 }
+
+/**
+ * 联盟列表页面
+ * 删除子表数据
+ * @param ids  添加请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteTaskUrlDate(ids) {
+    return request(TaskUrl, "DELETE1", ids)
+}

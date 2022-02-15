@@ -56,13 +56,20 @@
           slot="expandedRowRender"
           slot-scope="record"
           :columns="innerColumns"
-          :data-source="record.task_ruls"
+          :data-source="record.track_url"
           :pagination="false"
           :showHeader="false"
         >
-          <span slot="operation" class="table-operation">
+          <a-popconfirm
+            slot-scope="record"
+            title="你确定要删除此项?"
+            ok-text="是"
+            cancel-text="否"
+            @confirm="confirmdeletetaskurl(record.id)"
+            @cancel="cancel"
+            slot="operation">
             <a style="margin-left: 5px;">删除</a>
-          </span>
+          </a-popconfirm>
         </a-table>
       </a-table>
       <!-- 父表表单 -->
@@ -135,7 +142,7 @@
 </template>
 
 <script>
-import {GetAffiliatelistDate, AddDate, AddTaskUrlDate, EditDate, DeleteDate} from '@/services/affiliatelist'
+import {GetAffiliatelistDate, AddDate, AddTaskUrlDate, EditDate, DeleteDate, DeleteTaskUrlDate} from '@/services/affiliatelist'
 const columns = [
   {
     title: '序号',
@@ -165,12 +172,12 @@ const columns = [
 
 const innerColumns = [{
   title: '链接',
-  dataIndex: 'urls',
-  key: 'urls',
-  width: 1025
+  dataIndex: 'track_url',
+  key: 'track_url'
   },
   { title: '操作',
     key: 'operation',
+    width: 450,
     scopedSlots: { customRender: 'operation' } 
   },]
 
@@ -223,13 +230,6 @@ export default {
         console.log(res);
         res.data.data.forEach((i, y) => {
           i['index'] = y + 1
-          i.task_ruls = []
-          i.track_url.forEach((a, b) => {
-            let obj = {}
-            obj.id = b
-            obj.urls = a
-            i.task_ruls.push(obj)
-          })
         });
         console.log(res.data.data);
         this.dataSource = res.data.data
@@ -310,7 +310,7 @@ export default {
             console.log(res);
             this.$message.success('添加成功！')
             this.loading = false;
-            this.subvisible = false;
+            this.subhandleCancel()
             this.gettabledata();
           })
         }
@@ -318,18 +318,28 @@ export default {
     },
     // 删除确认框
     confirmdelete(id) {
-      console.log(id);
       const ids = []
       ids.push(id)
       DeleteDate(ids).then(res => {
-        console.log(ids);
         console.log(res);
+        this.$message.success('删除成功！');
+        this.gettabledata()
       })
     },
     cancel(e) {
       console.log(e);
       this.$message.error('取消删除！');
     },
+    // 删除跟踪域
+    confirmdeletetaskurl(id) {
+      const ids = []
+      ids.push(id)
+      DeleteTaskUrlDate(ids).then(res => {
+        console.log(res);
+        this.$message.success('删除成功！');
+        this.gettabledata()
+      })
+    }
   }
 }
 </script>
