@@ -80,7 +80,7 @@
           slot="expandedRowRender"
           slot-scope="record"
           :columns="innerColumns"
-          :data-source="record.task_set"
+          :data-source="record.task_set" 
           :pagination="false"
         >
           <span slot="operation" class="table-operation">
