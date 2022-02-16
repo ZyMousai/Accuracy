@@ -42,7 +42,7 @@ class AddTrackUrl(BaseModel):
 
 
 class SearchTrackAlliance(BaseModel):
-    name: Optional[str] = Query(None)
-    url: Optional[str] = Query(None)
+    name_or_url: Optional[str] = Query(None)
+    track_url: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10

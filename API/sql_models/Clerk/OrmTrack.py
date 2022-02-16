@@ -1,9 +1,10 @@
 import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from sql_models import create_table
 from sql_models.db_config import BaseType, PBaseModel
+from sqlalchemy import or_
 
 
 class TrackAlliance(PBaseModel):
@@ -14,28 +15,32 @@ class TrackAlliance(PBaseModel):
     created_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now)
 
     @classmethod
-    async def get_all_detail_page(cls, dbs, page, page_size, *args):
+    async def get_all_detail_page_track(cls, dbs, page, page_size, **kwargs):
         """获取所有数据-分页-关联查询"""
         # 构建查询条件
         filter_condition = list()
-        for x in args:
-            if x[2] is not None:
-                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+        name_or_url = kwargs.get("name_or_url")
+        track_url = kwargs.get("track_url")
+        if name_or_url:
+            filter_condition.append(cls.name.like(f"%{name_or_url}%"))
+            filter_condition.append(cls.url.like(f"%{name_or_url}%"))
+
+        if track_url:
+            filter_condition.append(TrackUrl.track_url.like(f"%{track_url}%"))
+
+        # 查询数据
+        _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
+                                                                                            TrackUrl.alliance_id == cls.id).where(
+            or_(*filter_condition)).order_by().limit(page_size).offset((page - 1) * page_size)
+        result = (await dbs.execute(_orm)).all()
 
         # 处理分页
-        count = await cls.get_data_count(dbs, *filter_condition)
+        count = len(result)
         remainder = count % page_size
         if remainder == 0:
             total_page = int(count // page_size)
         else:
             total_page = int(count // page_size) + 1
-
-        # 查询数据
-        _orm = select(cls.id, cls.name, cls.url, TrackUrl.track_url).outerjoin(TrackUrl,
-                                                                               TrackUrl.alliance_id == cls.id).where(
-            *filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
-        result = (await dbs.execute(_orm)).all()
-
         return result, count, total_page
 
 

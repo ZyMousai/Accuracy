@@ -7,7 +7,7 @@ from app.Clerk.Track.DataValidation import SearchTrackLink, AddTrackAlliance, Up
     SearchTrackAlliance
 from sql_models.Clerk.OrmTrack import TrackAlliance, TrackUrl
 from sql_models.db_config import db_session
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 track_router = APIRouter(
@@ -46,7 +46,7 @@ def get_token():
     TOKEN["login_time"] = datetime.datetime.now()
 
 
-@track_router.post("/execute")
+@track_router.get("/execute")
 async def execute_track(query: SearchTrackLink = Depends(SearchTrackLink)):
     """
     执行追踪
@@ -112,13 +112,12 @@ async def update_alliance(info: UpdateTrackAlliance, dbs: AsyncSession = Depends
 async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
                        dbs: AsyncSession = Depends(db_session)):
     #  需要联表查询
-    filter_condition = [
-        ('name', f'.like(f"%{info.name}%")', info.name),
-        ('url', f'.like(f"%{info.url}%")', info.url),
-        ('is_delete', '==0', 0)
-    ]
-    result, count, total_page = await TrackAlliance.get_all_detail_page(dbs, info.page, info.page_size,
-                                                                        *filter_condition)
+    filter_condition = {
+        "name_or_url": info.name_or_url,
+        "track_url": info.track_url
+    }
+    result, count, total_page = await TrackAlliance.get_all_detail_page_track(dbs, info.page, info.page_size,
+                                                                              **filter_condition)
 
     # 整理查询出来的数据
     result_new = []
@@ -134,7 +133,7 @@ async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
             }
             for y in result:
                 if x.id == y.id and y.track_url:
-                    dd.get("track_url").append(y.track_url)
+                    dd.get("track_url").append({"id": y.id_1, "track_url": y.track_url})
             result_new.append(dd)
 
     response_json = {"total": count,
@@ -156,7 +155,7 @@ async def add_track_url(info: AddTrackUrl, dbs: AsyncSession = Depends(db_sessio
 @track_router.delete("/TrackUrl")
 async def delete_track_url(ids: Optional[List[int]], dbs: AsyncSession = Depends(db_session)):
     filter_c = [
-        ("alliance_id", f".in_({ids})", ids)
+        ("id", f".in_({ids})", ids)
     ]
     await TrackUrl.filter_delete_data(dbs, *filter_c, auto_commit=True)
     return {"data": ids}
