@@ -72,14 +72,14 @@
         <a-upload
           name="files"
           :multiple="true"
-          action="http://192.168.50.115:8000/api/DocumentManagement/documents/v1/upload?user_id=1&department_id=2"
+          action="http://192.168.50.49:8000/api/DocumentManagement/documents/v1/upload?user_id=1&department_id=2"
           :headers="headers"
           :showUploadList="false"
           @change="handleChange"
         >
         <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
         </a-upload>
-        <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
+        <a-button type="primary" @click="Batchdwon()"><a-icon type="cloud-download" />批量下载</a-button>
         <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
       <standard-table
@@ -87,14 +87,15 @@
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
         @clear="onClear"
-        @change="onChange"
         :rowKey='record=>record.id'
+        :loading="tableloading"
+        :pagination="false"
       >
         <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px">
+          <a style="margin-right: 8px" :href=record.file_url target="_blank">
             <a-icon type="cloud-download"/>下载
           </a>
-          <a @click="showModal(record.id)" style="margin-right: 8px">
+          <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
           <a @click="deletedialog(record.id)">
@@ -102,6 +103,14 @@
           </a>
         </div>
       </standard-table>
+      <a-pagination
+        style="margin-top: 15px;"
+        v-model="query.page"
+        :total="total"
+        show-size-changer
+        @showSizeChange="onShowSizeChange"
+        :show-total="total => `一共 ${total} 条`"
+        @change="pageonChange" />
       <!-- 编辑表单 -->
       <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
       <template slot="footer">
@@ -123,10 +132,11 @@
           <a-form-model-item ref="filename" label="文件名" prop="filename">
             <a-input
               v-model="editform.filename"
+              :disabled="true"
             />
           </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department">
-            <a-radio-group v-model="editform.department">
+          <a-form-model-item label="权限部门" prop="department_id">
+            <a-radio-group v-model="editform.department_id">
               <a-radio value="1">
                 运营部
               </a-radio>
@@ -142,12 +152,9 @@
     <a-modal
      title="是否将所选项放入回收站"
      :visible="dialogvisible"
-     ok-text="是"
-     cancel-text="否"
-     @ok="onok"
-     @cancel="onno"
      :closable="false"
      @icon="oncancel"
+     :footer="modalfooter"
     >
       <p>如果不放入回收站则直接删除，无法恢复</p>
     </a-modal>
@@ -157,8 +164,13 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {DocumentDate, DeleteDocuments} from '@/services/documentmanagement'
+import {DocumentDate, DeleteDocuments, EditDate} from '@/services/documentmanagement'
 const columns = [
+  {
+    title: '序号',
+    dataIndex: 'index',
+    width: 80
+  },
   {
     title: '上传时间',
     dataIndex: 'created_time'
@@ -189,17 +201,19 @@ export default {
   data () {
     return {
       query: {
-        page: '1',
-        page_size: '10',
+        page: 1,
+        page_size: 10,
         filename: null,
         user_name: null,
         department_id: null,
         start_time: null,
         end_time: null,
       },
+      total: 0,
       editform: {
+        id: '',
         filename: '',
-        department: ''
+        department_id: ''
       },
       advanced: true,
       columns: columns,
@@ -214,8 +228,9 @@ export default {
       departmentoptions: ['商务部', '技术部'],
       editrules: {
         filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
+        department_id: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
       },
+      tableloading: false,
       headers: {
         accept: 'application/json',
         authorization: 'authorization-text',
@@ -228,8 +243,21 @@ export default {
   methods: {
     // 获取表格数据
     gettabledata () {
+      this.tableloading = true
       DocumentDate(this.query).then(res => {
-        this.dataSource = res.data.data
+        if (res.status === 200) {
+          console.log(res);
+          this.dataSource = res.data.data
+          this.total = res.data.total
+          console.log(this.total);
+          this.tableloading = false
+          for (var i = 0; i < this.dataSource.length; i++) {
+            this.dataSource[i]["index"] = i + 1
+          }
+        } else {
+          this.tableloading = false
+          this.$message.error(`获取数据失败！`);
+        }
       })
     },
     toggleAdvanced () {
@@ -237,11 +265,6 @@ export default {
     },
     onClear() {
       this.$message.info('您清空了勾选的所有行')
-    },
-    onChange(current) {
-      this.query.page = current.current
-      this.gettabledata()
-      this.$message.info('表格状态改变了')
     },
     // 查询
     queryevents() {
@@ -267,8 +290,10 @@ export default {
       this.gettabledata()
     },
     // 打开编辑表单
-    showModal(id) {
-      console.log(id);
+    showModal(data) {
+      this.editform.id = data.id
+      this.editform.department_id = data.department_id
+      this.editform.filename = data.filename
       this.visible = true;
     },
     // 提交编辑表单
@@ -276,7 +301,19 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          console.log('ok');
+          EditDate(this.editform).then(res => {
+            if (res.status === 200) {
+              this.$message.success(`编辑成功！`);
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata()
+            } else {
+              this.$message.error(`编辑失败！`);
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata()
+            }
+          })
         }
       })
     },
@@ -284,7 +321,6 @@ export default {
     closeform() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
-      console.log('ok');
     },
     deletedialog(id) {
       this.ids.push(id)
@@ -294,9 +330,16 @@ export default {
       let is_logic_del = '1';
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
-          console.log(res);
-          })
+          if (res.status === 200) {
+            this.$message.success(`删除成功！`);
+          } else {
+            this.$message.error(`删除失败！`);
+          }
+        })
       }
+      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+      this.query.page = this.query.page < 1 ? 1 : this.query.page
       this.gettabledata();
       this.ids = [];
       this.dialogvisible = false
@@ -305,14 +348,24 @@ export default {
       let is_logic_del = '0';
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
-          console.log(res);
-          })
+          if (res.status === 200) {
+            this.$message.success(`删除成功！`);
+          } else {
+            this.$message.error(`删除失败！`);
+          }
+        })
       }
+      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+      this.query.page = this.query.page < 1 ? 1 : this.query.page
       this.gettabledata();
       this.ids = [];
       this.dialogvisible = false
     },
-
+    canceldelete() {
+      this.ids = [];
+      this.dialogvisible = false
+    },
     async oncancel() {
       this.dialogvisible = false
     },
@@ -323,10 +376,37 @@ export default {
         console.log(info.file, info.fileList);
       }
       if (info.file.status === 'done') {
-        this.$message.success(`${info.file.name} file uploaded successfully`);
+        this.$message.success(`${info.file.name}文件上传成功！`);
         this.gettabledata()
       } else if (info.file.status === 'error') {
-        this.$message.error(`${info.file.name} file upload failed.`);
+        this.$message.error(`${info.file.name}文件上传失败！`);
+      }
+    },
+    // 自定义删除对话框底部按钮
+    modalfooter() {
+      return (
+        <div>
+          <a-button onClick={this.onok}  type="primary">是</a-button>
+          <a-button onClick={this.onno}  type="danger">否</a-button>
+          <a-button onClick={this.canceldelete}>取消</a-button>
+        </div>
+      )
+    },
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
+    },
+    // 批量下载
+    Batchdwon() {
+      console.log(this.selectedRows);
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        window.open(this.selectedRows[i].file_url, "_blank"); 
       }
     }
   }

@@ -5,7 +5,7 @@ const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API
     // const BASE_URL = process.env.VUE_APP_API_BASE_URL
 module.exports = {
     LOGIN: `${BASE_URL}/PersonnelManagement/users/v1/login`,
-    GetDocumentManagementtTableData: `${BASE_URL}/DocumentManagement/documents/v1`,
+    Document: `${BASE_URL}/DocumentManagement/documents/v1`,
     DeleteDocument: `${BASE_URL}/DocumentManagement/documents/v1`,
     GetCreditCardListData: `${BASE_URL}/Clerk/card/v1/card`,
     ROUTES: `${BASE_URL}/routes`,

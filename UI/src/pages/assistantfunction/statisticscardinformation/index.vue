@@ -82,7 +82,7 @@
         @expand="expandinnerlist"
       >
         <div slot="cardstatus" slot-scope="record">
-          <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record.id)" />
+          <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record)" />
         </div>
         <div slot="retain_" slot-scope="record">
           <a-switch slot="retain_" default-checked :checked="record.retain ? true : false" @change="retain_change(record.retain, record.id)" />
@@ -326,6 +326,8 @@ export default {
     },
     // 修改卡状态
     card_status_change(card_status, id) {
+      console.log(id);
+      id.loadingchanr = true
       PatchCardListData({card_status: card_status ? 0 : 1, id: id}).then(res => {
         console.log("成功")
         console.log(res)

@@ -31,7 +31,6 @@ const METHOD = {
  * @returns {Promise<AxiosResponse<T>>}
  */
 async function request(url, method, params, config) {
-    console.log(method);
     switch (method) {
         case METHOD.GET:
             return axios.get(url, { params, ...config })
