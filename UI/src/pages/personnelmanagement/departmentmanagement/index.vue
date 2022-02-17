@@ -102,49 +102,9 @@
             title: '操作',
             scopedSlots: {customRender: 'action'}
         }
-        // {
-        //   title: '规则编号',
-        //   dataIndex: 'ne'
-        // },
-        // {
-        //   title: '描述',
-        //   dataIndex: 'description',
-        //   scopedSlots: { customRender: 'description' }
-        // },
-        // {
-        //   title: '服务调用次数',
-        //   dataIndex: 'callNo',
-        //   needTotal: true,
-        //   customRender: (text) => text + ' 次'
-        // },
-        // {
-        //   dataIndex: 'status',
-        //   needTotal: true,
-        //   slots: {title: 'statusTitle'}
-        // },
-        // {
-        //   title: '更新时间',
-        //   dataIndex: 'updatedAt'
-        // },
-        // {
-        //   title: '操作',
-        //   scopedSlots: { customRender: 'action' }
-        // }
     ]
 
     const dataSource = []
-
-    // for (let i = 0; i < 100; i++) {
-    //   dataSource.push({
-    //     key: i,
-    //     ne: 'NO ' + i,
-    //     description: '这是一段描述',
-    //     callNo: Math.floor(Math.random() * 1000),
-    //     status: Math.floor(Math.random() * 10) % 4,
-    //     updatedAt: '2018-07-26'
-    //   })
-    // }
-
     export default {
         name: 'QueryList',
         components: {StandardTable},

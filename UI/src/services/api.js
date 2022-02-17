@@ -19,6 +19,7 @@ module.exports = {
     AffiliatelistDate: `${BASE_URL}/Clerk/track/v1/alliance`,
     TaskUrl: `${BASE_URL}/Clerk/track/v1/TrackUrl`,
     VoluumsiteIdData: `${BASE_URL}/Clerk/voluum/v1/campaign_mapping`,
+    getVoluumsiteIdUrl: `${BASE_URL}/Clerk/voluum/v1/campaign_site_url/`,
     RecycleShow: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,

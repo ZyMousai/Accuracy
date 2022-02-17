@@ -73,7 +73,14 @@
         <a-button type="primary"><a-icon type="cloud-download" />批量下载</a-button>
         <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
       </a-space>
-      <a-table :columns="columns" :data-source="data" class="components-table-demo-nested" :rowKey='record=>record.id' >
+      <a-table
+        :columns="columns"
+        :data-source="data"
+        class="components-table-demo-nested"
+        :rowKey='record=>record.id'
+        :expandedRowKeys="expandedRowKeys"
+        @expand="expandinnerlist"
+      >
         <div slot="cardstatus" slot-scope="record">
           <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record.id)" />
         </div>
@@ -86,15 +93,41 @@
         </div>
         <a-table
           slot="expandedRowRender"
-          slot-scope="record"
           :columns="innerColumns"
-          :data-source="record.task_set" 
-          :pagination="false"
+          :data-source="innerData"
+          :pagination="true"
+          :title="onHeaderCell"
+          :rowKey='record=>record.id'
         >
-          <span slot="operation" class="table-operation">
-            <a>编辑</a>
-            <a style="margin-left: 5px;">删除</a>
-          </span>
+        <!-- <template
+          v-for="col in ['account_id', 'task', 'commission', 'consume', 'user', 'secondary_consumption']"
+          :slot="col"
+          slot-scope="text, record"
+        >
+          <div :key="col">
+            <a-input
+              v-if="record.editable"
+              style="margin: -5px 0"
+              :value="text"
+              @change="e => innerhandleChange(e.target.value, record.id, col)"
+            />
+              <template v-else>
+                {{ text }}
+              </template>
+          </div>
+        </template> -->
+          <div slot="inneroperation" class="table-operation" slot-scope="record">
+            <!-- <span v-if="record.editable">
+              <a @click="innersave(record.id)">保存</a>
+              <a-popconfirm title="Sure to cancel?" @confirm="innercancel(record.id)">
+                <a>取消</a>
+              </a-popconfirm>
+            </span>
+            <span v-else>
+              <a :disabled="editingKey !== ''" @click="inneredit(record)">编辑</a>
+            </span> -->
+            <a style="margin-left: 5px;" @click="innerdelete(record)">删除</a>
+          </div>
         </a-table>
       </a-table>
       <!-- 编辑表单 -->
@@ -147,7 +180,7 @@ const columns = [
   { title: '有效期', dataIndex: 'valid_period', key: 'valid_period' },
   { title: 'cvv', dataIndex: 'cvv', key: 'cvv' },
   { title: '面值', dataIndex: 'face_value', key: 'face_value' },
-  { title: '余额', dataIndex: '', key: '' },
+  { title: '余额', dataIndex: 'balance', key: 'balance' },
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
   { title: '备注', dataIndex: 'note', key: 'note' },
   { title: '平台', dataIndex: 'platform', key: 'platform' },
@@ -160,20 +193,15 @@ const columns = [
 const data = [];
 
 const innerColumns = [
-  { title: '联盟', dataIndex: 'alliance_id', key: 'alliance_id' },
-  { title: '账号', dataIndex: 'account_id', key: 'account_id' },
-  { title: '任务', dataIndex: 'task', key: 'task' },
-  { title: '佣金', dataIndex: 'commission', key: 'commission' },
-  { title: '消耗', dataIndex: 'consume', key: 'consume' },
-  { title: '使用人', dataIndex: 'user', key: 'user' },
-  { title: '二次消费', dataIndex: 'secondary_consumption', key: 'secondary_consumption' },
+  { title: 'uuid', dataIndex: 'uid', key: 'uid' },
+  { title: '账号', dataIndex: 'account_id', key: 'account_id', scopedSlots: { customRender: 'account_id' } },
+  { title: '任务', dataIndex: 'task', key: 'task', scopedSlots: { customRender: 'task' } },
+  { title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: { customRender: 'commission' } },
+  { title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: { customRender: 'consume' } },
+  { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
+  { title: '二次消费', dataIndex: 'secondary_consumption', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
   { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
-  {
-    title: '操作',
-    dataIndex: 'operation',
-    key: 'operation',
-    scopedSlots: { customRender: 'operation' },
-  },
+  {title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
 ];
 
 const innerData = [];
@@ -181,6 +209,7 @@ const innerData = [];
 export default {
   name: 'QueryList',
   data () {
+    this.cacheData = innerData.map(item => ({ ...item }));
     return {
       data,
       columns,
@@ -208,12 +237,29 @@ export default {
       },
       headers: {
         authorization: 'authorization-text',
-      }
+      },
+      timer : {},
+      editingKey: ''
     }
   },
   created () {
     this.gettabledata()
   },
+  // 监听路由变化开启自动更新
+  // watch: {
+  //   $route: {
+  //     handler: function(val){
+  //       if (val.fullPath === '/assistantfunction/statisticscardinformation') {
+  //         this.timer = setInterval(() => {
+  //           this.gettabledata()
+  //         }, 15000);
+  //       } else {
+  //         clearInterval(this.timer)
+  //       }
+  //     },
+  //     immediate: true
+  //   }
+  // },
   methods: {
     gettabledata() {
       CreditCardListData(this.query).then(res => {
@@ -308,6 +354,80 @@ export default {
     },
     edit (data){
       console.log(data)
+    },
+    // 子表添加按钮
+    onHeaderCell() {
+      return (
+        <div style="text-align:left">
+          <a-button onClick={this.adddata} size="small">新增数据</a-button>
+        </div>
+      )
+    },
+    adddata() {
+      console.log('ok');
+    },
+    innerhandleChange(value, id, column) {
+      const newData = [...this.innerData];
+      console.log(newData);
+      const target = newData.filter(item => id === item.id)[0];
+      if (target) {
+        target[column] = value;
+        this.innerData = newData;
+      }
+    },
+    inneredit(id) {
+      const newData = [...this.innerData];
+      console.log(newData);
+      console.log(id);
+      const target = newData.filter(item => id === item.id)[0];
+      console.log(target);
+      this.editingKey = id;
+      if (target) {
+        target.editable = true;
+        this.innerData = newData;
+      }
+      console.log(this.innerData);
+    },
+    innersave(id) {
+      const newData = [...this.innerData];
+      const newCacheData = [...this.cacheData];
+      const target = newData.filter(item => id === item.id)[0];
+      const targetCache = newCacheData.filter(item => id === item.id)[0];
+      if (target && targetCache) {
+        delete target.editable;
+        this.innerData = newData;
+        Object.assign(targetCache, target);
+        this.cacheData = newCacheData;
+      }
+      this.editingKey = '';
+    },
+    innercancel(id) {
+      const newData = [...this.innerData];
+      const target = newData.filter(item => id === item.id)[0];
+      this.editingKey = '';
+      if (target) {
+        Object.assign(target, this.cacheData.filter(item => id === item.id)[0]);
+        delete target.editable;
+        this.innerData = newData;
+      }
+    },
+    expandinnerlist(expanded, record) {
+      if (this.expandedRowKeys.length > 0) {
+        let index = this.expandedRowKeys.indexOf(record.id);
+        if (index > -1) {
+          this.expandedRowKeys.splice(index, 1);
+        } else {
+           this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
+           this.expandedRowKeys.push(record.id);
+        }
+      } else {
+        this.expandedRowKeys.push(record.id);
+      }
+      this.innerData = record.task_set
+    },
+    // 子表删除
+    innerdelete(id) {
+      console.log(id);
     }
   }
 }
