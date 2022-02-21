@@ -81,15 +81,31 @@
         :expandedRowKeys="expandedRowKeys"
         @expand="expandinnerlist"
       >
+<!--        note-->
+
+        <div slot="note"  slot-scope="record">
+          <a-input
+            slot="note"
+            v-if="record.note_editable"
+            style="margin: -5px 0"
+            :value="text"
+            @change="e => handleChange(e.target.value, record.key, col)"
+          />
+          <template v-else>
+            {{ text }}
+          </template>
+        </div>
+
+
         <div slot="cardstatus" slot-scope="record">
-          <a-switch slot="cardstatus" default-checked :checked="record.card_status ? true : false" @change="card_status_change(record.card_status, record)" />
+          <a-switch slot="cardstatus" :loading="record.card_status_loading" default-checked :checked="record.card_status ? true : false" @change="record.card_status_loading=true;card_status_change(record.card_status, record.id)" />
         </div>
         <div slot="retain_" slot-scope="record">
-          <a-switch slot="retain_" default-checked :checked="record.retain ? true : false" @change="retain_change(record.retain, record.id)" />
+          <a-switch slot="retain_" :loading="record.retain_loading" default-checked :checked="record.retain ? true : false" @change="record.retain_loading=true;retain_change(record.retain, record.id)" />
         </div>
         <div slot="operation" slot-scope="record">
           <a slot="operation" @click="edit(record)">编辑</a>
-          <a slot="operation" style="margin-left: 5px;">删除</a>
+          <a slot="operation" style="margin-left: 5px;" >删除</a>
         </div>
         <a-table
           slot="expandedRowRender"
@@ -149,9 +165,7 @@
           :wrapper-col="{ span: 14 }"
         >
           <a-form-model-item ref="filename" label="文件名" prop="filename">
-            <a-input
-              v-model="editform.filename"
-            />
+            <a-input v-model="editform.filename" />
           </a-form-model-item>
           <a-form-model-item label="权限部门" prop="department">
             <a-radio-group v-model="editform.department">
@@ -182,7 +196,8 @@ const columns = [
   { title: '面值', dataIndex: 'face_value', key: 'face_value' },
   { title: '余额', dataIndex: 'balance', key: 'balance' },
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
-  { title: '备注', dataIndex: 'note', key: 'note' },
+  // { title: '备注', dataIndex: 'note', key: 'note' },
+  { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
   { title: '平台', dataIndex: 'platform', key: 'platform' },
   { title: '卡状态', key: 'cardstatus', scopedSlots: { customRender: 'cardstatus' } },
   { title: '保留', key: 'retain_', scopedSlots: { customRender: 'retain_' } },
@@ -268,6 +283,9 @@ export default {
         for (var i = 0; i < re_da.length; i++) {
           re_da[i]['create_time'] = re_da[i]['create_time'].split(' ')[0];
           re_da[i]["index"] = i + 1
+          re_da[i]["card_status_loading"] = false
+          re_da[i]["retain_loading"] = false
+          re_da[i]["note_editable"] = false
         }
         this.data = re_da
         console.log(res);
