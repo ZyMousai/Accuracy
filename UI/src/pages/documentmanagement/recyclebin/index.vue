@@ -62,6 +62,8 @@
                     @clear="onClear"
                     @change="onChange"
                     :rowKey='record=>record.id'
+                    :pagination="false"
+                    :loading="tableloading"
             >
                 <div slot="description" slot-scope="{text}">
                     {{text}}
@@ -80,16 +82,23 @@
                     <a-icon @click.native="onStatusTitleClick" type="info-circle"/>
                 </template>
             </standard-table>
-
+            <a-pagination
+                style="margin-top: 15px;"
+                v-model="query.page"
+                :total="total"
+                show-size-changer
+                @showSizeChange="onShowSizeChange"
+                :show-total="total => `一共 ${total} 条`"
+                @change="pageonChange" />
             <!-- 删除确认对话框 -->
             <a-modal
-                    title="您确定要删除吗？不可恢复噢！"
+                    title="您确定要删除吗？删除之后无法恢复！"
                     :visible="dialogvisible"
                     ok-text="是"
                     cancel-text="否"
                     @ok="onok"
                     @cancel="onno">
-                <p style="color: darkred">请认真思考后再进行删除噢！</p>
+                <p style="color: darkred">请认真思考后再进行删除！</p>
             </a-modal>
 
             <!-- 恢复确认对话框 -->
@@ -100,7 +109,7 @@
                     cancel-text="否"
                     @ok="onokrecover"
                     @cancel="onnorecover">
-                <p style="color: darkred">请认真思考后再进行恢复噢！</p>
+                <p style="color: darkred">请认真思考后再进行恢复！</p>
             </a-modal>
 
         </div>
@@ -118,7 +127,8 @@
     const columns = [
         {
             title: '序号',
-            dataIndex: 'index'
+            dataIndex: 'index',
+            width: 80
         },
         {
             title: '上传时间',
@@ -144,17 +154,20 @@
 
     const dataSource = [];
 
-
     export default {
         name: 'QueryList',
         components: {StandardTable},
         data() {
             return {
                 query: {
+                    page: 1,
+                    page_size: 10,
                     filename: '',
                     uploadusers: '',
                     uploaddate: ''
                 },
+                total: 0,
+                tableloading: false,
                 advanced: true,
                 columns: columns,
                 dataSource: dataSource,
@@ -162,7 +175,6 @@
                 dialogvisible: false,
                 recovervisible: false,
                 ids: [],
-
                 headers: {
                     accept: 'application/json',
                     authorization: 'authorization-text',
@@ -172,18 +184,25 @@
         created() {
             this.gettabledata()
         },
-
         methods: {
             // 获取表格数据
             gettabledata() {
+                this.tableloading = true
                 RecycleDocumentDate(this.query).then(res => {
-                    var re_da = res.data.data;
-                    // 给予序号
-                    for (var i = 0; i < re_da.length; i++) {
-                        re_da[i]["index"] = i + 1
+                    if (res.status === 200) {
+                      console.log(res);
+                      this.dataSource = res.data.data
+                      this.total = res.data.total
+                      console.log(this.total);
+                      this.tableloading = false
+                      // 给予序号
+                      for (var i = 0; i < this.dataSource.length; i++) {
+                          this.dataSource[i]["index"] = i + 1
+                      }
+                    } else {
+                        this.tableloading = false
+                        this.$message.error(`获取数据失败！`);
                     }
-                    this.dataSource = re_da
-
                 })
             },
 
@@ -294,6 +313,16 @@
             recoverConfirm(id) {
                 this.ids.push(id);
                 this.recovervisible = true
+            },
+            // 分页配置
+            onShowSizeChange(current, pageSize) {
+              this.query.page = 1
+              this.query.page_size = pageSize
+              this.gettabledata()
+            },
+            pageonChange(pageNumber) {
+              this.query.page = pageNumber
+              this.gettabledata()
             },
         }
     }

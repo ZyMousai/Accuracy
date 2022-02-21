@@ -1,4 +1,4 @@
-import { VoluumsiteIdData } from '@/services/api'
+import { VoluumsiteIdData, getVoluumsiteIdUrl } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -31,4 +31,15 @@ export async function DeleteDate(id) {
     return request(VoluumsiteIdData, "DELETE", {
         ids: id
     })
+}
+
+/**
+ * voluumsiteId页面
+ * 获取URL
+ * @param m_id  请求参数
+ * @param s_id  请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetUrl(m_id, s_id) {
+    return request(getVoluumsiteIdUrl + m_id + '/' + s_id, METHOD.GET, '')
 }

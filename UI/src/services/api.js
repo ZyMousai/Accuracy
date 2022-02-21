@@ -5,7 +5,7 @@ const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API
     // const BASE_URL = process.env.VUE_APP_API_BASE_URL
 module.exports = {
     LOGIN: `${BASE_URL}/PersonnelManagement/users/v1/login`,
-    GetDocumentManagementtTableData: `${BASE_URL}/DocumentManagement/documents/v1`,
+    Document: `${BASE_URL}/DocumentManagement/documents/v1`,
     DeleteDocument: `${BASE_URL}/DocumentManagement/documents/v1`,
     GetCreditCardListData: `${BASE_URL}/Clerk/card/v1/card`,
     ROUTES: `${BASE_URL}/routes`,
@@ -19,6 +19,7 @@ module.exports = {
     AffiliatelistDate: `${BASE_URL}/Clerk/track/v1/alliance`,
     TaskUrl: `${BASE_URL}/Clerk/track/v1/TrackUrl`,
     VoluumsiteIdData: `${BASE_URL}/Clerk/voluum/v1/campaign_mapping`,
+    getVoluumsiteIdUrl: `${BASE_URL}/Clerk/voluum/v1/campaign_site_url/`,
     RecycleShow: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,

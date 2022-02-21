@@ -11,14 +11,14 @@
               :wrapperCol="{span: 18, offset: 1}"
             >
               <a-select v-model="department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id" @change="tasknamechange">
+                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
                   {{item.s_name}}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" :offset="1" style="margin-top: 3px;">
-            <a-button type="primary">刷新任务</a-button>
+            <a-button type="primary" @click="retasklist">刷新任务</a-button>
           </a-col>
         </a-row>
         <a-row >
@@ -109,7 +109,7 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {GetVoluumsiteIdData, AddDate, DeleteDate} from '@/services/voluumsiteId'
+import {GetVoluumsiteIdData, AddDate, DeleteDate, GetUrl} from '@/services/voluumsiteId'
 const columns = [
   {
     title: '序号',
@@ -156,9 +156,10 @@ export default {
         account: '',
       },
       form: {
-        layout: 'vertical',
-        filename: '',
-        desc: ''
+        m_id: '',
+        m_name: '',
+        s_id: '',
+        s_name: ''
       },
       department: '',
       advanced: true,
@@ -169,7 +170,7 @@ export default {
       tablename: '',
       visible: false,
       loading: false,
-      teakURL: 'sssss',
+      teakURL: '',
       rules: {
         m_id: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
         m_name: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
@@ -256,16 +257,17 @@ export default {
       this.ids = [];
       this.dialogvisible = false
     },
-    tasknamechange(value) {
-      const rule = this.options.find(item => item.id === value)
-      this.m_taskid = rule.m_id
-      this.s_taskid = rule.s_id
-      console.log(this.m_taskid);
-      console.log(this.s_taskid);
+    retasklist() {
+      this.gettabledata()
     },
     // 获取URL
     getURL() {
-      console.log(this.department);
+      const rule = this.departmentoptions.find(item => item.id === this.department)
+      this.m_taskid = rule.m_id
+      this.s_taskid = rule.s_id
+      GetUrl(this.m_taskid, this.s_taskid).then(res => {
+        this.teakURL = res.data.data
+      })
     },
   }
 }

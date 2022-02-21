@@ -1,4 +1,4 @@
-import { GetDocumentManagementtTableData, DeleteDocument } from '@/services/api'
+import { Document } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -8,7 +8,7 @@ import { request, METHOD } from '@/utils/request'
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function DocumentDate(query) {
-    return request(GetDocumentManagementtTableData, METHOD.GET, query)
+    return request(Document, METHOD.GET, query)
 }
 
 /**
@@ -18,8 +18,18 @@ export async function DocumentDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function DeleteDocuments(id, is_logic_del) {
-    return request(DeleteDocument, "DELETE", {
+    return request(Document, "DELETE", {
         ids: id,
         is_logic_del: is_logic_del
     })
+}
+
+/**
+ * 文档页面
+ *  编辑文档
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function EditDate(form) {
+    return request(Document, "PATCH", form)
 }
