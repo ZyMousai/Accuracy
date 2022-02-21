@@ -61,7 +61,7 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             # "alliance_id": task.account_id,
             "user": task.user,
             "is_delete": task.is_delete,
-            # "task": task.task,
+            "task": task.task,
             "consume": task.consume,
             "card_id": task.card_id,
             "commission": task.commission,

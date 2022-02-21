@@ -174,4 +174,4 @@ async def login(dbs: AsyncSession = Depends(db_session),
     # print("加入完成")
     # await request.app.state.redis.get(user.email)
     # noinspection PyArgumentList
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer", "user": user}
