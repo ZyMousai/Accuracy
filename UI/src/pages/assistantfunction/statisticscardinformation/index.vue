@@ -115,33 +115,7 @@
           :title="onHeaderCell"
           :rowKey='record=>record.id'
         >
-        <!-- <template
-          v-for="col in ['account_id', 'task', 'commission', 'consume', 'user', 'secondary_consumption']"
-          :slot="col"
-          slot-scope="text, record"
-        >
-          <div :key="col">
-            <a-input
-              v-if="record.editable"
-              style="margin: -5px 0"
-              :value="text"
-              @change="e => innerhandleChange(e.target.value, record.id, col)"
-            />
-              <template v-else>
-                {{ text }}
-              </template>
-          </div>
-        </template> -->
           <div slot="inneroperation" class="table-operation" slot-scope="record">
-            <!-- <span v-if="record.editable">
-              <a @click="innersave(record.id)">保存</a>
-              <a-popconfirm title="Sure to cancel?" @confirm="innercancel(record.id)">
-                <a>取消</a>
-              </a-popconfirm>
-            </span>
-            <span v-else>
-              <a :disabled="editingKey !== ''" @click="inneredit(record)">编辑</a>
-            </span> -->
             <a style="margin-left: 5px;" @click="innerdelete(record)">删除</a>
           </div>
         </a-table>
@@ -159,24 +133,18 @@
       <template>
         <a-form-model
           ref="ruleForm"
-          :model="editform"
+          :model="form"
           :rules="editrules"
           :label-col="{ span: 4 }"
           :wrapper-col="{ span: 14 }"
         >
-          <a-form-model-item ref="filename" label="文件名" prop="filename">
-            <a-input v-model="editform.filename" />
-          </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department">
-            <a-radio-group v-model="editform.department">
-              <a-radio value="1">
-                运营部
-              </a-radio>
-              <a-radio value="2">
-                技术部
-              </a-radio>
-            </a-radio-group>
-          </a-form-model-item>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="card_number" label="卡号" prop="creator">
+                <a-input v-model="form.card_number" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
         </a-form-model>
       </template>
     </a-modal>
@@ -236,12 +204,18 @@ export default {
         department: '',
         uploaddate: ''
       },
-      editform: {
-        filename: '',
-        department: ''
+      form: {
+        card_number: '',
+        valid_period: '',
+        cvv: '',
+        face_value: '',
+        name: '',
+        platform: '',
+        note: '',
       },
       advanced: true,
       selectedRows: [],
+      tablename: '',
       visible: false,
       loading: false,
       expandedRowKeys: [],
@@ -374,6 +348,7 @@ export default {
     },
     edit (data){
       console.log(data)
+      this.visible = true;
     },
     // 子表添加按钮
     onHeaderCell() {
