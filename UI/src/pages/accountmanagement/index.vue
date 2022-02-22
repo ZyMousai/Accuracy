@@ -43,24 +43,30 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
-        @clear="onClear"
-        @change="onChange"
+        :loading="tableloading"
+        :pagination="false"
+        :rowKey='record=>record.id'
       >
         <div slot="description" slot-scope="{text}">
           {{text}}
         </div>
         <div slot="action" slot-scope="{record}">
-          <a @click="showModal(record.key)" style="margin-right: 8px">
+          <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="showdeleConfirm(record.ne)">
+          <a @click="DeleteDate(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
+      <a-pagination
+        style="margin-top: 15px;"
+        v-model="query.page"
+        :total="total"
+        show-size-changer
+        @showSizeChange="onShowSizeChange"
+        :show-total="total => `一共 ${total} 条`"
+        @change="pageonChange" />
       <!-- 表单 -->
       <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
@@ -78,37 +84,26 @@
           :rules="rules"
           :label-col="{ span: 6 }"
           :wrapper-col="{ span: 14 }"
-          :layout="form.layout"
+          layout="vertical"
         >
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="平台" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="platform" label="平台" prop="platform">
+              <a-input v-model="form.platform" />
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="账号" prop="filename">
-              <a-input v-model="form.filename" />
+            <a-form-model-item ref="account" label="账号" prop="account">
+              <a-input v-model="form.account" />
             </a-form-model-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="密码" prop="filename">
-            <a-input v-model="form.filename" />
+            <a-form-model-item ref="password" label="密码" prop="password">
+            <a-input v-model="form.password" />
           </a-form-model-item>
           </a-col>
-          <a-col :span="10">
-            <a-form-model-item label="权限部门" prop="department">
-            <a-select v-model="form.department" placeholder="请选择部门">
-              <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                {{item}}
-              </a-select-option>
-            </a-select>
-          </a-form-model-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
           <a-col :span="10">
             <a-form-model-item label="权限角色" prop="department">
             <a-select v-model="form.department" placeholder="请选择角色">
@@ -118,25 +113,26 @@
             </a-select>
           </a-form-model-item>
           </a-col>
-          <a-col :span="10">
-            <a-form-model-item label="权限人员" prop="department">
-            <a-select v-model="form.department" placeholder="请选择人员">
-              <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                {{item}}
-              </a-select-option>
-            </a-select>
-          </a-form-model-item>
-          </a-col>
         </a-row>
         <a-row>
           <a-col>
-            <a-form-model-item label="备注" prop="desc" :labelCol="{span: 2}" :wrapperCol="{span: 18}">
-            <a-input v-model="form.desc" type="textarea" />
+            <a-form-model-item label="备注" prop="remark" :labelCol="{span: 2}" :wrapperCol="{span: 18}">
+            <a-input v-model="form.remark" type="textarea" />
           </a-form-model-item>
           </a-col>
         </a-row>
         </a-form-model>
       </template>
+    </a-modal>
+    <!-- 删除确认对话框 -->
+    <a-modal
+     title="是否删除所选项？"
+     :visible="dialogvisible"
+     ok-text="是"
+     cancel-text="否"
+     @ok="onok"
+     @cancel="onno">
+      <p>删除后将无法恢复！</p>
     </a-modal>
     </div>
   </a-card>
@@ -144,30 +140,24 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
+import {AccountDate, GetDownmenutDate, AddAccount, GetOngAccountDate, DeleteDate, EditAccount} from '@/services/accountmanagement'
 const columns = [
   {
-    title: '规则编号',
-    dataIndex: 'ne'
+    title: '序号',
+    dataIndex: 'index',
+    width: 80
   },
   {
-    title: '描述',
-    dataIndex: 'description',
-    scopedSlots: { customRender: 'description' }
+    title: '平台',
+    dataIndex: 'platform'
   },
   {
-    title: '服务调用次数',
-    dataIndex: 'callNo',
-    needTotal: true,
-    customRender: (text) => text + ' 次'
+    title: '密码',
+    dataIndex: 'password'
   },
   {
-    dataIndex: 'status',
-    needTotal: true,
-    slots: {title: 'statusTitle'}
-  },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt'
+    title: '备注',
+    dataIndex: 'remark'
   },
   {
     title: '操作',
@@ -177,63 +167,86 @@ const columns = [
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
-
 export default {
   name: 'QueryList',
   components: {StandardTable},
   data () {
     return {
       query: {
-        platform: '',
+        page: 1,
+        page_size: 10,
         account: '',
+        platform: '',
+        password: '',
+        remark: '',
       },
       form: {
-        layout: 'vertical',
-        filename: '',
-        department: '',
-        desc: ''
+        account: '',
+        platform: '',
+        remark: '',
+        password: ''
       },
+      total: 0,
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
-      departmentoptions: ['商务部', "技术部"],
+      departmentoptions: [],
       tablename: '',
       visible: false,
       loading: false,
+      tableloading: false,
+      dialogvisible: false,
+      ids: [],
       rules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-        desc: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
+        platform: [{ required: true, message: '请输入平台', trigger: 'blur' }],
+        account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+        department: [{ required: true, message: '请选择角色', trigger: 'change' }],
+        remark: [{ required: false, trigger: 'blur' }],
       }
     }
   },
+  created () {
+    this.gettabledata()
+    this.getdowndata()
+  },
   methods: {
+    // 获取表格数据
+    gettabledata () {
+      this.tableloading = true
+      AccountDate(this.query).then(res => {
+        if (res.status === 200) {
+          this.dataSource = res.data.data
+          this.total = res.data.total
+          this.tableloading = false
+          for (var i = 0; i < this.dataSource.length; i++) {
+            this.dataSource[i]["index"] = i + 1
+          }
+        } else {
+          this.tableloading = false
+          this.$message.error(`获取数据失败！`);
+        }
+      })
+    },
+    // 获取角色下拉菜单数据
+    getdowndata() {
+      GetDownmenutDate().then(res => {
+        if (res.status === 200) {
+          res.data.data.forEach(item => {
+            this.departmentoptions.push(item.role)
+          })
+        } else {
+          this.$message.error(`获取角色菜单数据失败！`);
+        }
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
     remove () {
       this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
       this.selectedRows = []
-    },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
     },
     handleMenuClick (e) {
       if (e.key === 'delete') {
@@ -244,9 +257,39 @@ export default {
     queryevents() {
       console.log(this.query);
     },
+    // 删除对话框
+    DeleteDate(id) {
+      this.ids.push(id);
+      console.log(this.ids);
+      this.dialogvisible = true;
+    },
+    async onok() {
+      for (let i = 0; i < this.ids.length; i++) {
+        await DeleteDate(this.ids[i]).then(res => {
+          if (res.status === 200) {
+            this.$message.success(`删除成功！`);
+          } else {
+            this.$message.error(`删除失败！`);
+          }  
+        })
+      }
+      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+      this.query.page = this.query.page < 1 ? 1 : this.query.page
+      this.gettabledata()
+      this.ids = []
+      this.dialogvisible = false
+    },
+    onno() {
+      this.ids = [];
+      this.dialogvisible = false
+    },
     // 批量删除
     Batchdelete() {
-      this.showdeleConfirm(this.selectedRows)
+      for (let i = 0; i < this.selectedRows.length; i++) {
+        this.ids.push(this.selectedRows[i].id)
+      }
+      this.dialogvisible = true
     },
     // 重置查询表单
     resettingqueryform() {
@@ -255,16 +298,50 @@ export default {
       }
     },
     // 打开编辑表单
-    showModal(id) {
-      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
-      this.visible = true;
+    showModal(data) {
+      if (data.id) {
+        this.tablename = '编辑'
+        GetOngAccountDate(data.id).then(res => {
+          this.form = res.data.data
+          this.visible = true;
+        })
+      } else {
+        this.tablename = '新增'
+        this.visible = true;
+      }
     },
-    // 提交编辑表单
+    // 提交表单
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          console.log('ok');
+          this.tablename === '新增' ? this.addadta() : this.ediddata()
+        }
+      })
+    },
+    addadta() {
+      AddAccount(this.form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.gettabledata()
+          this.handleCancel()
+          this.loading = false;
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    ediddata() {
+      EditAccount(this.form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.gettabledata()
+          this.handleCancel()
+          this.loading = false;
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
         }
       })
     },
@@ -272,22 +349,17 @@ export default {
     handleCancel() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
-      console.log('ok');
     },
-    // 删除对话框
-    showdeleConfirm(id) {
-      this.$confirm({
-        title: '是否删除所选项?',
-        content: '删除之后无法恢复！',
-        onOk() {
-          return new Promise((resolve, reject) => {
-            console.log(id);
-            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          }).catch(() => console.log('Oops errors!'));
-        },
-        onCancel() {},
-      })
-    }
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
+    },
   }
 }
 </script>

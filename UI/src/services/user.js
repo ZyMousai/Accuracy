@@ -1,4 +1,4 @@
-import { LOGIN, ROUTES } from '@/services/api'
+import { LOGIN, ROUTES, USERS } from '@/services/api'
 import { request, METHOD, removeAuthorization } from '@/utils/request'
 
 /**
@@ -17,6 +17,24 @@ export async function login(username, password) {
 
 export async function getRoutesConfig() {
     return request(ROUTES, METHOD.GET)
+}
+
+/**
+ * 获取用户信息
+ * @param id  账户ID
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UserData(id) {
+    return request(USERS + id, METHOD.GET, '')
+}
+
+/**
+ * 更新用户信息
+ * @param userform  用户信息
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UpUserData(userform) {
+    return request(USERS, 'PATCH', userform)
 }
 
 /**
