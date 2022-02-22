@@ -319,7 +319,7 @@ export default {
     // 修改卡状态
     card_status_change(card_status, id) {
       console.log(id);
-      id.loadingchanr = true
+      // id.loadingchanr = true
       PatchCardListData({card_status: card_status ? 0 : 1, id: id}).then(res => {
         console.log("成功")
         console.log(res)
