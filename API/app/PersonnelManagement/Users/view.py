@@ -3,13 +3,12 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 
 from typing import Optional, List
-import os
-
-from starlette.responses import StreamingResponse
-
-from config import globals_config
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+import os
 from app.PersonnelManagement.Users.permissions import Permissions
+from config import globals_config
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
 from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles, RoleUserMapping, DepartmentUserMapping
@@ -57,6 +56,7 @@ async def get_user_one(user_id: Optional[int] = Query(None), dbs: AsyncSession =
     result = await Users.get_one_detail(dbs, user_id)
     if not result:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
+    users_roles = await Roles.get_role_user(dbs, user_id)
     response_json = {"data": result}
     return response_json
 
@@ -134,6 +134,22 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
     return response_json
 
 
+async def authenticate(dbs, username: str, password: str):
+    """用户校验"""
+    filter_condition = [
+        ('account', f'=="{username}"', username),
+        ('is_delete', '==0', 0)
+    ]
+
+    user = await Users.get_one(dbs, *filter_condition)
+
+    if not user:
+        return False
+    if not sha1_encode(password) == user.password:
+        return False
+    return user
+
+
 @users_router.get('/avatar/{avatar_name}')
 async def get_avatar(avatar_name: str):
     avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/', avatar_name)
@@ -170,21 +186,6 @@ async def upload_avatar(account: str, user_id: int, file: UploadFile = File(...)
         raise HTTPException(status_code=403, detail="avatar upload fail!")
 
     return {"code": 200, "msg": "上传成功! img_name:" + img_name}
-
-async def authenticate(dbs, username: str, password: str):
-    """用户校验"""
-    filter_condition = [
-        ('account', f'=="{username}"', username),
-        ('is_delete', '==0', 0)
-    ]
-
-    user = await Users.get_one(dbs, *filter_condition)
-
-    if not user:
-        return False
-    if not sha1_encode(password) == user.password:
-        return False
-    return user
 
 
 @users_router.post('/login')

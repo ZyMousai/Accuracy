@@ -138,7 +138,7 @@ async def upload_doc(user_id: int, department_id: str, files: List[UploadFile] =
 
 
 @documents_router.patch('/')
-async def update_doc(info: UpdateDocumentManagement = Depends(UpdateDocumentManagement),
+async def update_doc(info: UpdateDocumentManagement,
                      dbs: AsyncSession = Depends(db_session)):
     """
     修改文档部门id
