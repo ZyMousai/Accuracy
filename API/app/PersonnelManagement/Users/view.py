@@ -1,9 +1,13 @@
 # Users 视图
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 
 from typing import Optional, List
+import os
 
+from starlette.responses import StreamingResponse
+
+from config import globals_config
 from fastapi.security import OAuth2PasswordRequestForm
 from app.PersonnelManagement.Users.permissions import Permissions
 from util.crypto import sha1_encode
@@ -129,6 +133,43 @@ async def update_password(info: UpdatePassword, dbs: AsyncSession = Depends(db_s
     response_json = {"data": info.id}
     return response_json
 
+
+@users_router.get('/avatar/{avatar_name}')
+async def get_avatar(avatar_name: str):
+    avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/', avatar_name)
+    if not os.path.exists(avatar_path):
+        raise HTTPException(status_code=404, detail="image not found !")
+
+    file_like = open(avatar_path, mode="rb")
+    return StreamingResponse(file_like, media_type="image/jpg")
+
+
+@users_router.post('/upload_avatar')
+async def upload_avatar(account: str, user_id: int, file: UploadFile = File(...),
+                        dbs: AsyncSession = Depends(db_session)):
+    verify_pic_type = ["jpg", "png", "gif"]
+    pic_type = file.filename.split(".")[1]
+    if pic_type not in verify_pic_type:
+        raise HTTPException(status_code=500, detail="Image type not supported !")
+
+    content = await file.read()
+    avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/')
+    img_name = str(hash(account + str(file.filename)))
+    avatar_path = os.path.join(avatar_path, img_name + pic_type)
+    if not os.path.exists(avatar_path):
+        raise HTTPException(status_code=404, detail="image not found !")
+
+    with open(avatar_path, "wb") as f:
+        f.write(content)
+
+    info = {"id": user_id, "avatar": img_name + ".jpg"}
+
+    result = await Users.update_data(dbs, info, is_delete=0)
+    if not result:
+        os.remove(avatar_path)
+        raise HTTPException(status_code=403, detail="avatar upload fail!")
+
+    return {"code": 200, "msg": "上传成功! img_name:" + img_name}
 
 async def authenticate(dbs, username: str, password: str):
     """用户校验"""
