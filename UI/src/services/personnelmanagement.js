@@ -10,6 +10,17 @@ import { request, METHOD } from '@/utils/request'
 export async function UsersDate(query) {
     return request(USERS, METHOD.GET, query)
 }
+
+/**
+ * 用户页面
+ * 查询单个用户
+ * @param id  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetOneUsersDate(id) {
+    return request(USERS + id, METHOD.GET, '')
+}
+
 /**
  * 用户页面
  * 增加用户
@@ -20,6 +31,15 @@ export async function UsersAdd(query) {
     return request(USERS, METHOD.POST, query)
 }
 
+/**
+ * 用户页面
+ * 增加用户
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UsersEdit(form) {
+    return request(USERS, 'PATCH', form)
+}
 /**
  * 删除用户
  * @param id  查新请求参数

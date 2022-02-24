@@ -61,27 +61,39 @@
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
         :rowKey='record=>record.id'
-        @clear="onClear"
-        @change="onChange"
+        :loading="tableloading"
+        :pagination="false"
       >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
+      <span slot="gender"  slot-scope="{record}">
+        {{ record.gender ? '男' : '女' }}
+      </span>
         <div slot="action" slot-scope="{record}">
-          <a @click="showModal(record.id)" style="margin-right: 8px">
+          <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
-          <a @click="resetPassword(record.id)" style="margin-right: 8px">
-            <a-icon type="retweet" />重置密码
-          </a>
+          <a-popconfirm
+            title="你确定要重置密码吗？"
+            ok-text="是"
+            cancel-text="否"
+            @confirm="resetPassword(record.id)"
+            >
+            <a style="margin-right: 8px">
+              <a-icon type="retweet" />重置密码
+            </a>
+          </a-popconfirm>
           <a @click="showdeleConfirm(record.id)">
             <a-icon type="delete" />删除
           </a>
         </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
+      <a-pagination
+        style="margin-top: 15px;"
+        v-model="query.page"
+        :total="total"
+        show-size-changer
+        @showSizeChange="onShowSizeChange"
+        :show-total="total => `一共 ${total} 条`"
+        @change="pageonChange" />
       <!-- 表单 -->
       <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
@@ -99,7 +111,7 @@
           :rules="rules"
           :label-col="{ span: 6 }"
           :wrapper-col="{ span: 14 }"
-          :layout="form.layout"
+          layout="vertical"
         >
         <a-row :gutter="16">
           <a-col :span="10">
@@ -194,14 +206,7 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {UsersDate} from '@/services/personnelmanagement'
-import {
-  DeleteUsers,
-  DepartmentDate,
-  RolesDate,
-  RolesResetPassword,
-  UsersAdd
-} from "../../../services/personnelmanagement";
+import {UsersDate, DeleteUsers, DepartmentDate, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit} from '@/services/personnelmanagement'
 const columns = [
   {
     title: '序号',
@@ -218,12 +223,10 @@ const columns = [
   {
     title: '性别',
     dataIndex: 'gender',
+    key: 'gender',
+    slots: { title: 'genderTitle' },
+    scopedSlots: { customRender: 'gender' },
   },
-  // {
-  //   title: '部门',
-  //   dataIndex: '',
-  // },
-
   {
     title: '入职时间',
     dataIndex: 'entry_time'
@@ -244,57 +247,63 @@ const columns = [
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
-
 export default {
   name: 'QueryList',
   components: {StandardTable},
   data () {
+    var checkMobile = (rule, value, cb) => {
+      console.log(value);
+      const regMobile = /^(0|86|17951)?(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$/;
+      if (regMobile.test(value)) {
+          // 合法的手机号码
+          return cb() 
+      }
+      cb(new Error('手机号码格式不正确'))
+    }
     return {
       dateFormat: 'YYYY-MM-DD',
       query: {
+        page: 1,
+        page_size: 10,
         platform: '',
         department: ''
       },
       form: {
-        layout: 'vertical',
         account: '',
         name: '',
-        department: '',
-        gender: '',
-        entry_time: '',
+        gender: null,
+        birth: '',
         phone: '',
         address: '',
-        birth: '',
-        creator: '',
-        role: ''
+        creator: ''
       },
+      total: 0,
       advanced: true,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
       ids: [],
-      departmentoptions: [{id:"0",department:'商务部'}, {id:"1",department:"技术部"}],
+      tableloading: false,
+      departmentoptions: [],
       roleoptions: ['商务', "技术"],
       genderlist: [['男', "true"], ["女", "false"]],
-      ruleslist: [{id: "0", role: '商务专员'}, {id: "1", role: "技术专员"}],
+      ruleslist: [],
       dialogvisible: false,
       tablename: '',
       visible: false,
       loading: false,
       rules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+        account: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+        name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+        gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
         department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-        desc: [{ required: false, message: 'Please input activity form', trigger: 'blur' }],
+        role: [{ required: true, message: '请选择角色', trigger: 'change' }],
+        entry_time: [{ required: true, message: '请选择入职时间', trigger: 'change' }],
+        phone: [{ required: true, message: '请填写手机号', trigger: 'blur' },
+                  { validator: checkMobile, rtigger:'blur'  }],
+        address: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+        birth: [{ required: true, message: '请选择入职时间', trigger: 'change' }],
+        creator: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
       }
     }
   },
@@ -314,24 +323,34 @@ export default {
     },
     // 获取表格数据
     gettabledata () {
+      this.tableloading = true
       UsersDate(this.query).then(res => {
-        var re_da = res.data.data;
-        // 给予序号
-        for (var i = 0; i < re_da.length; i++) {
-          // re_da[i]["time"] = re_da[i]["time"].split(" ")[0];
-          re_da[i]["index"] = i + 1
+        if (res.status === 200) {
+          this.dataSource = res.data.data
+          this.total = res.data.total
+          this.tableloading = false
+          for (var i = 0; i < this.dataSource.length; i++) {
+            this.dataSource[i]["index"] = i + 1
+          }
+        } else {
+          this.tableloading = false
+          this.$message.error(`获取数据失败！`);
         }
-        this.dataSource = re_da
       })
     },
     async user_onok() {
-      // let is_logic_del = '0'
-      // console.log(this.ids)
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteUsers(this.ids[i]).then(res => {
-          console.log(res);
+            if (res.status === 200) {
+              this.$message.success(`删除成功！`);
+            } else {
+              this.$message.error(`删除失败！`);
+            }
           })
       }
+      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+      this.query.page = this.query.page < 1 ? 1 : this.query.page
       this.gettabledata()
       this.ids = []
       this.dialogvisible = false
@@ -346,20 +365,6 @@ export default {
     remove () {
       this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1);
       this.selectedRows = []
-    },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
     },
     // 查询
     queryevents() {
@@ -380,39 +385,63 @@ export default {
       }
     },
     // 打开编辑表单
-    showModal(id) {
-      typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
-      console.log(id);
-      this.visible = true;
+    showModal(data) {
+      if (data.id) {
+        this.tablename = '编辑'
+        GetOneUsersDate(data.id).then(res => {
+          this.form = res.data.data
+          this.form.gender = this.form.gender + ''
+          this.visible = true;
+        })
+      } else {
+        this.tablename = '新增'
+        this.visible = true;
+      }
     },
     // 重置密码
     resetPassword(id) {
       RolesResetPassword({"id":id, "password": "123456"}).then(res => {
-        console.log("重置密码成功")
-        console.log(res)
-        // 提示框
-
-
-
-
-
+        if (res.status === 200) {
+          this.$message.success(`重置成功！`);
+        } else {
+          this.$message.error(`重置失败！`);
+        }
       })
     },
     // 提交编辑表单
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
-          console.log(valid)
           this.loading = true;
-          console.log('ok');
-          UsersAdd(this.form).then(res => {
-            console.log(res)
-          })
-          this.gettabledata()
-          this.visible = false;
+          this.tablename === '新增' ? this.addadta() : this.ediddata()
         }
       })
     },
+    addadta() {
+      UsersAdd(this.form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.gettabledata()
+          this.loading = false;
+          this.visible = false;
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    ediddata() {
+      UsersEdit(this.form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.gettabledata()
+          this.loading = false;
+          this.visible = false;
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })},
     // 关闭编辑表单
     handleCancel() {
       this.visible = false;
@@ -423,7 +452,17 @@ export default {
     showdeleConfirm(id) {
       this.ids.push(id)
       this.dialogvisible = true
-    }
+    },
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
+    },
   }
 }
 </script>

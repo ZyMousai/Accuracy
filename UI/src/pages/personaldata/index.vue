@@ -4,40 +4,41 @@
       <a-tab-pane key="1" tab="基本资料">
         <a-row :gutter="16" style="margin: 25px 0 150px 0;">
           <a-col :span="6">
-              <a-form-model :model="form" :label-col="labelCol" :wrapper-col="wrapperCol">
-                <a-form-model-item label="姓名">
+              <a-form-model :model="form" :label-col="labelCol" :wrapper-col="wrapperCol" ref="userruleForm" :rules="userdatarules">
+                <a-form-model-item label="姓名"  prop="name">
                   <a-input v-model="form.name" />
                 </a-form-model-item>
-                <a-form-model-item label="性别">
-                  <a-select v-model="form.region" placeholder="请选择性别">
-                    <a-select-option value="shanghai">
+                <a-form-model-item label="性别" prop="gender">
+                  <a-select v-model="form.gender" placeholder="请选择性别">
+                    <a-select-option value="true">
                       男
                     </a-select-option>
-                    <a-select-option value="beijing">
+                    <a-select-option value="false">
                       女
                     </a-select-option>
                   </a-select>
                 </a-form-model-item>
-                <a-form-model-item label="出生日期">
+                <a-form-model-item label="出生日期" prop="birth">
                   <a-date-picker
-                    v-model="form.date1"
+                    v-model="form.birth"
                     show-time
+                    format="YYYY-MM-DD"
                     type="date"
                     placeholder="请选择"
                     style="width: 100%;"
                   />
                 </a-form-model-item>
-                <a-form-model-item label="部门">
-                  <a-input v-model="form.name" />
+                <!-- <a-form-model-item label="部门">
+                  <a-input v-model="form.name" :disabled='true'/>
                 </a-form-model-item>
                 <a-form-model-item label="角色">
-                  <a-input v-model="form.name" />
+                  <a-input v-model="form.name" :disabled='true'/>
+                </a-form-model-item> -->
+                <a-form-model-item label="联系方式" prop="phone">
+                  <a-input v-model="form.phone" />
                 </a-form-model-item>
-                <a-form-model-item label="联系方式">
-                  <a-input v-model="form.name" />
-                </a-form-model-item>
-                <a-form-model-item label="联系地址">
-                  <a-input v-model="form.desc" type="textarea" />
+                <a-form-model-item label="联系地址"  prop="address">
+                  <a-input v-model="form.address" type="textarea" />
                 </a-form-model-item>
                 <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
                   <a-button type="primary" @click="onSubmit">
@@ -78,7 +79,7 @@
         </a-list>
       </a-tab-pane>
     </a-tabs>
-    <!-- 表单 -->
+    <!-- 修改密码表单 -->
       <a-modal v-model="visible" title="修改密码" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
         <a-button key="back" @click="handleCancel">
@@ -92,20 +93,20 @@
         <a-form-model
           ref="ruleForm"
           :model="form"
-          :rules="rules"
+          :rules="wprules"
           :label-col="{ span: 6 }"
           :wrapper-col="{ span: 14 }"
           :layout="form.layout"
         >
         <a-row :gutter="16">
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="密码" prop="filename">
-              <a-input v-model="wdform.filename" />
+            <a-form-model-item label="密码" prop="password">
+              <a-input v-model="wdform.password" />
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item ref="filename" label="确认密码" prop="filename">
-              <a-input v-model="wdform.filename" />
+            <a-form-model-item label="确认密码" prop="repassword">
+              <a-input v-model="wdform.repassword" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -127,31 +128,66 @@
     }
   ];
   import {mapState} from 'vuex'
+  import { UserData, UpUserData } from '@/services/user';
   export default {
     name: 'personaldata',
     data() {
+    var checkMobile = (rule, value, cb) => {
+      console.log(value);
+      const regMobile = /^(0|86|17951)?(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$/;
+      if (regMobile.test(value)) {
+          // 合法的手机号码
+          return cb() 
+      }
+      cb(new Error('手机号码格式不正确'))
+    }
+    // 验证密码是否相同
+    var validatePass = (rule, value, callback) => {
+      console.log(value);
+      if (!value) {
+        callback(new Error('请输入新密码！'))
+      } else if (value.toString().length < 6) {
+        callback(new Error('密码请大于六位数'))
+      } else {
+        callback()
+      }
+    }
+    var validatePass2 = (rule, value, callback) => {
+      console.log(value);
+      if (value === '') {
+          callback(new Error('请重新输入你的密码！'))
+      } else if (value !== this.wdform.password) {
+          callback(new Error('两次密码不一致!'))
+      } else {
+          callback()
+      }
+    }
       return {
         labelCol: { span: 8 },
         wrapperCol: { span: 15 },
         form: {
           name: '',
-          region: undefined,
-          date1: undefined,
-          delivery: false,
-          type: [],
-          resource: '',
-          desc: '',
+          gender: null,
+          birth: null,
+          address: '',
+          phone: ''
         },
         loading: false,
         imageUrl: '',
         data,
         visible: false,
         wdform: {
-          layout: 'vertical',
-          filename: '',
-          department: '',
-          desc: ''
+          password: '',
+          repassword: ''
         },
+        userdatarules: {
+          phone: [{ required: false, trigger: 'blur' },
+                  { validator: checkMobile, rtigger:'blur'  }]
+        },
+        wprules: {
+          password: [{ required: true, validator: validatePass, trigger: 'blur' }],
+          repassword: [{ required: true, validator: validatePass2, trigger: 'blur' }]
+        }
       }
     },
     computed: {
@@ -160,7 +196,19 @@
         return this.$t('description')
       }
     },
+    created () {
+      this.getuserdata()
+    },
     methods: {
+      // 获取用户信息
+      getuserdata() {
+        const id = localStorage.getItem('id')
+        UserData(id).then(res => {
+          this.form = res.data.data
+          this.form.gender = this.form.gender + ''
+          console.log(res);
+        })
+      },
       handleChange(info) {
       if (info.file.status === 'uploading') {
         this.loading = true;
@@ -186,7 +234,19 @@
         return isJpgOrPng && isLt2M;
       },
       onSubmit() {
-        console.log('submit!', this.form);
+        this.$refs.userruleForm.validate(valid => {
+        if (valid) {
+          this.form.birth = this.form.birth.format("YYYY-MM-DD")
+          UpUserData(this.form).then(res => {
+            if (res.status === 200) {
+              this.$message.success('更新成功！')
+              this.getuserdata()
+            } else {
+              this.$message.error('更新失败！')
+            }
+          })
+        }
+      })
       },
       // 打开编辑表单
       showModal(id) {
@@ -197,8 +257,14 @@
       handleCancel() {
         this.visible = false;
         this.$refs.ruleForm.resetFields();
-        console.log('ok');
       },
+      handleOk() {
+        this.$refs.ruleForm.validate(valid => {
+          if (valid) {
+            console.log(this.wdform);
+          }
+        })
+      }
     }
   }
 </script>

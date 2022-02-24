@@ -31,6 +31,7 @@ export default {
     logout() {
       logout()
       this.$router.push('/login')
+      localStorage.clear()
     },
     gopersonal() {
       this.$router.push('/personaldata')

@@ -86,7 +86,6 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
-        @clear="onClear"
         :rowKey='record=>record.id'
         :loading="tableloading"
         :pagination="false"
@@ -262,9 +261,6 @@ export default {
     },
     toggleAdvanced () {
       this.advanced = !this.advanced
-    },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
     },
     // 查询
     queryevents() {

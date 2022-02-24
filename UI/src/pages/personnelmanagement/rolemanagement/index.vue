@@ -34,13 +34,10 @@
         :columns="columns"
         :dataSource="dataSource"
         :selectedRows.sync="selectedRows"
+        :loading="tableloading"
+        :pagination="false"
         :rowKey='record=>record.id'
-        @clear="onClear"
-        @change="onChange"
       >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
         <div slot="action" slot-scope="{record}">
           <a @click="editrole(record.id)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
@@ -95,25 +92,18 @@ const columns = [
 
 const dataSource = []
 
-for (let i = 0; i < 100; i++) {
-  dataSource.push({
-    key: i,
-    ne: 'NO ' + i,
-    description: '这是一段描述',
-    callNo: Math.floor(Math.random() * 1000),
-    status: Math.floor(Math.random() * 10) % 4,
-    updatedAt: '2018-07-26'
-  })
-}
-
 export default {
   name: 'QueryList',
   components: {StandardTable},
   data () {
     return {
       query: {
+        page: 1,
+        page_size: 10,
         department: ''
       },
+      total: 0,
+      tableloading: false,
       advanced: true,
       ids: [],
       dialogvisible: false,
@@ -129,13 +119,19 @@ export default {
   methods: {
     // 获取表格数据
     gettabledata () {
+      this.tableloading = true
       RolesDate(this.query).then(res => {
-        var re_da = res.data.data
-        // 给予序号
-        for (var i = 0; i < re_da.length; i++) {
-          re_da[i]["index"] = i + 1
+        if (res.status === 200) {
+          this.dataSource = res.data.data
+          this.total = res.data.total
+          this.tableloading = false
+          for (var i = 0; i < this.dataSource.length; i++) {
+            this.dataSource[i]["index"] = i + 1
+          }
+        } else {
+          this.tableloading = false
+          this.$message.error(`获取数据失败！`);
         }
-        this.dataSource = re_da
       })
     },
     toggleAdvanced () {
@@ -145,14 +141,8 @@ export default {
       this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
       this.selectedRows = []
     },
-    onClear() {
-      this.$message.info('您清空了勾选的所有行')
-    },
     onStatusTitleClick() {
       this.$message.info('你点击了状态栏表头')
-    },
-    onChange() {
-      this.$message.info('表格状态改变了')
     },
     handleMenuClick (e) {
       if (e.key === 'delete') {
