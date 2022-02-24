@@ -154,6 +154,42 @@
                 <a-input v-model="form.card_number" />
               </a-form-model-item>
             </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="valid_period" label="有效期" prop="creator">
+                <a-input v-model="form.valid_period" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="cvv" label="cvv" prop="creator">
+                <a-input v-model="form.cvv" />
+              </a-form-model-item>
+            </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="face_value" label="面值" prop="creator">
+                <a-input v-model="form.face_value" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
+                <a-input v-model="form.name" />
+              </a-form-model-item>
+            </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="note" label="备注" prop="creator">
+                <a-input v-model="form.note" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="platform" label="平台" prop="creator">
+                <a-input v-model="form.platform" />
+              </a-form-model-item>
+            </a-col>
           </a-row>
         </a-form-model>
       </template>
@@ -174,8 +210,8 @@ const columns = [
   { title: '面值', dataIndex: 'face_value', key: 'face_value' },
   { title: '余额', dataIndex: 'balance', key: 'balance' },
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
-  // { title: '备注', dataIndex: 'note', key: 'note' },
-  { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
+  { title: '备注', dataIndex: 'note', key: 'note' },
+  // { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
   { title: '平台', dataIndex: 'platform', key: 'platform' },
   { title: '卡状态', key: 'cardstatus', scopedSlots: { customRender: 'cardstatus' } },
   { title: '保留', key: 'retain_', scopedSlots: { customRender: 'retain_' } },
@@ -187,14 +223,13 @@ const data = [];
 
 const innerColumns = [
   { title: 'uuid', dataIndex: 'uid', key: 'uid' },
-  // { title: '账号', dataIndex: 'account_id', key: 'account_id', scopedSlots: { customRender: 'account_id' } },
   { title: '任务', dataIndex: 'task', key: 'task', scopedSlots: { customRender: 'task' } },
   { title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: { customRender: 'commission' } },
   { title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: { customRender: 'consume' } },
   { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
   { title: '二次消费', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
   { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
-  {title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
+  { title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
 ];
 
 const innerData = [];
@@ -215,6 +250,7 @@ export default {
         uploaddate: ''
       },
       form: {
+        id: '',
         card_number: '',
         valid_period: '',
         cvv: '',
@@ -303,6 +339,13 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
+          PatchCardListData(this.form).then(res => {
+            console.log("成功")
+            console.log(res)
+            this.loading = false;
+            this.gettabledata()
+            this.visible = false;
+          })
           console.log('ok');
         }
       })
@@ -369,7 +412,16 @@ export default {
     },
     edit (data){
       console.log(data)
+      this.form.id = data.id
+      this.form.card_number = data.card_number
+      this.form.valid_period = data.valid_period
+      this.form.cvv = data.cvv
+      this.form.face_value = data.face_value
+      this.form.name = data.name
+      this.form.platform = data.platform
+      this.form.note = data.note
       this.visible = true;
+
     },
     // 子表添加按钮
     onHeaderCell() {
