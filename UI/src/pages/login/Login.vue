@@ -109,8 +109,10 @@ export default {
       this.logging = false
       const loginRes = res.data
       console.log(res.data);
+      localStorage.id = res.data.user.id
       if (loginRes.access_token) {
         console.log('ok');
+        this.setUser(loginRes.user)
         // const {user, permissions, roles} = loginRes.data
         // this.setUser(user)
         // this.setPermissions(permissions)

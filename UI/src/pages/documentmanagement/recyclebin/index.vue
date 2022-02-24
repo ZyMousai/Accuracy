@@ -246,15 +246,7 @@
                 this.ids = [];
                 this.dialogvisible = false
             },
-            async onno() {
-                // let is_logic_del = '0';
-                // for (let i = 0; i < this.ids.length; i++) {
-                //     await DeleteDepartment(this.ids[i], is_logic_del).then(res => {
-                //         console.log(res);
-                //     })
-                // }
-                // this.gettabledata();
-                // this.ids = [];
+            onno() {
                 this.dialogvisible = false
             },
 
@@ -268,15 +260,7 @@
                 this.ids = [];
                 this.recovervisible = false
             },
-            async onnorecover() {
-                // let is_logic_del = '0';
-                // for (let i = 0; i < this.ids.length; i++) {
-                //     await DeleteDepartment(this.ids[i], is_logic_del).then(res => {
-                //         console.log(res);
-                //     })
-                // }
-                // this.gettabledata();
-                // this.ids = [];
+            onnorecover() {
                 this.recovervisible = false
             },
 

@@ -23,4 +23,5 @@ module.exports = {
     RecycleShow: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,
+    Accountmanagement: `${BASE_URL}/AccountManagement/account/v1`,
 }

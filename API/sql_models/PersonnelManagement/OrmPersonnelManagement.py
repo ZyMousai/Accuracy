@@ -143,6 +143,13 @@ class Departments(PBaseModel):
         result = (await dbs.execute(_orm)).scalars().first()
         return result
 
+    @classmethod
+    async def get_department_user(cls, dbs, user_id):
+        _orm = select(cls).outerjoin(DepartmentUserMapping, cls.id == DepartmentUserMapping.department_id)\
+            .where(cls.is_delete == 0, DepartmentUserMapping.user_id == user_id)
+        result = (await dbs.execute(_orm)).scalars().first()
+        return result
+
 
 class DepartmentUserMapping(PBaseModel):
     __tablename__ = 'department_user_mapping'
