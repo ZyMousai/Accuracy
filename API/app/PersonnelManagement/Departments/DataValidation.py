@@ -23,7 +23,7 @@ class SearchDepartment(BaseModel):
 
 class DepartmentAbout(BaseModel):
     department_id: int
-    ids: Optional[List] = Query(...)
+    ids: Optional[List[int]] = Query(...)
 
 
 class DepartmentGet(BaseModel):

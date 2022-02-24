@@ -7,6 +7,8 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 import os
+from sqlalchemy import select
+
 from app.PersonnelManagement.Users.permissions import Permissions
 from config import globals_config
 from util.crypto import sha1_encode
@@ -56,8 +58,43 @@ async def get_user_one(user_id: Optional[int] = Query(None), dbs: AsyncSession =
     result = await Users.get_one_detail(dbs, user_id)
     if not result:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
-    users_roles = await Roles.get_role_user(dbs, user_id)
-    response_json = {"data": result}
+    # 获取用户的角色
+    users_role = (await Roles.get_role_user(dbs, user_id)).role
+    # 获取department_id创建的条件
+    args = [
+        ('user_id', f'=={user_id}', user_id),
+        ('is_delete', '==0', 0),
+    ]
+    filter_condition = list()
+    for x in args:
+        if x[2] is not None:
+            filter_condition.append(eval(f'DepartmentUserMapping.{x[0]}{x[1]}'))
+    _orm = select(DepartmentUserMapping.department_id).where(*filter_condition)
+    # noinspection PyBroadException
+    try:
+        department_id = (await dbs.execute(_orm)).first()['department_id']
+    except Exception as e:
+        print(e)
+        department_id = 'no department'
+    # 对user数据进行重新归纳赋值
+    new_result = {
+        "password": result.password,
+        "id": result.id,
+        "birth": result.birth,
+        "phone": result.phone,
+        "account": result.account,
+        "address": result.address,
+        "gender": result.gender,
+        "update_password_time": result.update_password_time,
+        "avatar": result.avatar,
+        "is_delete": result.is_delete,
+        "entry_time": result.entry_time,
+        "creator": result.creator,
+        "name": result.name,
+        "users_role": users_role,
+        "department_id": department_id,
+    }
+    response_json = {"data": new_result}
     return response_json
 
 
@@ -170,7 +207,7 @@ async def upload_avatar(account: str, user_id: int, file: UploadFile = File(...)
 
     content = await file.read()
     avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/')
-    img_name = str(hash(account + str(file.filename)))
+    img_name = str(hash(account + str(user_id)))
     avatar_path = os.path.join(avatar_path, img_name + pic_type)
     if not os.path.exists(avatar_path):
         raise HTTPException(status_code=404, detail="image not found !")

@@ -52,6 +52,12 @@ class Roles(PBaseModel):
 
     @classmethod
     async def get_role_user(cls, dbs, user_id):
+        """
+        返回的字段仅含有主表的
+        :param dbs: 依赖数据库
+        :param user_id: 对应的user的id
+        :return:
+        """
         _orm = select(cls).outerjoin(RoleUserMapping,
                                      cls.id == RoleUserMapping.role_id).where(cls.is_delete == 0,
                                                                               RoleUserMapping.user_id == user_id)
