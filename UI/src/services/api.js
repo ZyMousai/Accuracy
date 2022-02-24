@@ -8,6 +8,7 @@ module.exports = {
     Document: `${BASE_URL}/DocumentManagement/documents/v1`,
     DeleteDocument: `${BASE_URL}/DocumentManagement/documents/v1`,
     GetCreditCardListData: `${BASE_URL}/Clerk/card/v1/card`,
+    GetTaskListData: `${BASE_URL}/Clerk/card/v1/task`,
     ROUTES: `${BASE_URL}/routes`,
     USERS: `${BASE_URL}/PersonnelManagement/users/v1/`,
     TrackAlliance: `${BASE_URL}/Clerk/track/v1/alliance`,
