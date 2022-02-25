@@ -126,7 +126,7 @@
           </div>
           <div slot="inneroperation" class="table-operation" slot-scope="record">
             <a slot="inneroperation" @click="inneredit(record)">编辑</a>
-            <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record)">删除</a>
+            <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record.id)">删除</a>
           </div>
         </a-table>
       </a-table>
@@ -204,13 +204,25 @@
               @cancel="onno">
         <p>删除后将无法恢复！</p>
       </a-modal>
+
+      <!-- 删除子表任务确认对话框 -->
+      <a-modal
+              title="是否删除所选项？"
+              :visible="dialogvisibleson"
+              ok-text="是"
+              cancel-text="否"
+              @ok="onokson"
+              @cancel="onno">
+        <p>删除后将无法恢复！</p>
+      </a-modal>
+
     </div>
   </a-card>
 </template>
 
 <script>
   import {CreditCardListData} from '@/services/statisticscardinformation'
-  import {PatchCardListData, PatchTaskListData, table_delete} from "../../../services/statisticscardinformation";
+  import {PatchCardListData, PatchTaskListData, table_delete, innerdelete} from "../../../services/statisticscardinformation";
   const columns = [
     { title: '卡号', dataIndex: 'card_number', key: 'card_number' },
     { title: '有效期', dataIndex: 'valid_period', key: 'valid_period' },
@@ -237,7 +249,8 @@
     { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
     { title: '二次消费', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
     { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
-    { title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
+    // { title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
+    { title: '操作', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
   ];
 
   const innerData = [];
@@ -273,6 +286,7 @@
         visible: false,
         loading: false,
         dialogvisible: false,
+        dialogvisibleson: false,
         ids: [],
         expandedRowKeys: [],
         departmentoptions: ['商务部', '技术部'],
@@ -505,7 +519,9 @@
       },
       // 子表删除
       innerdelete(id) {
-        console.log(id);
+        this.ids.push(id);
+        console.log(this.ids);
+        this.dialogvisibleson = true;
       },
       // 主表删除
       table_delete(id) {
@@ -530,6 +546,26 @@
         this.ids = []
         this.dialogvisible = false
       },
+
+
+      async onokson() {
+        for (let i = 0; i < this.ids.length; i++) {
+          await innerdelete(this.ids[i]).then(res => {
+            if (res.status === 200) {
+              this.$message.success(`删除成功！`);
+            } else {
+              this.$message.error(`删除失败！`);
+            }
+          })
+        }
+        const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+        this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+        this.query.page = this.query.page < 1 ? 1 : this.query.page
+        this.gettabledata()
+        this.ids = []
+        this.dialogvisibleson = false
+      },
+
       onno() {
         this.ids = [];
         this.dialogvisible = false
