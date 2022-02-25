@@ -1,4 +1,4 @@
-import { USERS, ROLES, DEPARTMENTS, UpdatePassword } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -82,8 +82,6 @@ export async function RolesResetPassword(query) {
     return request(UpdatePassword, "PATCH", query)
 }
 
-
-
 /**
  * 部门页面
  * 获取部门列表
@@ -94,16 +92,103 @@ export async function DepartmentDate(query) {
     return request(DEPARTMENTS, METHOD.GET, query)
 }
 
-
 /**
- * 删除部门
+ * 部门页面
+ * 获取某个部门
  * @param id  查新请求参数
- * @param is_logic_del  是否是逻辑删除
  * @returns {Promise<AxiosResponse<T>>}
  */
-export async function DeleteDepartment(id, is_logic_del) {
+export async function GetOneDepartmentDate(id) {
+    return request(DEPARTMENTS + '/' + id, METHOD.GET, '')
+}
+
+/**
+ * 部门页面
+ * 添加部门
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddDepartment(form) {
+    return request(DEPARTMENTS, METHOD.POST, form)
+}
+
+/**
+ * 部门页面
+ * 修改部门
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function EditDepartment(form) {
+    return request(DEPARTMENTS, "PATCH", form)
+}
+/**
+ * 部门页面
+ * 删除部门
+ * @param id  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteDepartment(id) {
     return request(DEPARTMENTS, METHOD.DELETE, {
-        ids: id,
-        is_logic_del: is_logic_del
+        ids: id
     })
+}
+
+/**
+ * 部门编辑页面
+ * 获取角色列表
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetDepartmentRole(query) {
+    return request(DepartmentRoleMapping, METHOD.GET, query)
+}
+
+/**
+ * 部门编辑页面
+ * 添加部门角色
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddDepartmentRole(form) {
+    return request(DepartmentRoleMapping, METHOD.POST, form)
+}
+
+/**
+ * 部门编辑页面
+ * 删除部门角色
+ * @param data  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteDepartmentRole(data) {
+    return request(DepartmentRoleMapping, "DELETE1", data)
+}
+
+/**
+ * 部门编辑页面
+ * 获取用户列表
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetDepartmentUser(query) {
+    return request(DepartmentUserMapping, METHOD.GET, query)
+}
+
+/**
+ * 部门编辑页面
+ * 添加部门用户
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddDepartmentUser(form) {
+    return request(DepartmentUserMapping, METHOD.POST, form)
+}
+
+/**
+ * 部门编辑页面
+ * 删除部门用户
+ * @param data  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteDepartmentUser(data) {
+    return request(DepartmentUserMapping, "DELETE1", data)
 }

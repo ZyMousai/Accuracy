@@ -4,16 +4,21 @@
       :columns="columns"
       :dataSource="dataSource"
       :pagination="false"
+      :rowKey='record=>record.id'
+      :loading="tableloading"
     >
-      <template  v-for="(col, i) in ['name', 'number', 'department']" :slot="col" slot-scope="text, record">
-          <a-input
+      <template  v-for="(col, i) in ['name']" :slot="col" slot-scope="text, record">
+          <a-select
             :key="col"
             v-if="record.editable"
-            style="margin: -5px 0"
-            :value="text"
+            v-model="userid"
             :placeholder="columns[i].title"
-            @change="e => handleChange(e.target.value, record.key, col)"
-          />
+            style="margin: -5px 0"
+            @change="e => handleChange(e, record.key, col)">
+            <a-select-option v-for="item in useroptions" :key="item.id" :value="item.id">
+              {{item.name}}
+            </a-select-option>
+          </a-select>
           <template v-else>{{text}}</template>
       </template>
       <template slot="operation" slot-scope="text, record">
@@ -25,47 +30,41 @@
               <a>刪除</a>
             </a-popconfirm>
           </span>
-            <span v-else>
+            <!-- <span v-else>
             <a @click="saveRow(record.key)">保存</a>
             <a-divider type="vertical" />
             <a @click="cancle(record.key)">取消</a>
-          </span>
+          </span> -->
         </template>
         <span v-else>
-          <a @click="toggle(record.key)">编辑</a>
-          <a-divider type="vertical" />
-          <a-popconfirm title="是否要删除此行？" @confirm="remove(record.key)">
+          <!-- <a @click="toggle(record.key)">编辑</a>
+          <a-divider type="vertical" /> -->
+          <a-popconfirm title="是否要删除此行？" @confirm="userremove(record.id)">
             <a>删除</a>
           </a-popconfirm>
         </span>
       </template>
     </a-table>
-    <a-button style="width: 100%; margin-top: 16px; margin-bottom: 8px" type="dashed" icon="plus" @click="newMember">新增成员</a-button>
+    <a-button v-if="isshowbutton" style="width: 100%; margin-top: 16px; margin-bottom: 8px" type="dashed" icon="plus" @click="newMember">新增成员</a-button>
   </form>
 </template>
 
 <script>
+import {UsersDate, GetDepartmentUser, AddDepartmentUser, DeleteDepartmentUser} from '@/services/personnelmanagement'
 const columns = [
   {
-    title: '成员姓名',
+    title: '姓名',
     dataIndex: 'name',
     key: 'name',
-    width: '20%',
+    width: '25%',
     scopedSlots: { customRender: 'name' }
   },
   {
-    title: '工号',
-    dataIndex: 'number',
-    key: 'number',
+    title: '添加时间',
+    dataIndex: 'entry_time',
+    key: 'entry_time',
     width: '20%',
-    scopedSlots: { customRender: 'number' }
-  },
-  {
-    title: '所属部门',
-    dataIndex: 'department',
-    key: 'department',
-    width: '40%',
-    scopedSlots: { customRender: 'department' }
+    scopedSlots: { customRender: 'entry_time' }
   },
   {
     title: '操作',
@@ -74,48 +73,64 @@ const columns = [
   }
 ]
 
-const dataSource = [
-  {
-    key: 1,
-    name: '小明',
-    number: '001',
-    editable: false,
-    department: '行政部'
-  },
-  {
-    key: 2,
-    name: '李莉',
-    number: '002',
-    editable: false,
-    department: 'IT部'
-  },
-  {
-    key: 3,
-    name: '王小帅',
-    number: '003',
-    editable: false,
-    department: '财务部'
-  }
-]
+const dataSource = []
 
 export default {
   name: 'UserForm',
   data () {
     return {
       columns,
-      dataSource
+      dataSource,
+      isshowbutton: false,
+      tableloading: false,
+      userid: '',
+      useroptions: []
     }
   },
+  created () {
+    this.geturldata()
+    this.getuserall()
+    this.getpersonnoldata()
+  },
   methods: {
-    handleSubmit (e) {
-      e.preventDefault()
+    // 获取url的参数
+    geturldata() {
+      this.dataSource = []
+      this.id = location.href.split("?")[1]
+      if (this.id) {
+        this.isshowbutton = true
+      }
+    },
+    // 获取全部用户数据
+    getuserall() {
+      UsersDate().then(res => {
+        console.log(res);
+        if (res.status === 200) {
+          this.useroptions = res.data.data
+        } else {
+          this.$message.error('获取用户列表失败！')
+        }
+      })
+    },
+    getpersonnoldata() {
+      const query = {
+        department_id: this.id
+      }
+      GetDepartmentUser(query).then(res => {
+        this.tableloading = true
+        if (res.status === 200) {
+          this.tableloading = false
+          this.dataSource = res.data.data
+        } else {
+          this.tableloading = false
+          this.$message.error('获取用户列表失败！')
+        }
+      })
     },
     newMember () {
       this.dataSource.push({
         key: this.dataSource.length + 1,
         name: '',
-        number: '',
-        department: '',
         editable: true,
         isNew: true
       })
@@ -125,9 +140,44 @@ export default {
       this.dataSource = newData
     },
     saveRow (key) {
-      let target = this.dataSource.filter(item => item.key === key)[0]
-      target.editable = false
-      target.isNew = false
+      console.log(this.userid);
+      if (this.userid) {
+        let target = this.dataSource.filter(item => item.key === key)[0]
+        target.editable = false
+        target.isNew = false
+        const form = {
+          department_id: '',
+          ids: []
+        }
+        form.department_id = this.id
+        form.ids.push(this.userid)
+        AddDepartmentUser(form).then(res => {
+          console.log(res);
+          if (res.status === 200) {
+            this.$message.success(`添加成功！`);
+            this.getpersonnoldata()
+          }
+        })
+      } else {
+        this.$message.error('请选择用户！')
+      }
+    },
+    // 删除用户
+    userremove(id) {
+      const data = {
+        department_id: this.id,
+        ids: []
+      }
+      data.ids.push(id)
+      DeleteDepartmentUser(data).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`删除成功！`);
+          this.getpersonnoldata()
+        } else {
+          this.$message.error('删除失败！')
+        }
+      })
+
     },
     toggle (key) {
       let target = this.dataSource.filter(item => item.key === key)[0]
@@ -144,8 +194,9 @@ export default {
     handleChange (value, key, column) {
       const newData = [...this.dataSource]
       const target = newData.filter(item => key === item.key)[0]
+      const user = this.useroptions.filter(i => value === i.id)[0]
       if (target) {
-        target[column] = value
+        target[column] = user.name
         this.dataSource = newData
       }
     }

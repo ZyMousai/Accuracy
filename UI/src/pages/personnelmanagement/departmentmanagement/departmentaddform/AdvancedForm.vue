@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-card class="card" title="新增部门" :bordered="false">
+    <a-card class="card" :title="tablename" :bordered="false">
       <repository-form ref="repository" :showSubmit="false" />
     </a-card>
     <a-card title="部门关联角色选择" :bordered="false">
@@ -16,6 +16,7 @@
 </template>
 
 <script>
+import {AddDepartment, EditDepartment} from '@/services/personnelmanagement'
 import RepositoryForm from './RepositoryForm'
 import RoleForm from './RoleForm'
 import PersonnelForm from './PersonnelForm'
@@ -26,7 +27,10 @@ export default {
   components: {FooterToolBar, RoleForm, RepositoryForm, PersonnelForm},
   data () {
     return {
-      loading: false
+      loading: false,
+      tablename: '新增部门',
+      id: '',
+      inputdata: ''
     }
   },
   computed: {
@@ -34,19 +38,58 @@ export default {
       return this.$t('desc')
     }
   },
+  created () {
+    this.geturldata()
+  },
   methods: {
+    // 获取url的参数
+    geturldata() {
+      this.id = location.href.split("?")[1]
+      if (this.id) {
+        this.tablename = '部门修改'
+      }
+    },
     validate () {
       this.$refs.repository.form.validateFields((err, values) => {
         if (!err) {
-          console.log('Received values of form: ', values)
+          this.loading = true
+          this.tablename === '新增部门' ? this.addadta(values) : this.ediddata(values)
         }
       });
-      this.$refs.task.form.validateFields((err, values) => {
-        if (!err) {
-          console.log('Received values of form: ', values)
+    },
+    addadta(values) {
+      this.loading = true
+      const form = {}
+      form.department = values.department
+      form.creator = localStorage.getItem('name')
+      AddDepartment(form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.$router.push('/personnelmanagement/departmentmanagement')
+          this.$refs.repository.form.resetFields()
+          this.loading = false
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false
         }
       })
-    }
+    },
+    ediddata(values) {
+      this.loading = true
+      const form = {}
+      form.department = values.department
+      form.id = this.id
+      EditDepartment(form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.$router.push('/personnelmanagement/departmentmanagement')
+          this.$refs.repository.form.resetFields()
+          this.loading = false
+        } else {
+          this.$message.success(`${this.tablename}失败！`);
+          this.loading = false
+        }
+      })}
   }
 }
 </script>

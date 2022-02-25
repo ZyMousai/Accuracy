@@ -5,7 +5,7 @@
         <a-form-item label="部门名称">
           <a-input
             placeholder="请输入部门名称"
-            v-decorator="['repository.name', {rules: [{ required: true, message: '请输入部门名称', whitespace: true}]}]"
+            v-decorator="['department', {rules: [{ required: true, message: '请输入部门名称', whitespace: true}]}]"
           />
         </a-form-item>
       </a-col>
@@ -17,13 +17,17 @@
 </template>
 
 <script>
+import {GetOneDepartmentDate} from '@/services/personnelmanagement'
 export default {
   name: 'RepositoryForm',
-  props: ['showSubmit'],
+  props: ['showSubmit', 'inputvale'],
   data() {
     return {
       form: this.$form.createForm(this)
     }
+  },
+  created() {
+    this.geturldata()
   },
   methods: {
     handleSubmit (e) {
@@ -34,12 +38,22 @@ export default {
         }
       })
     },
-    validate (rule, value, f) {
-      if (value !== undefined && value !== 'iczer') {
-        f('输入\'iczer\'试下？')
+    // 获取部门信息
+    geturldata() {
+      const id = location.href.split("?")[1]
+      if (id) {
+        GetOneDepartmentDate(id).then(res => {
+          if (res.status === 200) {
+            this.form.setFieldsValue({
+              department: res.data.data.department
+            })
+            this.$message.success(`获取${res.data.data.department}信息成功！`);
+          } else {
+            this.$message.error(`获取${res.data.data.department}信息失败！`);
+          }
+        })
       }
-      f()
-    }
+    },
   }
 }
 </script>

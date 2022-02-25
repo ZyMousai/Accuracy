@@ -24,4 +24,6 @@ module.exports = {
     RecycleClear: `${BASE_URL}/DocumentManagement/recycle/v1/`,
     RecycleRecover: `${BASE_URL}/DocumentManagement/recycle/v1/recover`,
     Accountmanagement: `${BASE_URL}/AccountManagement/account/v1`,
+    DepartmentRoleMapping: `${BASE_URL}/PersonnelManagement/departments/v1/DepartmentRoleMapping`,
+    DepartmentUserMapping: `${BASE_URL}/PersonnelManagement/departments/v1/DepartmentUserMapping`,
 }

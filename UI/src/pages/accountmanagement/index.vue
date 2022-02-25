@@ -47,9 +47,6 @@
         :pagination="false"
         :rowKey='record=>record.id'
       >
-        <div slot="description" slot-scope="{text}">
-          {{text}}
-        </div>
         <div slot="action" slot-scope="{record}">
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改

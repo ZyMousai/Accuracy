@@ -72,9 +72,10 @@
         <a-upload
           name="files"
           :multiple="true"
-          action="http://192.168.50.49:8000/api/DocumentManagement/documents/v1/upload?user_id=1&department_id=2"
+          :action="updocuurl"
           :headers="headers"
           :showUploadList="false"
+          :before-upload="beforeUpload"
           @change="handleChange"
         >
         <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
@@ -217,6 +218,7 @@ export default {
       advanced: true,
       columns: columns,
       dataSource: dataSource,
+      updocuurl: '',
       selectedRows: [],
       ids: [],
       visible: false,
@@ -365,7 +367,6 @@ export default {
     async oncancel() {
       this.dialogvisible = false
     },
-
     // 上传文件
     handleChange(info) {
       if (info.file.status !== 'uploading') {
@@ -377,6 +378,11 @@ export default {
       } else if (info.file.status === 'error') {
         this.$message.error(`${info.file.name}文件上传失败！`);
       }
+    },
+    beforeUpload() {
+      const user_id  = localStorage.getItem('id')
+      const department_id  = localStorage.getItem('department_id ')
+      this.updocuurl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/upload_avatar?user_id=${user_id}&department_id=${department_id}`
     },
     // 自定义删除对话框底部按钮
     modalfooter() {

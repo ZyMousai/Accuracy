@@ -26,6 +26,7 @@
                     type="date"
                     placeholder="请选择"
                     style="width: 100%;"
+                    @change="datepicker"
                   />
                 </a-form-model-item>
                 <!-- <a-form-model-item label="部门">
@@ -41,7 +42,7 @@
                   <a-input v-model="form.address" type="textarea" />
                 </a-form-model-item>
                 <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
-                  <a-button type="primary" @click="onSubmit">
+                  <a-button type="primary" @click="onSubmit" :loading="buttonloading">
                     更新
                   </a-button>
                 </a-form-model-item>
@@ -49,15 +50,16 @@
           </a-col>
           <a-col :span="6" :offset="1">
             <a-upload
-              name="avatar"
+              name="file"
               list-type="picture-card"
               class="avatar-uploader"
               :show-upload-list="false"
-              action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+              :action="upactionurl"
+              :headers="headers"
               :before-upload="beforeUpload"
               @change="handleChange"
             >
-              <img v-if="imageUrl" :src="imageUrl" alt="avatar" />
+              <img v-if="imageUrl" :src="imageUrl" alt="avatar" width="150px" />
               <div v-else>
                 <a-icon :type="loading ? 'loading' : 'plus'" />
                 <div class="ant-upload-text">
@@ -105,8 +107,8 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="确认密码" prop="repassword">
-              <a-input v-model="wdform.repassword" />
+            <a-form-model-item label="确认密码" prop="editrepassword">
+              <a-input v-model="wdform.editrepassword" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -117,17 +119,12 @@
 </template>
 
 <script>
-  function getBase64(img, callback) {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => callback(reader.result));
-    reader.readAsDataURL(img);
-  }
   const data = [
     {
       title: '账户密码',
     }
   ];
-  import {mapState} from 'vuex'
+  import {mapState, mapGetters} from 'vuex'
   import { UserData, UpUserData } from '@/services/user';
   export default {
     name: 'personaldata',
@@ -174,24 +171,32 @@
         },
         loading: false,
         imageUrl: '',
+        upactionurl: '',
         data,
         visible: false,
+        buttonloading: false,
         wdform: {
           password: '',
-          repassword: ''
+          editrepassword: ''
         },
         userdatarules: {
           phone: [{ required: false, trigger: 'blur' },
-                  { validator: checkMobile, rtigger:'blur'  }]
+                  { validator: checkMobile, rtigger:'blur'}]
         },
         wprules: {
-          password: [{ required: true, validator: validatePass, trigger: 'blur' }],
-          repassword: [{ required: true, validator: validatePass2, trigger: 'blur' }]
+          password: [{ required: false, trigger: 'blur' },
+                     { validator: validatePass, rtigger:'blur'}],
+          editrepassword: [{ required: false, trigger: 'blur' },
+                           { validator: validatePass2, rtigger:'blur'}]
+        },
+        headers: {
+          accept: 'application/json'
         }
       }
     },
     computed: {
       ...mapState('setting', ['pageMinHeight']),
+      ...mapGetters('account', ['user']),
       desc() {
         return this.$t('description')
       }
@@ -206,42 +211,52 @@
         UserData(id).then(res => {
           this.form = res.data.data
           this.form.gender = this.form.gender + ''
-          console.log(res);
+          this.imageUrl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/avatar/${this.form.avatar}`;
+          this.user.avatar = this.form.avatar
+          this.user.name = this.form.name
         })
       },
       handleChange(info) {
-      if (info.file.status === 'uploading') {
-        this.loading = true;
-        return;
-      }
-      if (info.file.status === 'done') {
-        // Get this url from response in real world.
-        getBase64(info.file.originFileObj, imageUrl => {
-          this.imageUrl = imageUrl;
-          this.loading = false;
-        });
-      }
+        console.log(info);
+        if (info.file.status === 'uploading') {
+          this.loading = true;
+          return;
+        }
+        if (info.file.status === 'done') {
+            this.$message.success('上传成功！')
+            this.getuserdata()
+            this.loading = false;
+        }
       },
       beforeUpload(file) {
+        const id = localStorage.getItem('id')
+        const account = localStorage.getItem('account')
+        this.upactionurl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/upload_avatar?account=${account}&user_id=${id}`
         const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
         if (!isJpgOrPng) {
           this.$message.error('You can only upload JPG file!');
         }
         const isLt2M = file.size / 1024 / 1024 < 2;
         if (!isLt2M) {
-          this.$message.error('Image must smaller than 2MB!');
+          this.$message.error('文件不能大于2MB!');
         }
         return isJpgOrPng && isLt2M;
+      },
+      // 处理时间格式
+      datepicker() {
+        this.form.birth = this.form.birth.format("YYYY-MM-DD")
       },
       onSubmit() {
         this.$refs.userruleForm.validate(valid => {
         if (valid) {
-          this.form.birth = this.form.birth.format("YYYY-MM-DD")
+          this.buttonloading = true
           UpUserData(this.form).then(res => {
             if (res.status === 200) {
               this.$message.success('更新成功！')
               this.getuserdata()
+              this.buttonloading = false
             } else {
+              this.buttonloading = false
               this.$message.error('更新失败！')
             }
           })
@@ -259,6 +274,7 @@
         this.$refs.ruleForm.resetFields();
       },
       handleOk() {
+        console.log(this.wdform);
         this.$refs.ruleForm.validate(valid => {
           if (valid) {
             console.log(this.wdform);

@@ -46,10 +46,15 @@
             <a-icon type="delete" />删除
           </a>
         </div>
-        <template slot="statusTitle">
-          <a-icon @click.native="onStatusTitleClick" type="info-circle" />
-        </template>
       </standard-table>
+      <a-pagination
+        style="margin-top: 15px;"
+        v-model="query.page"
+        :total="total"
+        show-size-changer
+        @showSizeChange="onShowSizeChange"
+        :show-total="total => `一共 ${total} 条`"
+        @change="pageonChange" />
     </div>
     <!-- 删除确认对话框 -->
     <a-modal
@@ -137,18 +142,6 @@ export default {
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
-    },
-    onStatusTitleClick() {
-      this.$message.info('你点击了状态栏表头')
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
-    },
     // 查询
     queryevents() {
       console.log(this.query);
@@ -178,9 +171,16 @@ export default {
     async user_onok() {
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteRoles(this.ids[i]).then(res => {
-          console.log(res);
-          })
+          if (res.status === 200) {
+            this.$message.success(`删除成功！`);
+          } else {
+            this.$message.error(`删除失败！`);
+          }  
+        })
       }
+      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+      this.query.page = this.query.page < 1 ? 1 : this.query.page
       this.gettabledata()
       this.ids = []
       this.dialogvisible = false
@@ -193,18 +193,17 @@ export default {
     showdeleConfirm(id) {
       this.ids.push(id)
       this.dialogvisible = true
-      // this.$confirm({
-      //   title: '是否删除所选项?',
-      //   content: '删除之后无法恢复！',
-      //   onOk() {
-      //     return new Promise((resolve, reject) => {
-      //       console.log(id);
-      //       setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-      //     }).catch(() => console.log('Oops errors!'));
-      //   },
-      //   onCancel() {},
-      // })
-    }
+    },
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
+    },
   }
 }
 </script>

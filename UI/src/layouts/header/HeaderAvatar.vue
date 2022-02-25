@@ -1,7 +1,7 @@
 <template>
   <a-dropdown>
     <div class="header-avatar" style="cursor: pointer">
-      <a-avatar class="avatar" size="small" shape="circle" :src="user.avatar"/>
+      <a-avatar class="avatar" size="large" shape="circle" :src="'http://192.168.50.49:8000/api/PersonnelManagement/users/v1/avatar/' + user.avatar"/>
       <span class="name">{{user.name}}</span>
     </div>
     <a-menu :class="['avatar-menu']" slot="overlay">
@@ -27,7 +27,13 @@ export default {
   computed: {
     ...mapGetters('account', ['user']),
   },
+    created () {
+      this.getuserdata()
+    },
   methods: {
+    getuserdata() {
+      console.log(this.user);
+    },
     logout() {
       logout()
       this.$router.push('/login')

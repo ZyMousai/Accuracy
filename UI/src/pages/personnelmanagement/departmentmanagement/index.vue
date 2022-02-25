@@ -40,13 +40,11 @@
                     :columns="columns"
                     :dataSource="dataSource"
                     :selectedRows.sync="selectedRows"
-                    @clear="onClear"
-                    @change="onChange"
                     :rowKey='record=>record.id'
+                    :loading="tableloading"
+                    :pagination="false"
+                    
             >
-                <div slot="description" slot-scope="{text}">
-                    {{text}}
-                </div>
                 <div slot="action" slot-scope="{record}">
                     <a @click="editdepartment(record.id)" style="margin-right: 8px">
                         <a-icon type="edit"/>
@@ -57,11 +55,15 @@
                         删除
                     </a>
                 </div>
-                <template slot="statusTitle">
-                    <a-icon @click.native="onStatusTitleClick" type="info-circle"/>
-                </template>
             </standard-table>
-
+            <a-pagination
+                style="margin-top: 15px;"
+                v-model="query.page"
+                :total="total"
+                show-size-changer
+                @showSizeChange="onShowSizeChange"
+                :show-total="total => `一共 ${total} 条`"
+                @change="pageonChange" />
             <!-- 删除确认对话框 -->
             <a-modal
                     title="您确定要删除吗？不可恢复噢！"
@@ -111,8 +113,12 @@
         data() {
             return {
                 query: {
+                    page: 1,
+                    page_size: 10,
                     department: ''
                 },
+                total: 0,
+                tableloading: false,
                 advanced: true,
                 columns: columns,
                 dataSource: dataSource,
@@ -129,37 +135,41 @@
         created() {
             this.gettabledata()
         },
+        // 监听路由变化
+        watch: {
+          $route: {
+            handler: function(val){
+              if (val.fullPath === '/personnelmanagement/departmentmanagement') {
+                this.gettabledata()
+              }
+            },
+            immediate: true
+          }
+        },
         methods: {
             // 获取表格数据
             gettabledata() {
+                this.tableloading = true
                 DepartmentDate(this.query).then(res => {
-                    var re_da = res.data.data;
-                    // 给予序号
-                    for (var i = 0; i < re_da.length; i++) {
-                        re_da[i]['create_time'] = re_da[i]['create_time'].split('T')[0];
-                        re_da[i]["index"] = i + 1
+                    if (res.status === 200) {
+                      this.dataSource = res.data.data
+                      this.total = res.data.total
+                      this.tableloading = false
+                      for (var i = 0; i < this.dataSource.length; i++) {
+                        this.dataSource[i]["index"] = i + 1
+                      }
+                    } else {
+                      this.tableloading = false
+                      this.$message.error(`获取数据失败！`);
                     }
-                    this.dataSource = re_da
-
                 })
             },
-
-
             toggleAdvanced() {
                 this.advanced = !this.advanced
             },
             remove() {
                 this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
                 this.selectedRows = []
-            },
-            onClear() {
-                this.$message.info('您清空了勾选的所有行')
-            },
-            onStatusTitleClick() {
-                this.$message.info('你点击了状态栏表头')
-            },
-            onChange() {
-                this.$message.info('表格状态改变了')
             },
             handleMenuClick(e) {
                 if (e.key === 'delete') {
@@ -169,9 +179,6 @@
             // 查询
             queryevents() {
                 this.gettabledata();
-
-
-                // console.log(this.query);
             },
             // 批量删除
             Batchdelete() {
@@ -180,44 +187,27 @@
                 for (let i = 0; i < this.selectedRows.length; i++) {
                     this.ids.push(this.selectedRows[i].id)
                 }
-
-
-                // console.log(this.selectedRows)
-                // this.showdeleConfirm(this.selectedRows)
-                // for (let i = 0; i < this.selectedRows.length; i++) {
-                //   this.ids.push(this.selectedRows[i].id)
-                // }
             },
-
-
             async onok() {
-                let is_logic_del = '0';
                 for (let i = 0; i < this.ids.length; i++) {
-                    await DeleteDepartment(this.ids[i], is_logic_del).then(res => {
-                        console.log(res);
+                    await DeleteDepartment(this.ids[i]).then(res => {
+                        if (res.status === 200) {
+                          this.$message.success(`删除成功！`);
+                        } else {
+                          this.$message.error(`删除失败！`);
+                        }  
                     })
                 }
+                const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+                this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+                this.query.page = this.query.page < 1 ? 1 : this.query.page
                 this.gettabledata();
                 this.ids = [];
                 this.dialogvisible = false
             },
             async onno() {
-                // let is_logic_del = '0';
-                // for (let i = 0; i < this.ids.length; i++) {
-                //     await DeleteDepartment(this.ids[i], is_logic_del).then(res => {
-                //         console.log(res);
-                //     })
-                // }
-                // this.gettabledata();
-                // this.ids = [];
                 this.dialogvisible = false
             },
-
-
-
-
-
-
             // 重置查询表单
             resettingqueryform() {
                 for (var key in this.query) {
@@ -236,21 +226,17 @@
             showdeleConfirm(id) {
                 this.ids.push(id);
                 this.dialogvisible = true
-
-
-                // this.$confirm({
-                //     title: '是否删除所选项?',
-                //     content: '删除之后无法恢复！',
-                //     onOk() {
-                //         return new Promise((resolve, reject) => {
-                //             console.log(id);
-                //             setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-                //         }).catch(() => console.log('Oops errors!'));
-                //     },
-                //     onCancel() {
-                //     },
-                // })
-            }
+            },
+            // 分页配置
+            onShowSizeChange(current, pageSize) {
+              this.query.page = 1
+              this.query.page_size = pageSize
+              this.gettabledata()
+            },
+            pageonChange(pageNumber) {
+              this.query.page = pageNumber
+              this.gettabledata()
+            },
         }
     }
 </script>
