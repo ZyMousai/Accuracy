@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.AccountManagement.Account.DataValidation import SearchAccount, AddAccount, UpdateAccount
 from sql_models.AccountManagement.OrmAccountManagement import Account
-from sql_models.PersonnelManagement.OrmPersonnelManagement import RoleAccountMapping
+from sql_models.PersonnelManagement.OrmPersonnelManagement import *
 from sql_models.db_config import db_session
 from util.crypto import encrypt, decrypt
 
@@ -37,9 +37,28 @@ async def get_account(info: SearchAccount = Depends(SearchAccount),
 async def get_account_one(account_id: int,
                           dbs: AsyncSession = Depends(db_session)):
     result = await Account.get_one_detail(dbs, account_id)
+    filter_condition = [
+        ("account_id", f"=={result.id}", result.id)
+    ]
+    # noinspection PyBroadException
+    try:
+        role_id = (await RoleAccountMapping.get_one(dbs, *filter_condition)).role_id
+    except Exception as e:
+        print(e)
+        role_id = "unbound"
     if not result:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
-    return {"data": result}
+    # 对account数据进行重新归纳赋值
+    new_result = {
+        "role_id": role_id,
+        "account": result.account,
+        "is_delete": result.is_delete,
+        "id": result.id,
+        "password": result.password,
+        "remark": result.remark,
+        "platform": result.platform,
+    }
+    return {"data": new_result}
 
 
 @account_router.post("/")

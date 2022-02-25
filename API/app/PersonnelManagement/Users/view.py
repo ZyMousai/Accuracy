@@ -7,11 +7,13 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 import os
+from sqlalchemy import select
+
 from app.PersonnelManagement.Users.permissions import Permissions
 from config import globals_config
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
-from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles, RoleUserMapping, DepartmentUserMapping
+from sql_models.PersonnelManagement.OrmPersonnelManagement import *
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 
@@ -56,8 +58,50 @@ async def get_user_one(user_id: Optional[int] = Query(None), dbs: AsyncSession =
     result = await Users.get_one_detail(dbs, user_id)
     if not result:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
-    users_roles = await Roles.get_role_user(dbs, user_id)
-    response_json = {"data": result}
+    # 获取用户的角色
+    users_role = (await Roles.get_role_user(dbs, user_id)).role
+    # 获取department_id创建的条件
+    args = [
+        ('user_id', f'=={user_id}', user_id),
+        ('is_delete', '==0', 0),
+    ]
+    # filter_condition = list()
+    # for x in args:
+    #     if x[2] is not None:
+    #         filter_condition.append(eval(f'DepartmentUserMapping.{x[0]}{x[1]}'))
+    # _orm = select(DepartmentUserMapping.department_id).where(*filter_condition)
+    # # noinspection PyBroadException
+    # try:
+    #     department_id = (await dbs.execute(_orm)).first()['department_id']
+    # except Exception as e:
+    #     print(e)
+    #     department_id = 'no department'
+
+    try:
+        department_id = (await DepartmentUserMapping.get_one(dbs, *args)).department_id
+    except Exception as e:
+        print(e)
+        department_id = 'no department'
+
+    # 对user数据进行重新归纳赋值
+    new_result = {
+        "password": result.password,
+        "id": result.id,
+        "birth": result.birth,
+        "phone": result.phone,
+        "account": result.account,
+        "address": result.address,
+        "gender": result.gender,
+        "update_password_time": result.update_password_time,
+        "avatar": result.avatar,
+        "is_delete": result.is_delete,
+        "entry_time": result.entry_time,
+        "creator": result.creator,
+        "name": result.name,
+        "users_role": users_role,
+        "department_id": department_id,
+    }
+    response_json = {"data": new_result}
     return response_json
 
 
@@ -151,7 +195,7 @@ async def authenticate(dbs, username: str, password: str):
 
 
 @users_router.get('/avatar/{avatar_name}')
-async def get_avatar(avatar_name: str):
+async def get_avatar(avatar_name: str = Query(...)):
     avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/', avatar_name)
     if not os.path.exists(avatar_path):
         raise HTTPException(status_code=404, detail="image not found !")
@@ -161,7 +205,7 @@ async def get_avatar(avatar_name: str):
 
 
 @users_router.post('/upload_avatar')
-async def upload_avatar(account: str, user_id: int, file: UploadFile = File(...),
+async def upload_avatar(user_id: int = Query(...), account: str = Query(...), file: UploadFile = File(...),
                         dbs: AsyncSession = Depends(db_session)):
     verify_pic_type = ["jpg", "png", "gif"]
     pic_type = file.filename.split(".")[1]
@@ -170,22 +214,21 @@ async def upload_avatar(account: str, user_id: int, file: UploadFile = File(...)
 
     content = await file.read()
     avatar_path = os.path.join(globals_config.basedir, 'app/PersonnelManagement/Users/Avatar/')
-    img_name = str(hash(account + str(file.filename)))
-    avatar_path = os.path.join(avatar_path, img_name + pic_type)
-    if not os.path.exists(avatar_path):
-        raise HTTPException(status_code=404, detail="image not found !")
+    img_name = str(hash(account + str(user_id))) + '.' + pic_type
+    avatar_path = os.path.join(avatar_path, img_name)
 
     with open(avatar_path, "wb") as f:
         f.write(content)
 
-    info = {"id": user_id, "avatar": img_name + ".jpg"}
+    info = {"id": user_id, "avatar": img_name}
 
     result = await Users.update_data(dbs, info, is_delete=0)
     if not result:
         os.remove(avatar_path)
         raise HTTPException(status_code=403, detail="avatar upload fail!")
 
-    return {"code": 200, "msg": "上传成功! img_name:" + img_name}
+    # return {"code": 200, "msg": "上传成功! img_name:" + img_name}
+    return {"data": {"code": 200, "msg": "上传成功", "image_name": img_name}}
 
 
 @users_router.post('/login')
@@ -204,6 +247,28 @@ async def login(dbs: AsyncSession = Depends(db_session),
         raise HTTPException(status_code=401, detail='Account password verification failed.')
 
     role: Roles = await Roles.get_role_user(dbs, user.id)
+    # 获取department_id创建的条件
+    args = [
+        ('user_id', f'=={user.id}', user.id),
+        ('is_delete', '==0', 0),
+    ]
+    # filter_condition = list()
+    # for x in args:
+    #     if x[2] is not None:
+    #         filter_condition.append(eval(f'DepartmentUserMapping.{x[0]}{x[1]}'))
+    # _orm = select(DepartmentUserMapping.department_id).where(*filter_condition)
+    # # noinspection PyBroadException
+    # try:
+    #     department_id = (await dbs.execute(_orm)).first()['department_id']
+    # except Exception as e:
+    #     print(e)
+    #     department_id = 'no department'
+
+    try:
+        department_id = (await DepartmentUserMapping.get_one(dbs, *args)).department_id
+    except Exception as e:
+        print(e)
+        department_id = 'no department'
 
     # 使用user_id生成jwt token
     data = {'user_id': user.id, "account": user.account, "name": user.name, "role_id": role.id, "role": role.role}
@@ -216,4 +281,4 @@ async def login(dbs: AsyncSession = Depends(db_session),
     # print("加入完成")
     # await request.app.state.redis.get(user.email)
     # noinspection PyArgumentList
-    return {"access_token": token, "token_type": "bearer", "user": user}
+    return {"access_token": token, "token_type": "bearer", "user": user, "department_id": department_id}

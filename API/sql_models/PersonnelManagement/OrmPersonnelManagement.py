@@ -6,6 +6,8 @@ from sql_models.db_config import BaseType, PBaseModel
 from sqlalchemy import select
 
 
+# outerjoin查询仅返回主表内容
+
 class Users(PBaseModel):
     __tablename__ = 'users'
     account = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False, unique=True)  # 用户名
@@ -52,6 +54,12 @@ class Roles(PBaseModel):
 
     @classmethod
     async def get_role_user(cls, dbs, user_id):
+        """
+        返回的字段仅含有主表的
+        :param dbs: 依赖数据库
+        :param user_id: 对应的user的id
+        :return:
+        """
         _orm = select(cls).outerjoin(RoleUserMapping,
                                      cls.id == RoleUserMapping.role_id).where(cls.is_delete == 0,
                                                                               RoleUserMapping.user_id == user_id)
@@ -134,6 +142,13 @@ class Departments(PBaseModel):
         _orm = select(cls).outerjoin(DepartmentRoleMapping,
                                      cls.id == DepartmentRoleMapping.department_id).where(cls.is_delete == 0,
                                                                                           DepartmentRoleMapping.role_id == role_id)
+        result = (await dbs.execute(_orm)).scalars().first()
+        return result
+
+    @classmethod
+    async def get_department_user(cls, dbs, user_id):
+        _orm = select(cls).outerjoin(DepartmentUserMapping, cls.id == DepartmentUserMapping.department_id) \
+            .where(cls.is_delete == 0, DepartmentUserMapping.user_id == user_id)
         result = (await dbs.execute(_orm)).scalars().first()
         return result
 

@@ -105,7 +105,7 @@
         </div>
         <div slot="operation" slot-scope="record">
           <a slot="operation" @click="edit(record)">编辑</a>
-          <a slot="operation" style="margin-left: 5px;" >删除</a>
+          <a slot="operation" style="margin-left: 5px;" @click="table_delete(record.id)">删除</a>
         </div>
         <a-table
           slot="expandedRowRender"
@@ -115,8 +115,18 @@
           :title="onHeaderCell"
           :rowKey='record=>record.id'
         >
+          <div slot="secondary_consumption" slot-scope="record">
+            <a-switch slot="secondary_consumption" :loading="record.secondary_consumption_loading" default-checked
+                      :checked="record.secondary_consumption ? true : false"
+                      @change="
+                        record.secondary_consumption_loading=true;
+                        secondary_consumption_change(record.secondary_consumption, record.id);
+                      "
+            />
+          </div>
           <div slot="inneroperation" class="table-operation" slot-scope="record">
-            <a style="margin-left: 5px;" @click="innerdelete(record)">删除</a>
+            <a slot="inneroperation" @click="inneredit(record)">编辑</a>
+            <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record)">删除</a>
           </div>
         </a-table>
       </a-table>
@@ -144,6 +154,42 @@
                 <a-input v-model="form.card_number" />
               </a-form-model-item>
             </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="valid_period" label="有效期" prop="creator">
+                <a-input v-model="form.valid_period" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="cvv" label="cvv" prop="creator">
+                <a-input v-model="form.cvv" />
+              </a-form-model-item>
+            </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="face_value" label="面值" prop="creator">
+                <a-input v-model="form.face_value" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
+                <a-input v-model="form.name" />
+              </a-form-model-item>
+            </a-col>
+            <a-col :span="10">
+              <a-form-model-item ref="note" label="备注" prop="creator">
+                <a-input v-model="form.note" />
+              </a-form-model-item>
+            </a-col>
+          </a-row>
+          <a-row :gutter="16">
+            <a-col :span="10">
+              <a-form-model-item ref="platform" label="平台" prop="creator">
+                <a-input v-model="form.platform" />
+              </a-form-model-item>
+            </a-col>
           </a-row>
         </a-form-model>
       </template>
@@ -156,7 +202,7 @@
 
 <script>
 import {CreditCardListData} from '@/services/statisticscardinformation'
-import {PatchCardListData} from "../../../services/statisticscardinformation";
+import {PatchCardListData, PatchTaskListData} from "../../../services/statisticscardinformation";
 const columns = [
   { title: '卡号', dataIndex: 'card_number', key: 'card_number' },
   { title: '有效期', dataIndex: 'valid_period', key: 'valid_period' },
@@ -164,8 +210,8 @@ const columns = [
   { title: '面值', dataIndex: 'face_value', key: 'face_value' },
   { title: '余额', dataIndex: 'balance', key: 'balance' },
   { title: '卡姓名地址', dataIndex: 'name', key: 'name' },
-  // { title: '备注', dataIndex: 'note', key: 'note' },
-  { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
+  { title: '备注', dataIndex: 'note', key: 'note' },
+  // { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
   { title: '平台', dataIndex: 'platform', key: 'platform' },
   { title: '卡状态', key: 'cardstatus', scopedSlots: { customRender: 'cardstatus' } },
   { title: '保留', key: 'retain_', scopedSlots: { customRender: 'retain_' } },
@@ -177,14 +223,13 @@ const data = [];
 
 const innerColumns = [
   { title: 'uuid', dataIndex: 'uid', key: 'uid' },
-  { title: '账号', dataIndex: 'account_id', key: 'account_id', scopedSlots: { customRender: 'account_id' } },
   { title: '任务', dataIndex: 'task', key: 'task', scopedSlots: { customRender: 'task' } },
   { title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: { customRender: 'commission' } },
   { title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: { customRender: 'consume' } },
   { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
-  { title: '二次消费', dataIndex: 'secondary_consumption', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
+  { title: '二次消费', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
   { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
-  {title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
+  { title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
 ];
 
 const innerData = [];
@@ -205,6 +250,7 @@ export default {
         uploaddate: ''
       },
       form: {
+        id: '',
         card_number: '',
         valid_period: '',
         cvv: '',
@@ -258,6 +304,7 @@ export default {
           re_da[i]['create_time'] = re_da[i]['create_time'].split(' ')[0];
           re_da[i]["index"] = i + 1
           re_da[i]["card_status_loading"] = false
+          re_da[i]["secondary_consumption_loading"] = false
           re_da[i]["retain_loading"] = false
           re_da[i]["note_editable"] = false
         }
@@ -292,6 +339,13 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
+          PatchCardListData(this.form).then(res => {
+            console.log("成功")
+            console.log(res)
+            this.loading = false;
+            this.gettabledata()
+            this.visible = false;
+          })
           console.log('ok');
         }
       })
@@ -316,7 +370,7 @@ export default {
         onCancel() {},
       })
     },
-    // 修改卡状态
+    // 修改主表卡状态
     card_status_change(card_status, id) {
       console.log(id);
       // id.loadingchanr = true
@@ -326,13 +380,23 @@ export default {
         this.gettabledata()
       })
     },
-    // 修改是否保留
-    retain_change(retain, id) {
-      console.log(retain)
-      PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
+    // 修改子表二次消费状态
+    secondary_consumption_change(secondary_consumption, id) {
+      console.log(id);
+      PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
         console.log("成功")
         console.log(res)
         this.gettabledata()
+      })
+    },
+    // 修改主表是否保留
+    retain_change(retain, id) {
+      console.log(retain)
+      PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
+        // console.log("成功")
+        console.log(res)
+        // this.gettabledata()
+        //此处未完成，需要刷新子表，或重新展开
       })
     },
     // 上传文件
@@ -348,7 +412,16 @@ export default {
     },
     edit (data){
       console.log(data)
+      this.form.id = data.id
+      this.form.card_number = data.card_number
+      this.form.valid_period = data.valid_period
+      this.form.cvv = data.cvv
+      this.form.face_value = data.face_value
+      this.form.name = data.name
+      this.form.platform = data.platform
+      this.form.note = data.note
       this.visible = true;
+
     },
     // 子表添加按钮
     onHeaderCell() {
@@ -371,17 +444,17 @@ export default {
       }
     },
     inneredit(id) {
-      const newData = [...this.innerData];
-      console.log(newData);
+      // const newData = [...this.innerData];
+      // console.log(newData);
       console.log(id);
-      const target = newData.filter(item => id === item.id)[0];
-      console.log(target);
-      this.editingKey = id;
-      if (target) {
-        target.editable = true;
-        this.innerData = newData;
-      }
-      console.log(this.innerData);
+      // const target = newData.filter(item => id === item.id)[0];
+      // console.log(target);
+      // this.editingKey = id;
+      // if (target) {
+      //   target.editable = true;
+      //   this.innerData = newData;
+      // }
+      // console.log(this.innerData);
     },
     innersave(id) {
       const newData = [...this.innerData];
@@ -423,7 +496,11 @@ export default {
     // 子表删除
     innerdelete(id) {
       console.log(id);
-    }
+    },
+    // 主表删除
+    table_delete(id) {
+      console.log(id);
+    },
   }
 }
 </script>

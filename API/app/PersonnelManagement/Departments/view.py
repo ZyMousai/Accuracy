@@ -125,7 +125,9 @@ async def get_department_user(dbs: AsyncSession = Depends(db_session), departmen
 @departments_router.post('/DepartmentUserMapping')
 async def add_user_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
     """增加用户关联 根据部门"""
-    uid_list, exist_list = await DepartmentUserMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    # uid_list, exist_list = await DepartmentUserMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    uid_list, exist_list = await DepartmentUserMapping.filter_add_data_many(dbs, "department_id", info.department_id,
+                                                                            "user_id", info.ids)
     response_json = {"data": uid_list, "exist_data": exist_list}
     return response_json
 
@@ -161,7 +163,9 @@ async def get_department_role(dbs: AsyncSession = Depends(db_session), departmen
 @departments_router.post('/DepartmentRoleMapping')
 async def add_role_department(info: DepartmentAbout, dbs: AsyncSession = Depends(db_session)):
     """增加角色关联 根据部门"""
-    uid_list, exist_list = await DepartmentRoleMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    # uid_list, exist_list = await DepartmentRoleMapping.filter_add_data_many_(dbs, info.department_id, info.ids)
+    uid_list, exist_list = await DepartmentRoleMapping.filter_add_data_many(dbs, "department_id", info.department_id,
+                                                                            "role_id", info.ids)
     response_json = {"data": uid_list, "exist_data": exist_list}
     return response_json
 
