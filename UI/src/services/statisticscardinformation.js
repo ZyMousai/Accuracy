@@ -40,3 +40,15 @@ export async function CreditTaskListData(query) {
 export async function PatchTaskListData(query) {
     return request(GetTaskListData, "PATCH", query)
 }
+
+/**
+ * 统计卡页面
+ * 删除卡号数据
+ * @param id  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function table_delete(id) {
+    return request(GetCreditCardListData, "DELETE", {
+        ids: id
+    })
+}
