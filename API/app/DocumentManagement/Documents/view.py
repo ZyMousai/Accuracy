@@ -73,12 +73,16 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
     return response_json
 
 
-@documents_router.get('/{fileid}')
+@documents_router.get('/{file_id}')
 async def get_doc_one(file_id: int = Path(..., description='文件id', ge=1), dbs: AsyncSession = Depends(db_session)):
     """
     根据file的id来获取对应数据
     """
-    return await DocumentManagement.get_one_detail(dbs, file_id)
+    result = await DocumentManagement.get_one_detail(dbs, file_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Get non-existent resources.")
+    response_json = {"data": result}
+    return response_json
 
 
 # @documents_router.get('/search')
@@ -97,6 +101,12 @@ async def delete_doc(ids: Optional[List[int]] = Query(...),
     逻辑删除和真实删除
     """
     if is_logic_del:
+        # 更新逻辑删除的时间
+        update_data_dict = {
+            "id": ids[0],
+            "updated_time": datetime.now()
+        }
+        await DocumentManagement.update_data(dbs, update_data_dict, is_delete=0)
         return await DocumentManagement.delete_data_logic(dbs, ids)
     else:
         for doc_id in ids:
