@@ -217,7 +217,7 @@
         </template>
         <template>
           <a-form-model
-                  ref="ruleForm"
+                  ref="innerruleForm"
                   :model="innerform"
                   :rules="editrules"
                   :label-col="{ span: 4 }"
@@ -230,10 +230,10 @@
 <!--                </a-form-model-item>-->
 <!--              </a-col>-->
               <a-col :span="10">
-                <a-select mode="tags" label="uuid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
+                <a-select mode="tags" v-model="innerform.uid" ref="uid" label="uuid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
 <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
-                  <a-select-option v-for="(k,v) in uuidSelect" :key="v">
-                    {{ k }}
+                  <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
+                    {{ item.uid }}
                   </a-select-option>
                 </a-select>
               </a-col>
@@ -295,10 +295,10 @@
 <script>
     import {CreditCardListData} from '@/services/statisticscardinformation'
     import {
-        PatchCardListData,
-        PatchTaskListData,
-        table_delete,
-        innerdelete
+      PatchCardListData,
+      PatchTaskListData,
+      table_delete,
+      innerdelete, CardAccountListData
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -360,12 +360,14 @@
         innerform: {
           id: '',
           uid: '',
+          account_id: '',
+          // card_id: '',
           task: '',
           commission: '',
           consume: '',
           user: '',
         },
-        uuidSelect: {"1": "123", "2": "222", "3": "333"},
+        uuidSelect: {},
         advanced: true,
         selectedRows: [],
         tablename: '',
@@ -475,16 +477,26 @@
       },
       // 提交编辑表单
       innerhandleOk() {
-        this.$refs.ruleForm.validate(valid => {
+        this.$refs.innerruleForm.validate(valid => {
           if (valid) {
             this.innerloading = true;
-            PatchTaskListData(this.innerform).then(res => {
-              console.log("成功")
-              console.log(res)
+            console.log(this.innerform)
+            if (this.innerform.uid.indexOf("uuid") != -1){
+              console.log("uuid")
+              console.log(this.innerform.uid)
+              console.log("uuid")
+            }else{
+              console.log("uuid+++++")
+              console.log(this.innerform.uid)
+              console.log("uuid+++++")
+            }
+            // PatchTaskListData(this.innerform).then(res => {
+            //   console.log("成功")
+            //   console.log(res)
               this.innerloading = false;
-              this.gettabledata()
-              this.innervisible = false;
-            })
+            //   this.gettabledata()
+            //   this.innervisible = false;
+            // })
             console.log('ok');
           }
         })
@@ -492,7 +504,7 @@
       // 关闭编辑表单
       innerhandleCancel() {
         this.innervisible = false;
-        this.$refs.ruleForm.resetFields();
+        this.$refs.innerruleForm.resetFields();
         console.log('ok');
       },
       // 删除对话框
@@ -520,7 +532,12 @@
         })
       },
       uuidclick(){
-
+        // uuidSelect
+        CardAccountListData().then(res => {
+          var re_da = res.data.data;
+          this.uuidSelect = re_da
+          console.log(res)
+        })
       },
       // 修改子表二次消费状态
       secondary_consumption_change(secondary_consumption, id) {
@@ -554,6 +571,8 @@
       },
       selecthandleChange(data){
         console.log(data)
+        this.innerform.uid = data[0]
+
       },
       edit (data){
         console.log(data)
@@ -603,6 +622,8 @@
         this.innervisible = true;
         this.innerform.id = data.id
         this.innerform.uid = data.uid
+        this.innerform.account_id = data.account_id
+        // this.innerform.card_id = data.card_id
         this.innerform.task = data.task
         this.innerform.commission = data.commission
         this.innerform.consume = data.consume
