@@ -659,17 +659,17 @@ async def delete_task(ids: List[int] = Query(...), dbs: AsyncSession = Depends(d
 @clerk_card_router.post('/task')
 async def create_task(info: AddTask, dbs: AsyncSession = Depends(db_session)):
     """
-    创建任务
+    创建任务，任务名可以重复，只要绑定对应的Account_id就可以，Account表对应的是uuid
     :param info:
     :param dbs:
     :return:
     """
-    filter_condition = [
-        ('task', f'=="{info.task}"', info.task)
-    ]
-    result = await TbTask.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate Task.")
+    # filter_condition = [
+    #     ('task', f'=="{info.task}"', info.task)
+    # ]
+    # result = await TbTask.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate Task.")
     result = await TbTask.add_data(dbs, info)
     response_json = {"data": result}
     return response_json
