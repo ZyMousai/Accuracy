@@ -27,4 +27,6 @@ module.exports = {
     Accountmanagement: `${BASE_URL}/AccountManagement/account/v1`,
     DepartmentRoleMapping: `${BASE_URL}/PersonnelManagement/departments/v1/DepartmentRoleMapping`,
     DepartmentUserMapping: `${BASE_URL}/PersonnelManagement/departments/v1/DepartmentUserMapping`,
+    RoleMenu: `${BASE_URL}/PersonnelManagement/roles/v1/RoleMenu`,
+    RolePermission: `${BASE_URL}/PersonnelManagement/roles/v1/RolePermission`,
 }
