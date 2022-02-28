@@ -696,3 +696,43 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
             raise HTTPException(status_code=403, detail="Task does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
+
+
+@clerk_card_router.get('/statistics/{uid}')
+async def get_statistics(uid: str = Path(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额"),
+                         dbs: AsyncSession = Depends(db_session)):
+    """
+        统计对应的uid的消耗金额数量，收益总量
+    param uid:
+
+        tb_Account表的uid值，是对应着每个任务，任务在创建的时候名字可以重复，但是uid不重复
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        对应uid的消耗金额和收益金额
+
+    """
+    filter_condition = [
+        ('uid', f'=="{uid}"', uid),
+        ('is_delete', '==0', 0)
+    ]
+    single_account = await TbAccount.get_one(dbs, *filter_condition)
+    if single_account:
+        # 获得uid对应的account_id,用于在tb_Task表里查询消耗额
+        account_id = single_account.id
+    else:
+        raise HTTPException(status_code=404, detail="Get non-existent resources.")
+    consume_commission_list = await TbTask.get_task_account_consume_commission(dbs, account_id)
+    total_consume = 0
+    total_commission = 0
+    for consume_commission in consume_commission_list:
+        total_consume += consume_commission['consume']
+        total_commission += consume_commission['commission']
+    return {
+        "total_consume": total_consume,
+        "total_commission": total_commission,
+    }

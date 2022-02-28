@@ -61,6 +61,7 @@ class TbTask(PBaseModel):
 
     card = relationship('TbCard')
     account = relationship('TbAccount')
+
     # alliance = relationship('TbAlliance')
 
     @classmethod
@@ -68,6 +69,19 @@ class TbTask(PBaseModel):
         _orm = select(cls).outerjoin(TbAccount, cls.uid == uid). \
             where(cls.is_delete == 0)
         result = (await dbs.execute(_orm)).scalars().all()
+        return result
+
+    @classmethod
+    async def get_task_account_consume_commission(cls, dbs, account_id):
+        """
+        获取对应account_id的任务的消耗和收益
+        :param dbs: 数据库依赖
+        :param account_id:  对应的account_id
+        :return:
+        """
+        _orm = select(cls.consume, cls.commission).where(cls.is_delete == 0, cls.account_id == account_id)
+        # 注意这里没有加scalars()，才能得到所有的查询数据
+        result = (await dbs.execute(_orm)).all()
         return result
 
 
