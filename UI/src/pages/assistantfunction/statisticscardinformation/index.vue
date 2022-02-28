@@ -568,7 +568,7 @@
 
       onno() {
         this.ids = [];
-        this.dialogvisible = false
+        this.dialogvisibleson = false
       },
     }
   }
