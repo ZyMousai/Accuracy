@@ -54,7 +54,6 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             ('is_delete', '==0', 0),
         ]
         account_res = await TbAccount.get_one(dbs, *args)
-
         new_task_dict = {
             "id": task.id,
             "uid": account_res.uid,
@@ -73,7 +72,6 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             task_dict[task_card_id] = [new_task_dict]
         else:
             task_dict[task_card_id].append(new_task_dict)
-
     # 对卡数据进行重新归纳赋值
     new_result = []
     task_di_keys = task_dict.keys()
@@ -93,20 +91,20 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             "create_time": res.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             "retain": res.retain,
         }
-
+        # 定义额外的任务的参数
         if res_id in task_di_keys:
             new_res["task_set"] = task_dict[res_id]
         else:
             new_res["task_set"] = []
         new_result.append(new_res)
         # 添加余额的逻辑
+        total_consume = 0
+        # 如果对应的卡有任务的话，进行每个任务的余额遍历和添加
         if new_res["task_set"]:
-            consume = new_res["task_set"][0]["consume"]
-        else:
-            consume = 0
-        balance = res.face_value - consume
+            for single_task in task_dict[res_id]:
+                total_consume += single_task['consume']
+        balance = res.face_value - total_consume
         new_res['balance'] = balance
-
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -661,17 +659,17 @@ async def delete_task(ids: List[int] = Query(...), dbs: AsyncSession = Depends(d
 @clerk_card_router.post('/task')
 async def create_task(info: AddTask, dbs: AsyncSession = Depends(db_session)):
     """
-    创建任务
+    创建任务，任务名可以重复，只要绑定对应的Account_id就可以，Account表对应的是uuid
     :param info:
     :param dbs:
     :return:
     """
-    filter_condition = [
-        ('task', f'=="{info.task}"', info.task)
-    ]
-    result = await TbTask.get_one(dbs, *filter_condition)
-    if result:
-        raise HTTPException(status_code=403, detail="Duplicate Task.")
+    # filter_condition = [
+    #     ('task', f'=="{info.task}"', info.task)
+    # ]
+    # result = await TbTask.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate Task.")
     result = await TbTask.add_data(dbs, info)
     response_json = {"data": result}
     return response_json
@@ -698,3 +696,43 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
             raise HTTPException(status_code=403, detail="Task does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
+
+
+@clerk_card_router.get('/statistics/{uid}')
+async def get_statistics(uid: str = Path(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额"),
+                         dbs: AsyncSession = Depends(db_session)):
+    """
+        统计对应的uid的消耗金额数量，收益总量
+    param uid:
+
+        tb_Account表的uid值，是对应着每个任务，任务在创建的时候名字可以重复，但是uid不重复
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        对应uid的消耗金额和收益金额
+
+    """
+    filter_condition = [
+        ('uid', f'=="{uid}"', uid),
+        ('is_delete', '==0', 0)
+    ]
+    single_account = await TbAccount.get_one(dbs, *filter_condition)
+    if single_account:
+        # 获得uid对应的account_id,用于在tb_Task表里查询消耗额
+        account_id = single_account.id
+    else:
+        raise HTTPException(status_code=404, detail="Get non-existent resources.")
+    consume_commission_list = await TbTask.get_task_account_consume_commission(dbs, account_id)
+    total_consume = 0
+    total_commission = 0
+    for consume_commission in consume_commission_list:
+        total_consume += consume_commission['consume']
+        total_commission += consume_commission['commission']
+    return {
+        "total_consume": total_consume,
+        "total_commission": total_commission,
+    }

@@ -3,6 +3,7 @@ import os
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from config import globals_config
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
@@ -21,9 +22,9 @@ async def query_parm(filename: Optional[str] = None, start_time: Optional[str] =
             "user_name": user_name}
 
 
-@recycle_router.get("/123")
-async def read_root():
-    return {"Hello": "World"}
+# @recycle_router.get("/123")
+# async def read_root():
+#     return {"Hello": "World"}
 
 
 # @documents_router.get('/search')
@@ -47,7 +48,20 @@ async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocum
         ("created_time", f'<"{query.end_time}"', query.end_time),
         ("is_delete", '==1', 1),
     ]
-
+    first_result = await DocumentManagement.get_all(dbs, *filter_condition)
+    # 要清除的文件
+    clear_list = []
+    for res in first_result:
+        # 超过7天的回收站文件直接清除
+        remain_hours = str((datetime.now() - res.updated_time)).split(":")[0]
+        # noinspection PyBroadException
+        try:
+            if int(remain_hours) >= 168:
+                clear_list.append(res.id)
+        except Exception as e:
+            if "days" in remain_hours:
+                clear_list.append(res.id)
+    await DocumentManagement.delete_data(dbs, clear_list)
     result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
                                                                              *filter_condition)
     # 对文档数据进行重新归纳赋值
@@ -58,7 +72,7 @@ async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocum
             "filename": res.filename,
             "id": res.id,
             "user_id": res.user_id,
-            "is_delete": False,
+            "is_delete": res.is_delete,
             "created_time": res.created_time.strftime("%Y-%m-%d"),
             "file_size": res.file_size,
             "updated_time": res.updated_time,
@@ -66,7 +80,6 @@ async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocum
             "uploader_name": uploader_name,
         }
         new_result.append(new_res)
-
     response_json = {"total": count,
                      "page": query.page,
                      "page_size": query.page_size,
