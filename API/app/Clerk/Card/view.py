@@ -54,7 +54,6 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             ('is_delete', '==0', 0),
         ]
         account_res = await TbAccount.get_one(dbs, *args)
-
         new_task_dict = {
             "id": task.id,
             "uid": account_res.uid,
@@ -73,7 +72,6 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             task_dict[task_card_id] = [new_task_dict]
         else:
             task_dict[task_card_id].append(new_task_dict)
-
     # 对卡数据进行重新归纳赋值
     new_result = []
     task_di_keys = task_dict.keys()
@@ -93,20 +91,20 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
             "create_time": res.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             "retain": res.retain,
         }
-
+        # 定义额外的任务的参数
         if res_id in task_di_keys:
             new_res["task_set"] = task_dict[res_id]
         else:
             new_res["task_set"] = []
         new_result.append(new_res)
         # 添加余额的逻辑
+        total_consume = 0
+        # 如果对应的卡有任务的话，进行每个任务的余额遍历和添加
         if new_res["task_set"]:
-            consume = new_res["task_set"][0]["consume"]
-        else:
-            consume = 0
-        balance = res.face_value - consume
+            for single_task in task_dict[res_id]:
+                total_consume += single_task['consume']
+        balance = res.face_value - total_consume
         new_res['balance'] = balance
-
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
