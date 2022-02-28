@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -61,6 +61,40 @@ export async function table_delete(id) {
  */
 export async function innerdelete(id) {
     return request(GetTaskListData, "DELETE", {
+        ids: id
+    })
+}
+
+
+/**
+ * 统计卡页面
+ * 获取账号列表
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function CardAccountListData(query) {
+    return request(CardAccount, METHOD.GET, query)
+}
+
+/**
+ * 统计卡页面
+ * 添加账号列表
+ * @param form  添加请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddCardAccount(form) {
+    return request(CardAccount, METHOD.POST, form)
+}
+
+
+/**
+ * 统计卡页面
+ * 删除账号列表
+ * @param id  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function CardAccountdelete(id) {
+    return request(CardAccount, "DELETE", {
         ids: id
     })
 }
