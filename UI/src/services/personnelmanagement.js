@@ -1,4 +1,4 @@
-import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping, RoleMenu, RolePermission } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -40,6 +40,7 @@ export async function UsersAdd(query) {
 export async function UsersEdit(form) {
     return request(USERS, 'PATCH', form)
 }
+
 /**
  * 删除用户
  * @param id  查新请求参数
@@ -59,6 +60,45 @@ export async function DeleteUsers(id) {
  */
 export async function RolesDate(query) {
     return request(ROLES, METHOD.GET, query)
+}
+
+/**
+ * 角色页面
+ * 增加角色
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddRole(from) {
+    return request(ROLES, METHOD.POST, from)
+}
+
+/**
+ * 角色页面
+ * 添加角色菜单
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddRoleMenu(from) {
+    return request(RoleMenu, METHOD.POST, from)
+}
+
+/**
+ * 角色页面
+ * 添加角色权限
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddRolePermission(from) {
+    return request(RolePermission, METHOD.POST, from)
+}
+
+/**
+ * 角色添加修改页面
+ * 获取角色对应的菜单
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetRoleMenu() {
+    return request(RoleMenu, METHOD.GET, '')
 }
 
 /**
