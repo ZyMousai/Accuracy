@@ -6,50 +6,28 @@
                     <a-row>
                         <a-col :md="8" :sm="24">
                             <a-form-item
-                                    label="文件名"
+                                    label="卡号查询"
                                     :labelCol="{span: 5}"
                                     :wrapperCol="{span: 18, offset: 1}"
                             >
-                                <a-input v-model="query.filename" placeholder="请输入"/>
+                                <a-input v-model="query.card_number" placeholder="请输入卡号"/>
                             </a-form-item>
                         </a-col>
+
                         <a-col :md="8" :sm="24">
                             <a-form-item
-                                    label="上传用户"
+                                    label="平台查询"
                                     :labelCol="{span: 5}"
                                     :wrapperCol="{span: 18, offset: 1}"
                             >
-                                <a-input v-model="query.uploadusers" style="width: 100%" placeholder="请输入"/>
+                                <a-input v-model="query.platform" placeholder="请输入平台"/>
                             </a-form-item>
                         </a-col>
-                        <a-col :md="8" :sm="24">
-                            <a-form-item
-                                    label="部门选择"
-                                    :labelCol="{span: 5}"
-                                    :wrapperCol="{span: 18, offset: 1}"
-                            >
-                                <a-select v-model="query.department" placeholder="请选择">
-                                    <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                                        {{item}}
-                                    </a-select-option>
-                                </a-select>
-                            </a-form-item>
-                        </a-col>
-                    </a-row>
-                    <a-row v-if="advanced">
-                        <a-col :md="8" :sm="24">
-                            <a-form-item
-                                    label="上传日期"
-                                    :labelCol="{span: 5}"
-                                    :wrapperCol="{span: 18, offset: 1}"
-                            >
-                                <a-date-picker v-model="query.uploaddate" style="width: 100%" placeholder="请输入更新日期"/>
-                            </a-form-item>
-                        </a-col>
+
                     </a-row>
                 </div>
                 <span style="float: right; margin-top: 3px;">
-          <a-button type="primary" @click="queryevents">查询</a-button>
+          <a-button type="primary" @click="gettabledata">查询</a-button>
           <a-button style="margin-left: 8px" @click="resettingqueryform">重置</a-button>
           <a @click="toggleAdvanced" style="margin-left: 8px">
             {{advanced ? '收起' : '展开'}}
@@ -76,6 +54,10 @@
                 <a-button type="primary">
                     <a-icon type="cloud-download"/>
                     批量下载
+                </a-button>
+                <a-button type="primary" @click="showModaluid">
+                    <a-icon type="plus-circle" />
+                    uid消耗与佣金查询
                 </a-button>
                 <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
             </a-space>
@@ -227,6 +209,37 @@
                 <p>删除后将无法恢复！</p>
             </a-modal>
 
+            <!-- uid对应的消耗和佣金 -->
+            <a-modal v-model="visibleuid" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceluid()" :width='850'>
+                <template slot="footer">
+                    <a-button key="back" @click="handleCanceluid">
+                        取消
+                    </a-button>
+                    <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+                        提交
+                    </a-button>
+                </template>
+                <template>
+                    <a-form-model
+                            ref="ruleForm"
+                            :model="form"
+                            :rules="rules"
+                            :label-col="{ span: 6 }"
+                            :wrapper-col="{ span: 14 }"
+                            layout="vertical"
+                    >
+                        <a-row :gutter="16">
+                            <a-col :span="10">
+                                <a-form-model-item ref="uid" label="uid" prop="uid">
+                                    <a-input v-model="form.uid" />
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+
+                        <div>2.所有用户的初始密码为123456，创建成功后请尽快修改密码。</div>
+                    </a-form-model>
+                </template>
+            </a-modal>
         </div>
     </a-card>
 </template>
@@ -282,12 +295,11 @@
                 innerColumns,
                 innerData,
                 query: {
-                    filename: '',
-                    uploadusers: '',
-                    department: '',
-                    uploaddate: ''
+                    card_number: '',
+                    platform: '',
                 },
                 form: {
+                    uid: '',
                     id: '',
                     card_number: '',
                     valid_period: '',
@@ -301,6 +313,7 @@
                 selectedRows: [],
                 tablename: '',
                 visible: false,
+                visibleuid: false,
                 loading: false,
                 dialogvisible: false,
                 dialogvisibleson: false,
@@ -356,10 +369,6 @@
             toggleAdvanced() {
                 this.advanced = !this.advanced
             },
-            // 查询
-            queryevents() {
-                console.log(this.query);
-            },
             // 批量删除
             Batchdelete() {
                 this.showdeleConfirm(this.selectedRows)
@@ -375,6 +384,14 @@
                 console.log(id);
                 this.visible = true;
             },
+
+            // 打开uid的消耗表单
+            showModaluid(id) {
+                console.log(id);
+                this.visibleuid = true;
+            },
+
+
             // 提交编辑表单
             handleOk() {
                 this.$refs.ruleForm.validate(valid => {
@@ -397,6 +414,16 @@
                 this.$refs.ruleForm.resetFields();
                 console.log('ok');
             },
+
+            // 关闭uid编辑表单
+            handleCanceluid() {
+                this.visibleuid = false;
+                this.$refs.ruleForm.resetFields();
+                console.log('ok');
+            },
+
+
+
             // 删除对话框
             showdeleConfirm(id) {
                 this.$confirm({

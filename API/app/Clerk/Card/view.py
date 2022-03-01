@@ -699,7 +699,7 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
 
 
 @clerk_card_router.get('/statistics/{uid}')
-async def get_statistics(uid: str = Path(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额"),
+async def get_statistics(uid: str = Path(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
                          dbs: AsyncSession = Depends(db_session)):
     """
         统计对应的uid的消耗金额数量，收益总量
@@ -713,7 +713,7 @@ async def get_statistics(uid: str = Path(..., title="uid值", description="需�
 
     return:
 
-        对应uid的消耗金额和收益金额
+        uid对应的所有消耗额和收益
 
     """
     filter_condition = [
