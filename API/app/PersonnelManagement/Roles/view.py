@@ -88,11 +88,22 @@ async def get_roles(info: SearchRole = Depends(SearchRole),
         ('is_delete', '==0', 0)
     ]
     result, count, total_page = await Roles.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+    new_result = []
+    for res in result:
+        new_res = {
+            "create_time": res.create_time.strftime("%Y-%m-%d"),
+            "creator": res.creator,
+            "id": res.id,
+            "is_delete": res.is_delete,
+            "role": res.role,
+            "update_time": res.update_time.strftime("%Y-%m-%d")
+        }
+        new_result.append(new_res)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
                      "total_page": total_page,
-                     "data": result}
+                     "data": new_result}
     return response_json
 
 
