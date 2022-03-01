@@ -55,6 +55,7 @@ export default {
       roleid: '',
       isdisabled: true,
       menuoptions: [],
+      useroptions: [],
       operationoptions: [{id: 1, operate:'新增'}, {id: 2, operate:'修改'},{id: 3, operate:'删除'},{id: 4, operate:'查看'},{id: 5, operate:'搜索'}],
       secondarymenuoptions: [],
       rules: {

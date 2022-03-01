@@ -1,4 +1,4 @@
-import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping, RoleMenu, RolePermission } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping, RoleMenu, RolePermission, RoleUser } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -33,7 +33,27 @@ export async function UsersAdd(query) {
 
 /**
  * 用户页面
- * 增加用户
+ * 增加用户角色
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UsersAddRole(form) {
+    return request(RoleUser, METHOD.POST, form)
+}
+
+/**
+ * 用户页面
+ * 增加用户部门
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UsersAddDepartment(form) {
+    return request(DepartmentRoleMapping, METHOD.POST, form)
+}
+
+/**
+ * 用户页面
+ * 修改用户
  * @param form  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */

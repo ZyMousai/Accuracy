@@ -179,11 +179,6 @@
             <a-date-picker v-model="form.birth" style="width: 100%" :value-format="dateFormat" placeholder="请选择出生日期" />
           </a-form-model-item>
           </a-col>
-          <a-col :span="10">
-            <a-form-model-item ref="account" label="创建人" prop="creator">
-              <a-input v-model="form.creator" />
-            </a-form-model-item>
-          </a-col>
         </a-row>
         <div>小提示：</div>
         <div>1.用户名一旦创建成功，则无法修改用户名。</div>
@@ -206,7 +201,7 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {UsersDate, DeleteUsers, DepartmentDate, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit} from '@/services/personnelmanagement'
+import {UsersDate, DeleteUsers, DepartmentDate, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit, UsersAddRole, UsersAddDepartment} from '@/services/personnelmanagement'
 const columns = [
   {
     title: '序号',
@@ -270,12 +265,13 @@ export default {
       },
       form: {
         account: '',
+        role: '',
+        department: '',
         name: '',
         gender: null,
         birth: '',
         phone: '',
-        address: '',
-        creator: ''
+        address: ''
       },
       total: 0,
       advanced: true,
@@ -292,6 +288,7 @@ export default {
       tablename: '',
       visible: false,
       loading: false,
+      userid: '',
       rules: {
         account: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -303,7 +300,6 @@ export default {
                   { validator: checkMobile, rtigger:'blur'  }],
         address: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         birth: [{ required: true, message: '请选择入职时间', trigger: 'change' }],
-        creator: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
       }
     }
   },
@@ -386,6 +382,7 @@ export default {
     },
     // 打开编辑表单
     showModal(data) {
+      this.form = {}
       if (data.id) {
         this.tablename = '编辑'
         GetOneUsersDate(data.id).then(res => {
@@ -412,6 +409,7 @@ export default {
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
+          this.form.creator = localStorage.getItem('name')
           this.loading = true;
           this.tablename === '新增' ? this.addadta() : this.ediddata()
         }
@@ -420,10 +418,8 @@ export default {
     addadta() {
       UsersAdd(this.form).then(res => {
         if (res.status === 200) {
-          this.$message.success(`${this.tablename}成功！`);
-          this.gettabledata()
-          this.loading = false;
-          this.visible = false;
+          this.userid = res.data.id
+          this.adduserrole()
         } else {
           this.$message.error(`${this.tablename}失败！`);
           this.loading = false;
@@ -441,12 +437,51 @@ export default {
           this.$message.error(`${this.tablename}失败！`);
           this.loading = false;
         }
+      })
+    },
+    // 添加用户关联角色
+    adduserrole() {
+      const form = {
+        role_id: this.form.role,
+        ids: []
+      }
+      form.ids.push(this.userid)
+      UsersAddRole(form).then(res => {
+        if (res.status === 200) {
+          console.log(res);
+          this.adduserDepartment()
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    // 删除用户关联角色
+    deleteuserrole() {},
+    // 添加用户关联部门
+    adduserDepartment() {
+      const form = {
+        department_id: this.form.department,
+        ids: []
+      }
+      form.ids.push(this.userid)
+      UsersAddDepartment(form).then(res => {
+        if (res.status === 200) {
+          console.log(res);
+          this.gettabledata()
+          this.loading = false;
+          this.visible = false;
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
       })},
+    // 删除用户关联部门  
+    deleteuserDepartment() {},
     // 关闭编辑表单
     handleCancel() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
-      console.log('ok');
     },
     // 删除对话框
     showdeleConfirm(id) {

@@ -2,8 +2,7 @@
     <common-layout>
         <div class="top">
             <div class="header">
-                <img alt="logo" class="logo" src="@/assets/img/logo.png"/>
-                <span class="title">{{systemName}}</span>
+                <img alt="logo" style="height: 80px;" class="logo" src="@/assets/img/logo1.png"/>
             </div>
         </div>
         <div class="login">
@@ -88,11 +87,6 @@
                 logging: false,
                 error: '',
                 form: this.$form.createForm(this)
-            }
-        },
-        computed: {
-            systemName() {
-                return this.$store.state.setting.systemName
             }
         },
         methods: {
