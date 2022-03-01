@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData, CardAccount } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -97,4 +97,14 @@ export async function CardAccountdelete(id) {
     return request(CardAccount, "DELETE", {
         ids: id
     })
+}
+
+/**
+ * 统计卡页面
+ * 根据uid来计算收益和消耗
+ * @param uid  查询请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function CommissionConsumetion(uid) {
+    return request(CommissionConsume + uid, METHOD.GET,'')
 }
