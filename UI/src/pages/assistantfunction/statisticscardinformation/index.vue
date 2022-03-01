@@ -115,88 +115,149 @@
                         record.secondary_consumption_loading=true;
                         secondary_consumption_change(record.secondary_consumption, record.id);
                       "
-                        />
-                    </div>
-                    <div slot="inneroperation" class="table-operation" slot-scope="record">
-                        <a slot="inneroperation" @click="inneredit(record)">编辑</a>
-                        <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record.id)">删除</a>
-                    </div>
-                </a-table>
-            </a-table>
-            <!-- 编辑表单 -->
-            <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
-                <template slot="footer">
-                    <a-button key="back" @click="handleCancel">
-                        取消
-                    </a-button>
-                    <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
-                        提交
-                    </a-button>
-                </template>
-                <template>
-                    <a-form-model
-                            ref="ruleForm"
-                            :model="form"
-                            :rules="editrules"
-                            :label-col="{ span: 4 }"
-                            :wrapper-col="{ span: 14 }"
-                    >
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="card_number" label="卡号" prop="creator">
-                                    <a-input v-model="form.card_number"/>
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="valid_period" label="有效期" prop="creator">
-                                    <a-input v-model="form.valid_period"/>
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="cvv" label="cvv" prop="creator">
-                                    <a-input v-model="form.cvv"/>
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="face_value" label="面值" prop="creator">
-                                    <a-input v-model="form.face_value"/>
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
-                                    <a-input v-model="form.name"/>
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="note" label="备注" prop="creator">
-                                    <a-input v-model="form.note"/>
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="platform" label="平台" prop="creator">
-                                    <a-input v-model="form.platform"/>
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                    </a-form-model>
-                </template>
-            </a-modal>
-            <!-- 删除确认对话框 -->
-            <a-modal
-                    title="是否删除所选项？"
-                    :visible="dialogvisible"
-                    ok-text="是"
-                    cancel-text="否"
-                    @ok="onok"
-                    @cancel="onno">
-                <p>删除后将无法恢复！</p>
-            </a-modal>
+            />
+          </div>
+          <div slot="inneroperation" class="table-operation" slot-scope="record">
+            <a slot="inneroperation" @click="inneredit(record)">编辑</a>
+            <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record.id)">删除</a>
+          </div>
+        </a-table>
+      </a-table>
+      <!-- 编辑表单 -->
+      <a-modal v-model="visible" title="卡编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
+        <template slot="footer">
+          <a-button key="back" @click="handleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+                  ref="ruleForm"
+                  :model="form"
+                  :rules="editrules"
+                  :label-col="{ span: 4 }"
+                  :wrapper-col="{ span: 14 }"
+          >
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="card_number" label="卡号" prop="creator">
+                  <a-input v-model="form.card_number" />
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="valid_period" label="有效期" prop="creator">
+                  <a-input v-model="form.valid_period" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="cvv" label="cvv" prop="creator">
+                  <a-input v-model="form.cvv" />
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="face_value" label="面值" prop="creator">
+                  <a-input v-model="form.face_value" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
+                  <a-input v-model="form.name" />
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="note" label="备注" prop="creator">
+                  <a-input v-model="form.note" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="platform" label="平台" prop="creator">
+                  <a-input v-model="form.platform" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <!-- 编辑表单 -->
+      <a-modal v-model="innervisible" title="任务编辑" on-ok="innerhandleOk" :maskClosable="false" @afterClose="innerhandleCancel()">
+        <template slot="footer">
+          <a-button key="back" @click="innerhandleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="innerloading" @click="innerhandleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+                  ref="innerruleForm"
+                  :model="innerform"
+                  :rules="editrules"
+                  :label-col="{ span: 4 }"
+                  :wrapper-col="{ span: 14 }"
+          >
+            <a-row :gutter="16">
+<!--              <a-col :span="10">-->
+<!--                <a-form-model-item ref="uid" label="uuid" prop="creator">-->
+<!--                  <a-input v-model="innerform.uid" />-->
+<!--                </a-form-model-item>-->
+<!--              </a-col>-->
+              <a-col :span="10">
+                <a-select mode="tags" v-model="innerform.uid" ref="uid" label="uuid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
+<!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
+                  <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
+                    {{ item.uid }}
+                  </a-select-option>
+                </a-select>
+              </a-col>
+
+              <a-col :span="10">
+                <a-form-model-item ref="task" label="任务名" prop="creator">
+                  <a-input v-model="innerform.task" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="commission" label="佣金" prop="creator">
+                  <a-input v-model="innerform.commission" />
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="consume" label="消耗" prop="creator">
+                  <a-input v-model="innerform.consume" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="user" label="使用人" prop="creator">
+                  <a-input v-model="innerform.user" />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <!-- 删除确认对话框 -->
+      <a-modal
+              title="是否删除所选项？"
+              :visible="dialogvisible"
+              ok-text="是"
+              cancel-text="否"
+              @ok="onok"
+              @cancel="onno">
+        <p>删除后将无法恢复！</p>
+      </a-modal>
 
             <!-- 删除子表任务确认对话框 -->
             <a-modal
@@ -247,10 +308,10 @@
 <script>
     import {CreditCardListData} from '@/services/statisticscardinformation'
     import {
-        PatchCardListData,
-        PatchTaskListData,
-        table_delete,
-        innerdelete
+      PatchCardListData,
+      PatchTaskListData,
+      table_delete,
+      innerdelete, CardAccountListData
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -269,19 +330,18 @@
         {title: '操作', key: 'operation', scopedSlots: {customRender: 'operation'}},
     ];
 
-    const data = [];
+  const data = [];
 
-    const innerColumns = [
-        {title: 'uuid', dataIndex: 'uid', key: 'uid'},
-        {title: '任务', dataIndex: 'task', key: 'task', scopedSlots: {customRender: 'task'}},
-        {title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: {customRender: 'commission'}},
-        {title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: {customRender: 'consume'}},
-        {title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: {customRender: 'user'}},
-        {title: '二次消费', key: 'secondary_consumption', scopedSlots: {customRender: 'secondary_consumption'}},
-        {title: '使用日期', dataIndex: 'creation_date', key: 'creation_date'},
-        // { title: '操作', dataIndex: 'inneroperation', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
-        {title: '操作', key: 'inneroperation', scopedSlots: {customRender: 'inneroperation'}},
-    ];
+  const innerColumns = [
+    { title: 'uuid', dataIndex: 'uid', key: 'uid' },
+    { title: '任务', dataIndex: 'task', key: 'task', scopedSlots: { customRender: 'task' } },
+    { title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: { customRender: 'commission' } },
+    { title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: { customRender: 'consume' } },
+    { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
+    { title: '二次消费', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
+    { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
+    { title: '操作', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
+  ];
 
     const innerData = [];
 
@@ -309,12 +369,25 @@
                     platform: '',
                     note: '',
                 },
+                innerform: {
+                  id: '',
+                  uid: '',
+                  account_id: '',
+                  // card_id: '',
+                  task: '',
+                  commission: '',
+                  consume: '',
+                  user: '',
+                },
+                uuidSelect: {},
                 advanced: true,
                 selectedRows: [],
                 tablename: '',
                 visible: false,
                 visibleuid: false,
+                innervisible: false,
                 loading: false,
+                innerloading: false,
                 dialogvisible: false,
                 dialogvisibleson: false,
                 ids: [],
@@ -384,14 +457,11 @@
                 console.log(id);
                 this.visible = true;
             },
-
             // 打开uid的消耗表单
             showModaluid(id) {
                 console.log(id);
                 this.visibleuid = true;
             },
-
-
             // 提交编辑表单
             handleOk() {
                 this.$refs.ruleForm.validate(valid => {
@@ -414,16 +484,49 @@
                 this.$refs.ruleForm.resetFields();
                 console.log('ok');
             },
-
             // 关闭uid编辑表单
             handleCanceluid() {
                 this.visibleuid = false;
                 this.$refs.ruleForm.resetFields();
                 console.log('ok');
             },
-
-
-
+            // 打开编辑表单
+            innershowModal(id) {
+              console.log(id);
+              this.innervisible = true;
+            },
+            // 提交编辑表单
+            innerhandleOk() {
+              this.$refs.innerruleForm.validate(valid => {
+                if (valid) {
+                  this.innerloading = true;
+                  console.log(this.innerform)
+                  if (this.innerform.uid.indexOf("uuid") != -1){
+                    console.log("uuid")
+                    console.log(this.innerform.uid)
+                    console.log("uuid")
+                  }else{
+                    console.log("uuid+++++")
+                    console.log(this.innerform.uid)
+                    console.log("uuid+++++")
+                  }
+                  // PatchTaskListData(this.innerform).then(res => {
+                  //   console.log("成功")
+                  //   console.log(res)
+                    this.innerloading = false;
+                  //   this.gettabledata()
+                  //   this.innervisible = false;
+                  // })
+                  console.log('ok');
+                }
+              })
+            },
+            // 关闭编辑表单
+            innerhandleCancel() {
+              this.innervisible = false;
+              this.$refs.innerruleForm.resetFields();
+              console.log('ok');
+            },
             // 删除对话框
             showdeleConfirm(id) {
                 this.$confirm({
@@ -448,6 +551,14 @@
                     console.log(res)
                     this.gettabledata()
                 })
+            },
+            uuidclick(){
+              // uuidSelect
+              CardAccountListData().then(res => {
+                var re_da = res.data.data;
+                this.uuidSelect = re_da
+                console.log(res)
+              })
             },
             // 修改子表二次消费状态
             secondary_consumption_change(secondary_consumption, id) {
@@ -479,6 +590,10 @@
                     this.$message.error(`${info.file.name} file upload failed.`);
                 }
             },
+            selecthandleChange(data){
+              console.log(data)
+              this.innerform.uid = data[0]
+            },
             edit(data) {
                 console.log(data)
                 this.form.id = data.id
@@ -491,109 +606,117 @@
                 this.form.note = data.note
                 this.visible = true;
 
-            },
-            // 子表添加按钮
-            onHeaderCell() {
-                return (
-                    < div
-                style = "text-align:left" >
-                    < a-button
-                onClick = {this.adddata}
-                size = "small" > 新增数据 < /a-button>
-                    < /div>
-            )
-            },
-            adddata() {
-                console.log('ok');
-            },
-            innerhandleChange(value, id, column) {
-                const newData = [...this.innerData];
-                console.log(newData);
-                const target = newData.filter(item => id === item.id)[0];
-                if (target) {
-                    target[column] = value;
-                    this.innerData = newData;
-                }
-            },
-            inneredit(id) {
-                // const newData = [...this.innerData];
-                // console.log(newData);
-                console.log(id);
-                // const target = newData.filter(item => id === item.id)[0];
-                // console.log(target);
-                // this.editingKey = id;
-                // if (target) {
-                //   target.editable = true;
-                //   this.innerData = newData;
-                // }
-                // console.log(this.innerData);
-            },
-            innersave(id) {
-                const newData = [...this.innerData];
-                const newCacheData = [...this.cacheData];
-                const target = newData.filter(item => id === item.id)[0];
-                const targetCache = newCacheData.filter(item => id === item.id)[0];
-                if (target && targetCache) {
-                    delete target.editable;
-                    this.innerData = newData;
-                    Object.assign(targetCache, target);
-                    this.cacheData = newCacheData;
-                }
-                this.editingKey = '';
-            },
-            innercancel(id) {
-                const newData = [...this.innerData];
-                const target = newData.filter(item => id === item.id)[0];
-                this.editingKey = '';
-                if (target) {
-                    Object.assign(target, this.cacheData.filter(item => id === item.id)[0]);
-                    delete target.editable;
-                    this.innerData = newData;
-                }
-            },
-            expandinnerlist(expanded, record) {
-                if (this.expandedRowKeys.length > 0) {
-                    let index = this.expandedRowKeys.indexOf(record.id);
-                    if (index > -1) {
-                        this.expandedRowKeys.splice(index, 1);
-                    } else {
-                        this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
-                        this.expandedRowKeys.push(record.id);
-                    }
-                } else {
-                    this.expandedRowKeys.push(record.id);
-                }
-                this.innerData = record.task_set
-            },
-            // 子表删除
-            innerdelete(id) {
-                this.ids.push(id);
-                console.log(this.ids);
-                this.dialogvisibleson = true;
-            },
-            // 主表删除
-            table_delete(id) {
-                this.ids.push(id);
-                console.log(this.ids);
-                this.dialogvisible = true;
-            },
-            async onok() {
-                for (let i = 0; i < this.ids.length; i++) {
-                    await table_delete(this.ids[i]).then(res => {
-                        if (res.status === 200) {
-                            this.$message.success(`删除成功！`);
-                        } else {
-                            this.$message.error(`删除失败！`);
-                        }
-                    })
-                }
-                const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-                this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-                this.query.page = this.query.page < 1 ? 1 : this.query.page
-                this.gettabledata()
-                this.ids = []
-                this.dialogvisible = false
-            },
+      },
+      // 子表添加按钮
+      onHeaderCell() {
+        return (
+                <div style="text-align:left">
+                <a-button onClick={this.adddata} size="small">新增数据</a-button>
+                </div>
+      )
+      },
+      adddata() {
+        console.log('ok');
+      },
+      innerhandleChange(value, id, column) {
+        const newData = [...this.innerData];
+        console.log(newData);
+        const target = newData.filter(item => id === item.id)[0];
+        if (target) {
+          target[column] = value;
+          this.innerData = newData;
+        }
+      },
+      inneredit(data) {
+        // const newData = [...this.innerData];
+        // console.log(newData);
+        // const target = newData.filter(item => id === item.id)[0];
+        // console.log(target);
+        // this.editingKey = id;
+        // if (target) {
+        //   target.editable = true;
+        //   this.innerData = newData;
+        // }
+        // console.log(this.innerData);
+        console.log(data);
+        this.innervisible = true;
+        this.innerform.id = data.id
+        this.innerform.uid = data.uid
+        this.innerform.account_id = data.account_id
+        // this.innerform.card_id = data.card_id
+        this.innerform.task = data.task
+        this.innerform.commission = data.commission
+        this.innerform.consume = data.consume
+        this.innerform.user = data.user
+
+
+      },
+      innersave(id) {
+        const newData = [...this.innerData];
+        const newCacheData = [...this.cacheData];
+        const target = newData.filter(item => id === item.id)[0];
+        const targetCache = newCacheData.filter(item => id === item.id)[0];
+        if (target && targetCache) {
+          delete target.editable;
+          this.innerData = newData;
+          Object.assign(targetCache, target);
+          this.cacheData = newCacheData;
+        }
+        this.editingKey = '';
+      },
+      innercancel(id) {
+        const newData = [...this.innerData];
+        const target = newData.filter(item => id === item.id)[0];
+        this.editingKey = '';
+        if (target) {
+          Object.assign(target, this.cacheData.filter(item => id === item.id)[0]);
+          delete target.editable;
+          this.innerData = newData;
+        }
+      },
+      expandinnerlist(expanded, record) {
+        if (this.expandedRowKeys.length > 0) {
+          let index = this.expandedRowKeys.indexOf(record.id);
+          if (index > -1) {
+            this.expandedRowKeys.splice(index, 1);
+          } else {
+            this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
+            this.expandedRowKeys.push(record.id);
+          }
+        } else {
+          this.expandedRowKeys.push(record.id);
+        }
+        this.innerData = record.task_set
+      },
+      // 子表删除
+      innerdelete(id) {
+        this.ids.push(id);
+        console.log(this.ids);
+        this.dialogvisibleson = true;
+      },
+      // 主表删除
+      table_delete(id) {
+        this.ids.push(id);
+        console.log(this.ids);
+        this.dialogvisible = true;
+      },
+      async onok() {
+        for (let i = 0; i < this.ids.length; i++) {
+          await table_delete(this.ids[i]).then(res => {
+            if (res.status === 200) {
+              this.$message.success(`删除成功！`);
+            } else {
+              this.$message.error(`删除失败！`);
+            }
+          })
+        }
+        const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+        this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+        this.query.page = this.query.page < 1 ? 1 : this.query.page
+        this.gettabledata()
+        this.ids = []
+        this.dialogvisible = false
+      },
 
 
             async onokson() {
