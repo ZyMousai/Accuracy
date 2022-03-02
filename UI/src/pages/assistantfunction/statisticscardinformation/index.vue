@@ -384,10 +384,10 @@
 <script>
     import {CreditCardListData} from '@/services/statisticscardinformation'
     import {
-        PatchCardListData,
-        PatchTaskListData,
-        table_delete,
-        innerdelete, CardAccountListData, CommissionConsumetion
+      PatchCardListData,
+      PatchTaskListData,
+      table_delete,
+      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -559,7 +559,7 @@
 
       // uid提交编辑表单
       uidhandleOk() {
-          // console.log(this.uid)
+          console.log(this.uid)
           CommissionConsumetion(this.uid).then(res =>{
               this.consume = res.data.total_consume;
               this.commission = res.data.total_commission;
@@ -608,18 +608,35 @@
               console.log("uuid")
               console.log(this.innerform.uid)
               console.log("uuid")
+              console.log(this.innerform.uid)
+              this.innerform.account_id = this.innerform.uid.split("uuid")[1]
               PatchTaskListData(this.innerform).then(res => {
                 console.log("成功")
                 console.log(res)
                 this.innerloading = false;
-              //   this.gettabledata()
-              //   this.innervisible = false;
+                this.gettabledata()
+                this.innervisible = false;
               })
 
             }else{
               console.log("uuid+++++")
               console.log(this.innerform.uid)
               console.log("uuid+++++")
+              AddCardAccount({uid: this.innerform.uid}).then(res => {
+                console.log("创建成功")
+                console.log(res)
+                var id = res.data.data
+                console.log(id)
+                this.innerform.account_id = id
+                PatchTaskListData(this.innerform).then(res => {
+                  console.log("成功")
+                  console.log(res)
+                  this.innerloading = false;
+                  this.gettabledata()
+                  this.innervisible = false;
+                })
+
+              })
 
             }
             // PatchTaskListData(this.innerform).then(res => {
