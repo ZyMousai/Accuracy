@@ -421,350 +421,356 @@
 
     const innerData = [];
 
-    export default {
-        name: 'QueryList',
-        data() {
-            this.cacheData = innerData.map(item => ({...item}));
-            return {
-                data,
-                columns,
-                innerColumns,
-                innerData,
-                query: {
-                    page: 1,
+  export default {
+    name: 'QueryList',
+    data () {
+      this.cacheData = innerData.map(item => ({ ...item }));
+      return {
+        data,
+        columns,
+        innerColumns,
+        innerData,
+        query: {
+          page: 1,
                     page_size: 10,
                     card_number: '',
                     platform: '',
-                },
-                form: {
-                    uid: '',
-                    id: '',
-                    card_number: '',
-                    valid_period: '',
-                    cvv: '',
-                    face_value: '',
-                    name: '',
-                    platform: '',
-                    note: '',
-                },
-                innerform: {
-                    id: '',
-                    uid: '',
-                    account_id: '',
-                    // card_id: '',
-                    task: '',
-                    commission: '',
-                    consume: '',
-                    user: '',
-                },
-                addform: {
-                    uid: '',
-                    commission: '',
-                    task: '',
-                    consume: '',
-                    user: '',
-                    secondary_consumption: '',
-                    note: '',
-                },
-                uuidSelect: {},
-                advanced: true,
-                selectedRows: [],
-                tablename: '',
-                visible: false,
-                visibleuid: false,
-                innervisible: false,
-                loading: false,
-                innerloading: false,
-                dialogvisible: false,
-                dialogvisibleson: false,
-                visibleadd: false,
-                commission: '',
-                consume: '',
-                uid: '',
-                ids: [],
-                expandedRowKeys: [],
-                departmentoptions: ['商务部', '技术部'],
-                editrules: {
-                    filename: [{required: true, message: '请输入文件名', trigger: 'blur'}],
-                    department: [{required: true, message: '请选择部门权限', trigger: 'change'}]
-                },
-                headers: {
-                    authorization: 'authorization-text',
-                },
-                timer: {},
-                editingKey: '',
-                total: 0,
+        },
+        form: {
+          uid: '',
+          id: '',
+          card_number: '',
+          valid_period: '',
+          cvv: '',
+          face_value: '',
+          name: '',
+          platform: '',
+          note: '',
+        },
+        innerform: {
+          id: '',
+          uid: '',
+          account_id: '',
+          // card_id: '',
+          task: '',
+          commission: '',
+          consume: '',
+          user: '',
+        },
+        addform: {
+            uid: '',
+            commission: '',
+            task: '',
+            consume: '',
+            user: '',
+            secondary_consumption: '',
+            note: '',
+        },
+        uuidSelect: {},
+        advanced: true,
+        selectedRows: [],
+        tablename: '',
+        visible: false,
+        visibleuid: false,
+        innervisible: false,
+        loading: false,
+        innerloading: false,
+        dialogvisible: false,
+        dialogvisibleson: false,
+        visibleadd: false,
+        commission: '',
+        consume: '',
+        uid: '',
+        ids: [],
+        expandedRowKeys: [],
+        departmentoptions: ['商务部', '技术部'],
+        editrules: {
+          filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
+          department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
+        },
+        headers: {
+          authorization: 'authorization-text',
+        },
+        timer : {},
+        total: 0,
+        editingKey: ''
+      }
+    },
+    created () {
+      this.gettabledata()
+    },
+    // 监听路由变化开启自动更新
+    // watch: {
+    //   $route: {
+    //     handler: function(val){
+    //       if (val.fullPath === '/assistantfunction/statisticscardinformation') {
+    //         this.timer = setInterval(() => {
+    //           this.gettabledata()
+    //         }, 15000);
+    //       } else {
+    //         clearInterval(this.timer)
+    //       }
+    //     },
+    //     immediate: true
+    //   }
+    // },
+    methods: {
+      gettabledata() {
+        CreditCardListData(this.query).then(res => {
+          var re_da = res.data.data;
+          // 给予序号
+          for (var i = 0; i < re_da.length; i++) {
+            re_da[i]['create_time'] = re_da[i]['create_time'].split(' ')[0];
+            re_da[i]["index"] = i + 1
+            re_da[i]["card_status_loading"] = false
+            re_da[i]["secondary_consumption_loading"] = false
+            re_da[i]["retain_loading"] = false
+            re_da[i]["note_editable"] = false
+          }
+          this.data = re_da
+          this.total = res.data.total
+          console.log(res);
+        })
+      },
+      toggleAdvanced () {
+        this.advanced = !this.advanced
+      },
+      // 批量删除
+      Batchdelete() {
+        this.showdeleConfirm(this.selectedRows)
+      },
+      // 重置查询表单
+      resettingqueryform() {
+        for (var key in this.query) {
+          this.query[key] = ''
+        }
+      },
+      // 打开编辑表单
+      showModal(id) {
+        console.log(id);
+        this.visible = true;
+      },
+      // 打开uid的消耗表单
+      showModaluid(id) {
+          console.log(id);
+          this.visibleuid = true;
+      },
+
+
+      // uid提交编辑表单
+      uidhandleOk() {
+          // console.log(this.uid)
+          CommissionConsumetion(this.uid).then(res =>{
+              this.consume = res.data.total_consume;
+              this.commission = res.data.total_commission;
+          })
+      },
+      // 提交编辑表单
+      handleOk() {
+        this.$refs.ruleForm.validate(valid => {
+          if (valid) {
+            this.loading = true;
+            PatchCardListData(this.form).then(res => {
+              console.log("成功")
+              console.log(res)
+              this.loading = false;
+              this.gettabledata()
+              this.visible = false;
+            })
+            console.log('ok');
+          }
+        })
+      },
+      // 关闭编辑表单
+      handleCancel() {
+        this.visible = false;
+        this.$refs.ruleForm.resetFields();
+        console.log('ok');
+      },
+      // 关闭uid编辑表单
+      handleCanceluid() {
+          this.visibleuid = false;
+          this.$refs.ruleForm.resetFields();
+          console.log('ok');
+      },
+      // 打开编辑表单
+      innershowModal(id) {
+        console.log(id);
+        this.innervisible = true;
+      },
+      // 提交编辑表单
+      innerhandleOk() {
+        this.$refs.innerruleForm.validate(valid => {
+          if (valid) {
+            this.innerloading = true;
+            console.log(this.innerform)
+            if (this.innerform.uid.indexOf("uuid") != -1){
+              console.log("uuid")
+              console.log(this.innerform.uid)
+              console.log("uuid")
+              PatchTaskListData(this.innerform).then(res => {
+                console.log("成功")
+                console.log(res)
+                this.innerloading = false;
+              //   this.gettabledata()
+              //   this.innervisible = false;
+              })
+
+            }else{
+              console.log("uuid+++++")
+              console.log(this.innerform.uid)
+              console.log("uuid+++++")
+
             }
-        },
-        created() {
-            this.gettabledata()
-        },
-        // 监听路由变化开启自动更新
-        // watch: {
-        //   $route: {
-        //     handler: function(val){
-        //       if (val.fullPath === '/assistantfunction/statisticscardinformation') {
-        //         this.timer = setInterval(() => {
-        //           this.gettabledata()
-        //         }, 15000);
-        //       } else {
-        //         clearInterval(this.timer)
-        //       }
-        //     },
-        //     immediate: true
-        //   }
-        // },
-        methods: {
-            gettabledata() {
-                CreditCardListData(this.query).then(res => {
-                    var re_da = res.data.data;
-                    // 给予序号
-                    for (var i = 0; i < re_da.length; i++) {
-                        re_da[i]['create_time'] = re_da[i]['create_time'].split(' ')[0];
-                        re_da[i]["index"] = i + 1
-                        re_da[i]["card_status_loading"] = false
-                        re_da[i]["secondary_consumption_loading"] = false
-                        re_da[i]["retain_loading"] = false
-                        re_da[i]["note_editable"] = false
-                    }
-                    this.data = re_da
-                    this.total = res.data.total
-                    console.log(res);
-                })
-            },
-            toggleAdvanced() {
-                this.advanced = !this.advanced
-            },
-            // 批量删除
-            Batchdelete() {
-                this.showdeleConfirm(this.selectedRows)
-            },
-            // 重置查询表单
-            resettingqueryform() {
-                for (var key in this.query) {
-                    this.query[key] = ''
-                }
-            },
-            // 打开编辑表单
-            showModal(id) {
-                console.log(id);
-                this.visible = true;
-            },
-            // 打开uid的消耗表单
-            showModaluid(id) {
-                console.log(id);
-                this.visibleuid = true;
-            },
+            // PatchTaskListData(this.innerform).then(res => {
+            //   console.log("成功")
+            //   console.log(res)
+              this.innerloading = false;
+            //   this.gettabledata()
+            //   this.innervisible = false;
+            // })
+            console.log('ok');
+          }
+        })
+      },
+      // 关闭编辑表单
+      innerhandleCancel() {
+        this.innervisible = false;
+        this.$refs.innerruleForm.resetFields();
+        console.log('ok');
+      },
+      // 删除对话框
+      showdeleConfirm(id) {
+        this.$confirm({
+          title: '是否删除所选项?',
+          content: '删除之后会放在回收站',
+          onOk() {
+            return new Promise((resolve, reject) => {
+              console.log(id);
+              setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
+            }).catch(() => console.log('Oops errors!'));
+          },
+          onCancel() {},
+        })
+      },
+      // 修改主表卡状态
+      card_status_change(card_status, id) {
+        console.log(id);
+        // id.loadingchanr = true
+        PatchCardListData({card_status: card_status ? 0 : 1, id: id}).then(res => {
+          console.log("成功")
+          console.log(res)
+          this.gettabledata()
+        })
+      },
+      uuidclick(){
+        // uuidSelect
+        CardAccountListData().then(res => {
+          var re_da = res.data.data;
+          this.uuidSelect = re_da
+          console.log(res)
+        })
+      },
+      // 修改子表二次消费状态
+      secondary_consumption_change(secondary_consumption, id) {
+        console.log(id);
+        PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
+          console.log("成功")
+          console.log(res)
+          this.gettabledata()
+        })
+      },
+      // 修改主表是否保留
+      retain_change(retain, id) {
+        console.log(retain)
+        PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
+          // console.log("成功")
+          console.log(res)
+          // this.gettabledata()
+          //此处未完成，需要刷新子表，或重新展开
+        })
+      },
+      // 上传文件
+      handleChange(info) {
+        if (info.file.status !== 'uploading') {
+          console.log(info.file, info.fileList);
+        }
+        if (info.file.status === 'done') {
+          this.$message.success(`${info.file.name} file uploaded successfully`);
+        } else if (info.file.status === 'error') {
+          this.$message.error(`${info.file.name} file upload failed.`);
+        }
+      },
+      selecthandleChange(data){
+        console.log(data)
+        this.innerform.uid = data[0]
 
+      },
+      edit (data){
+        console.log(data)
+        this.form.id = data.id
+        this.form.card_number = data.card_number
+        this.form.valid_period = data.valid_period
+        this.form.card_id = data.card_id
+        this.form.cvv = data.cvv
+        this.form.face_value = data.face_value
+        this.form.name = data.name
+        this.form.platform = data.platform
+        this.form.note = data.note
+        this.visible = true;
 
-            // uid提交编辑表单
-            uidhandleOk() {
-                // console.log(this.uid)
-                CommissionConsumetion(this.uid).then(res =>{
-                    this.consume = res.data.total_consume;
-                    this.commission = res.data.total_commission;
-                })
-            },
+      },
+      // 子表添加按钮
+      onHeaderCell() {
+        return (
+                <div style="text-align:left">
+                <a-button onClick={this.adddata} size="small">新增数据</a-button>
+                </div>
+      )
+      },
+      adddata() {
+          console.log('ok');
+          this.visibleadd = true
+      },
+      handleCanceladd(){
+          this.visibleadd = false;
+          this.$refs.ruleForm.resetFields();
+          console.log('ok');
+      },
+      handleOkadd(){
+        console.log('提交')
+      },
 
-
-            // 提交编辑表单
-            handleOk() {
-                this.$refs.ruleForm.validate(valid => {
-                    if (valid) {
-                        this.loading = true;
-                        PatchCardListData(this.form).then(res => {
-                            console.log("成功")
-                            console.log(res)
-                            this.loading = false;
-                            this.gettabledata()
-                            this.visible = false;
-                        })
-                        console.log('ok');
-                    }
-                })
-            },
-            // 关闭编辑表单
-            handleCancel() {
-                this.visible = false;
-                this.$refs.ruleForm.resetFields();
-                console.log('ok');
-            },
-            // 关闭uid编辑表单
-            handleCanceluid() {
-                this.visibleuid = false;
-                this.$refs.ruleForm.resetFields();
-                console.log('ok');
-            },
-            // 打开编辑表单
-            innershowModal(id) {
-                console.log(id);
-                this.innervisible = true;
-            },
-            // 提交编辑表单
-            innerhandleOk() {
-                this.$refs.innerruleForm.validate(valid => {
-                    if (valid) {
-                        this.innerloading = true;
-                        console.log(this.innerform)
-                        if (this.innerform.uid.indexOf("uuid") != -1){
-                            console.log("uuid")
-                            console.log(this.innerform.uid)
-                            console.log("uuid")
-                        }else{
-                            console.log("uuid+++++")
-                            console.log(this.innerform.uid)
-                            console.log("uuid+++++")
-                        }
-                        // PatchTaskListData(this.innerform).then(res => {
-                        //   console.log("成功")
-                        //   console.log(res)
-                        this.innerloading = false;
-                        //   this.gettabledata()
-                        //   this.innervisible = false;
-                        // })
-                        console.log('ok');
-                    }
-                })
-            },
-            // 关闭编辑表单
-            innerhandleCancel() {
-                this.innervisible = false;
-                this.$refs.innerruleForm.resetFields();
-                console.log('ok');
-            },
-            // 删除对话框
-            showdeleConfirm(id) {
-                this.$confirm({
-                    title: '是否删除所选项?',
-                    content: '删除之后会放在回收站',
-                    onOk() {
-                        return new Promise((resolve, reject) => {
-                            console.log(id);
-                            setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-                        }).catch(() => console.log('Oops errors!'));
-                    },
-                    onCancel() {
-                    },
-                })
-            },
-            // 修改主表卡状态
-            card_status_change(card_status, id) {
-                console.log(id);
-                // id.loadingchanr = true
-                PatchCardListData({card_status: card_status ? 0 : 1, id: id}).then(res => {
-                    console.log("成功")
-                    console.log(res)
-                    this.gettabledata()
-                })
-            },
-            uuidclick(){
-                // uuidSelect
-                CardAccountListData().then(res => {
-                    var re_da = res.data.data;
-                    this.uuidSelect = re_da
-                    console.log(res)
-                })
-            },
-            // 修改子表二次消费状态
-            secondary_consumption_change(secondary_consumption, id) {
-                console.log(id);
-                PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
-                    console.log("成功")
-                    console.log(res)
-                    this.gettabledata()
-                })
-            },
-            // 修改主表是否保留
-            retain_change(retain, id) {
-                console.log(retain)
-                PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
-                    // console.log("成功")
-                    console.log(res)
-                    // this.gettabledata()
-                    //此处未完成，需要刷新子表，或重新展开
-                })
-            },
-            // 上传文件
-            handleChange(info) {
-                if (info.file.status !== 'uploading') {
-                    console.log(info.file, info.fileList);
-                }
-                if (info.file.status === 'done') {
-                    this.$message.success(`${info.file.name} file uploaded successfully`);
-                } else if (info.file.status === 'error') {
-                    this.$message.error(`${info.file.name} file upload failed.`);
-                }
-            },
-            selecthandleChange(data){
-                console.log(data)
-                this.innerform.uid = data[0]
-            },
-            edit(data) {
-                console.log(data)
-                this.form.id = data.id
-                this.form.card_number = data.card_number
-                this.form.valid_period = data.valid_period
-                this.form.cvv = data.cvv
-                this.form.face_value = data.face_value
-                this.form.name = data.name
-                this.form.platform = data.platform
-                this.form.note = data.note
-                this.visible = true;
-
-            },
-            // 子表添加按钮
-            onHeaderCell() {
-                return (
-                    <div style="text-align:left">
-                    <a-button onClick={this.adddata} size="small">新增数据</a-button>
-                    </div>
-            )
-            },
-            adddata() {
-                console.log('ok');
-                this.visibleadd = true
-            },
-            handleCanceladd(){
-                this.visibleadd = false;
-                this.$refs.ruleForm.resetFields();
-                console.log('ok');
-            },
-            handleOkadd(){
-              console.log('提交')
-            },
-
-
-
-            innerhandleChange(value, id, column) {
-                const newData = [...this.innerData];
-                console.log(newData);
-                const target = newData.filter(item => id === item.id)[0];
-                if (target) {
-                    target[column] = value;
-                    this.innerData = newData;
-                }
-            },
-            inneredit(data) {
-                // const newData = [...this.innerData];
-                // console.log(newData);
-                // const target = newData.filter(item => id === item.id)[0];
-                // console.log(target);
-                // this.editingKey = id;
-                // if (target) {
-                //   target.editable = true;
-                //   this.innerData = newData;
-                // }
-                // console.log(this.innerData);
-                console.log(data);
-                this.innervisible = true;
-                this.innerform.id = data.id
-                this.innerform.uid = data.uid
-                this.innerform.account_id = data.account_id
-                // this.innerform.card_id = data.card_id
-                this.innerform.task = data.task
-                this.innerform.commission = data.commission
-                this.innerform.consume = data.consume
-                this.innerform.user = data.user
+      innerhandleChange(value, id, column) {
+        const newData = [...this.innerData];
+        console.log(newData);
+        const target = newData.filter(item => id === item.id)[0];
+        if (target) {
+          target[column] = value;
+          this.innerData = newData;
+        }
+      },
+      inneredit(data) {
+        // const newData = [...this.innerData];
+        // console.log(newData);
+        // const target = newData.filter(item => id === item.id)[0];
+        // console.log(target);
+        // this.editingKey = id;
+        // if (target) {
+        //   target.editable = true;
+        //   this.innerData = newData;
+        // }
+        // console.log(this.innerData);
+        console.log(data);
+        this.innervisible = true;
+        this.innerform.id = data.id
+        this.innerform.uid = data.uid
+        this.innerform.account_id = data.account_id
+        // this.innerform.card_id = data.card_id
+        this.innerform.task = data.task
+        this.innerform.commission = data.commission
+        this.innerform.consume = data.consume
+        this.innerform.user = data.user
 
 
             },
