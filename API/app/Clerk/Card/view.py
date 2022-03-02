@@ -186,10 +186,17 @@ async def create_cards(information: List[AddCard], dbs: AsyncSession = Depends(d
 @clerk_card_router.post('/cards/excel')
 async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = Depends(db_session)):
     """
-    上传excel文件，使用File类 文件内容会以bytes的形式读入内存 适合于上传小文件
-    :param file: 文件
-    :param dbs: 数据库
-    :return:
+        上传excel文件，使用File类 文件内容会以bytes的形式读入内存 适合于上传小文件
+
+    param file:
+
+        文件
+    param dbs:
+
+        数据库
+    return:
+
+        针对不同情况的返回状态和信息提示
     """
     content = await file.read()
     df = pd.read_excel(content)
@@ -429,7 +436,8 @@ async def create_account(user: AddAccount, dbs: AsyncSession = Depends(db_sessio
     # ]
     result = await TbAccount.get_one(dbs, *filter_condition)
     if result:
-        raise HTTPException(status_code=403, detail="Duplicate account.")
+        # raise HTTPException(status_code=403, detail="Duplicate account.")
+        return {"data": result.id}
     result = await TbAccount.add_data(dbs, user)
     response_json = {"data": result}
     return response_json
