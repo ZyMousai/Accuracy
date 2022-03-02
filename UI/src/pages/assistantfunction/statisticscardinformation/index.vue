@@ -68,6 +68,7 @@
                     :rowKey='record=>record.id'
                     :expandedRowKeys="expandedRowKeys"
                     @expand="expandinnerlist"
+                    :pagination="false"
             >
                 <!--        note-->
 
@@ -103,7 +104,7 @@
                         slot="expandedRowRender"
                         :columns="innerColumns"
                         :data-source="innerData"
-                        :pagination="true"
+                        :pagination="false"
                         :title="onHeaderCell"
                         :rowKey='record=>record.id'
                 >
@@ -301,6 +302,81 @@
                     </a-form-model>
                 </template>
             </a-modal>
+
+            <!-- 分页组件 -->
+            <a-pagination
+                style="margin-top: 15px;"
+                v-model="query.page"
+                :total="total"
+                show-size-changer
+                @showSizeChange="onShowSizeChange"
+                :show-total="total => `一共 ${total} 条`"
+                @change="pageonChange" />
+
+            <!-- 新增数据组件 -->
+            <a-modal v-model="visibleadd" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceladd()" :width='850'>
+                <template slot="footer">
+                    <a-button key="back" @click="handleCanceladd">
+                        取消
+                    </a-button>
+                    <a-button key="submit" type="primary" :loading="loading" @click="handleOkadd">
+                        提交
+                    </a-button>
+                </template>
+                <template>
+                    <a-form-model
+                            :label-col="{ span: 6 }"
+                            :wrapper-col="{ span: 14 }"
+                            layout="vertical"
+                    >
+                        <a-row :gutter="16">
+                            <a-col :span="10">
+                                <a-form-model-item ref="uid" label="uuid" prop="uid">
+                                    <a-input v-model="addform.uid" />
+                                </a-form-model-item>
+                            </a-col>
+                            <a-col :span="10">
+                                <a-form-model-item ref="task" label="任务名" prop="task">
+                                    <a-input v-model="addform.task" />
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="10">
+                                <a-form-model-item ref="commission" label="佣金" prop="commission">
+                                    <a-input v-model="addform.commission" />
+                                </a-form-model-item>
+                            </a-col>
+                            <a-col :span="10">
+                                <a-form-model-item ref="consume" label="消耗" prop="consume">
+                                    <a-input v-model="addform.consume" />
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="10">
+                                <a-form-model-item ref="user" label="使用人" prop="user">
+                                    <a-input v-model="addform.user" />
+                                </a-form-model-item>
+                            </a-col>
+                            <a-col :span="10">
+                                <a-form-model-item ref="secondary_consumption" label="二次消费" prop="secondary_consumption">
+                                    <a-input v-model="addform.secondary_consumption" />
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="16">
+                            <a-col :span="10">
+                                <a-form-model-item ref="note" label="备注" prop="note">
+                                    <a-input v-model="addform.note" />
+                                </a-form-model-item>
+                            </a-col>
+                        </a-row>
+                    </a-form-model>
+                </template>
+            </a-modal>
+
+
         </div>
     </a-card>
 </template>
@@ -355,6 +431,8 @@
                 innerColumns,
                 innerData,
                 query: {
+                    page: 1,
+                    page_size: 10,
                     card_number: '',
                     platform: '',
                 },
@@ -379,6 +457,15 @@
                     consume: '',
                     user: '',
                 },
+                addform: {
+                    uid: '',
+                    commission: '',
+                    task: '',
+                    consume: '',
+                    user: '',
+                    secondary_consumption: '',
+                    note: '',
+                },
                 uuidSelect: {},
                 advanced: true,
                 selectedRows: [],
@@ -390,6 +477,7 @@
                 innerloading: false,
                 dialogvisible: false,
                 dialogvisibleson: false,
+                visibleadd: false,
                 commission: '',
                 consume: '',
                 uid: '',
@@ -404,7 +492,8 @@
                     authorization: 'authorization-text',
                 },
                 timer: {},
-                editingKey: ''
+                editingKey: '',
+                total: 0,
             }
         },
         created() {
@@ -439,6 +528,7 @@
                         re_da[i]["note_editable"] = false
                     }
                     this.data = re_da
+                    this.total = res.data.total
                     console.log(res);
                 })
             },
@@ -632,7 +722,19 @@
             },
             adddata() {
                 console.log('ok');
+                this.visibleadd = true
             },
+            handleCanceladd(){
+                this.visibleadd = false;
+                this.$refs.ruleForm.resetFields();
+                console.log('ok');
+            },
+            handleOkadd(){
+              console.log('提交')
+            },
+
+
+
             innerhandleChange(value, id, column) {
                 const newData = [...this.innerData];
                 console.log(newData);
@@ -761,6 +863,19 @@
                 this.ids = [];
                 this.dialogvisibleson = false
             },
+
+            // 分页配置
+            onShowSizeChange(current, pageSize) {
+                this.query.page = 1
+                this.query.page_size = pageSize
+                this.gettabledata()
+            },
+            pageonChange(pageNumber) {
+                this.query.page = pageNumber
+                this.gettabledata()
+            },
+
+
         }
     }
 </script>
