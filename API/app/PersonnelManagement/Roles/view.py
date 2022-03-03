@@ -121,9 +121,12 @@ async def get_role_one(role_id: Optional[int] = Query(None), dbs: AsyncSession =
     ]
     results = await RolePermissionMapping.get_all(dbs, *filter_condition)
     permission_id_list = [i.permission_id for i in results]
+    role_menu_results = await RoleMenuMapping.get_all(dbs, *filter_condition)
+    menu_id_list = [i.menu_id for i in role_menu_results]
     return {
         "data": await Roles.get_one_detail(dbs, role_id),
-        "permission_id_list": permission_id_list
+        "permission_id_list": permission_id_list,
+        "menu_id_list": menu_id_list
     }
 
 
