@@ -669,15 +669,9 @@
       onHeaderCell() {
         return (
                 <div style="text-align:left">
-                <a-button onClick={this.adddata} size="small">新增数据</a-button>
+                <a-button onClick={this.inneredit} size="small">新增数据</a-button>
                 </div>
       )
-      },
-      adddata() {
-        this.innervisible = true
-        this.innerform.resetFields()
-        console.log("任务新增")
-        this.taskname = "任务新增"
       },
       innerhandleChange(value, id, column) {
         const newData = [...this.innerData];
@@ -699,21 +693,24 @@
         //   this.innerData = newData;
         // }
         // console.log(this.innerData);
-        console.log(data);
-        this.innervisible = true;
-        // console.log("任务编辑")
-        this.taskname = "任务编辑"
-        this.innerform.id = data.id
-        this.innerform.uid = data.uid
-        this.innerform.account_id = data.account_id
-        // this.innerform.card_id = data.card_id
-        this.innerform.task = data.task
-        this.innerform.commission = data.commission
-        this.innerform.consume = data.consume
-        this.innerform.user = data.user
-
-
-            },
+      if (data.id) {
+          console.log(data);
+          this.innervisible = true;
+          // console.log("任务编辑")
+          this.taskname = "任务编辑"
+          this.innerform.id = data.id
+          this.innerform.uid = data.uid
+          this.innerform.account_id = data.account_id
+          // this.innerform.card_id = data.card_id
+          this.innerform.task = data.task
+          this.innerform.commission = data.commission
+          this.innerform.consume = data.consume
+          this.innerform.user = data.user
+      } else {
+          console.log(data, 132123132)
+          this.taskname = '任务新增'
+          this.innervisible = true;
+      }},
       innersave(id) {
           const newData = [...this.innerData];
           const newCacheData = [...this.cacheData];
