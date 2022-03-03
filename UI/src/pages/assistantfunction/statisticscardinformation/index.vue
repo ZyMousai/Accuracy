@@ -221,26 +221,26 @@
                                 </a-select>
                             </a-col>
 
-                            <a-col :span="10">
+                            <a-col :span="15">
                                 <a-form-model-item ref="task" label="任务名" prop="creator">
                                     <a-input v-model="innerform.task" />
                                 </a-form-model-item>
                             </a-col>
                         </a-row>
                         <a-row :gutter="16">
-                            <a-col :span="10">
+                            <a-col :span="15">
                                 <a-form-model-item ref="commission" label="佣金" prop="creator">
                                     <a-input v-model="innerform.commission" />
                                 </a-form-model-item>
                             </a-col>
-                            <a-col :span="10">
+                            <a-col :span="15">
                                 <a-form-model-item ref="consume" label="消耗" prop="creator">
                                     <a-input v-model="innerform.consume" />
                                 </a-form-model-item>
                             </a-col>
                         </a-row>
                         <a-row :gutter="16">
-                            <a-col :span="10">
+                            <a-col :span="15">
                                 <a-form-model-item ref="user" label="使用人" prop="creator">
                                     <a-input v-model="innerform.user" />
                                 </a-form-model-item>
@@ -312,70 +312,6 @@
                 @showSizeChange="onShowSizeChange"
                 :show-total="total => `一共 ${total} 条`"
                 @change="pageonChange" />
-
-            <!-- 新增数据组件 -->
-            <a-modal v-model="visibleadd" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceladd()" :width='850'>
-                <template slot="footer">
-                    <a-button key="back" @click="handleCanceladd">
-                        取消
-                    </a-button>
-                    <a-button key="submit" type="primary" :loading="loading" @click="handleOkadd">
-                        提交
-                    </a-button>
-                </template>
-                <template>
-                    <a-form-model
-                            :label-col="{ span: 6 }"
-                            :wrapper-col="{ span: 14 }"
-                            layout="vertical"
-                    >
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="uid" label="uuid" prop="uid">
-                                    <a-input v-model="addform.uid" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="task" label="任务名" prop="task">
-                                    <a-input v-model="addform.task" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="commission" label="佣金" prop="commission">
-                                    <a-input v-model="addform.commission" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="consume" label="消耗" prop="consume">
-                                    <a-input v-model="addform.consume" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="user" label="使用人" prop="user">
-                                    <a-input v-model="addform.user" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="secondary_consumption" label="二次消费" prop="secondary_consumption">
-                                    <a-input v-model="addform.secondary_consumption" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="note" label="备注" prop="note">
-                                    <a-input v-model="addform.note" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                    </a-form-model>
-                </template>
-            </a-modal>
-
 
         </div>
     </a-card>
@@ -457,15 +393,6 @@
           consume: '',
           user: '',
         },
-        addform: {
-            uid: '',
-            commission: '',
-            task: '',
-            consume: '',
-            user: '',
-            secondary_consumption: '',
-            note: '',
-        },
         uuidSelect: {},
         advanced: true,
         selectedRows: [],
@@ -478,7 +405,6 @@
         innerloading: false,
         dialogvisible: false,
         dialogvisibleson: false,
-        visibleadd: false,
         commission: '',
         consume: '',
         uid: '',
@@ -601,6 +527,7 @@
       },
       // 提交编辑表单
       innerhandleOk() {
+        if (this.taskname === "任务编辑"){
         this.$refs.innerruleForm.validate(valid => {
           if (valid) {
             this.innerloading = true;
@@ -646,7 +573,10 @@
             // })
             console.log('ok');
           }
-        })
+        })}
+        else {
+            console.log(1223)
+        }
       },
       // 关闭编辑表单
       innerhandleCancel() {
@@ -745,18 +675,10 @@
       },
       adddata() {
         this.innervisible = true
+        this.innerform.resetFields()
         console.log("任务新增")
         this.taskname = "任务新增"
       },
-      handleCanceladd(){
-          this.visibleadd = false;
-          this.$refs.ruleForm.resetFields();
-          console.log('ok');
-      },
-      handleOkadd(){
-        console.log('提交')
-      },
-
       innerhandleChange(value, id, column) {
         const newData = [...this.innerData];
         console.log(newData);
@@ -792,112 +714,112 @@
 
 
             },
-            innersave(id) {
-                const newData = [...this.innerData];
-                const newCacheData = [...this.cacheData];
-                const target = newData.filter(item => id === item.id)[0];
-                const targetCache = newCacheData.filter(item => id === item.id)[0];
-                if (target && targetCache) {
-                    delete target.editable;
-                    this.innerData = newData;
-                    Object.assign(targetCache, target);
-                    this.cacheData = newCacheData;
-                }
-                this.editingKey = '';
-            },
-            innercancel(id) {
-                const newData = [...this.innerData];
-                const target = newData.filter(item => id === item.id)[0];
-                this.editingKey = '';
-                if (target) {
-                    Object.assign(target, this.cacheData.filter(item => id === item.id)[0]);
-                    delete target.editable;
-                    this.innerData = newData;
-                }
-            },
-            expandinnerlist(expanded, record) {
-                if (this.expandedRowKeys.length > 0) {
-                    let index = this.expandedRowKeys.indexOf(record.id);
-                    if (index > -1) {
-                        this.expandedRowKeys.splice(index, 1);
-                    } else {
-                        this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
-                        this.expandedRowKeys.push(record.id);
-                    }
-                } else {
-                    this.expandedRowKeys.push(record.id);
-                }
-                this.innerData = record.task_set
-            },
-            // 子表删除
-            innerdelete(id) {
-                this.ids.push(id);
-                console.log(this.ids);
-                this.dialogvisibleson = true;
-            },
-            // 主表删除
-            table_delete(id) {
-                this.ids.push(id);
-                console.log(this.ids);
-                this.dialogvisible = true;
-            },
-            async onok() {
-                for (let i = 0; i < this.ids.length; i++) {
-                    await table_delete(this.ids[i]).then(res => {
-                        if (res.status === 200) {
-                            this.$message.success(`删除成功！`);
-                        } else {
-                            this.$message.error(`删除失败！`);
-                        }
-                    })
-                }
-                const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-                this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-                this.query.page = this.query.page < 1 ? 1 : this.query.page
-                this.gettabledata()
-                this.ids = []
-                this.dialogvisible = false
-            },
+      innersave(id) {
+          const newData = [...this.innerData];
+          const newCacheData = [...this.cacheData];
+          const target = newData.filter(item => id === item.id)[0];
+          const targetCache = newCacheData.filter(item => id === item.id)[0];
+          if (target && targetCache) {
+              delete target.editable;
+              this.innerData = newData;
+              Object.assign(targetCache, target);
+              this.cacheData = newCacheData;
+          }
+          this.editingKey = '';
+      },
+      innercancel(id) {
+          const newData = [...this.innerData];
+          const target = newData.filter(item => id === item.id)[0];
+          this.editingKey = '';
+          if (target) {
+              Object.assign(target, this.cacheData.filter(item => id === item.id)[0]);
+              delete target.editable;
+              this.innerData = newData;
+          }
+      },
+      expandinnerlist(expanded, record) {
+          if (this.expandedRowKeys.length > 0) {
+              let index = this.expandedRowKeys.indexOf(record.id);
+              if (index > -1) {
+                  this.expandedRowKeys.splice(index, 1);
+              } else {
+                  this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
+                  this.expandedRowKeys.push(record.id);
+              }
+          } else {
+              this.expandedRowKeys.push(record.id);
+          }
+          this.innerData = record.task_set
+      },
+      // 子表删除
+      innerdelete(id) {
+          this.ids.push(id);
+          console.log(this.ids);
+          this.dialogvisibleson = true;
+      },
+      // 主表删除
+      table_delete(id) {
+          this.ids.push(id);
+          console.log(this.ids);
+          this.dialogvisible = true;
+      },
+      async onok() {
+          for (let i = 0; i < this.ids.length; i++) {
+              await table_delete(this.ids[i]).then(res => {
+                  if (res.status === 200) {
+                      this.$message.success(`删除成功！`);
+                  } else {
+                      this.$message.error(`删除失败！`);
+                  }
+              })
+          }
+          const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+          this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+          this.query.page = this.query.page < 1 ? 1 : this.query.page
+          this.gettabledata()
+          this.ids = []
+          this.dialogvisible = false
+      },
 
 
-            async onokson() {
-                for (let i = 0; i < this.ids.length; i++) {
-                    await innerdelete(this.ids[i]).then(res => {
-                        if (res.status === 200) {
-                            this.$message.success(`删除成功！`);
-                        } else {
-                            this.$message.error(`删除失败！`);
-                        }
-                    })
-                }
-                const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-                this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-                this.query.page = this.query.page < 1 ? 1 : this.query.page
-                this.gettabledata()
-                this.ids = []
-                this.dialogvisibleson = false
-            },
+      async onokson() {
+          for (let i = 0; i < this.ids.length; i++) {
+              await innerdelete(this.ids[i]).then(res => {
+                  if (res.status === 200) {
+                      this.$message.success(`删除成功！`);
+                  } else {
+                      this.$message.error(`删除失败！`);
+                  }
+              })
+          }
+          const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+          this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+          this.query.page = this.query.page < 1 ? 1 : this.query.page
+          this.gettabledata()
+          this.ids = []
+          this.dialogvisibleson = false
+      },
 
-            onno() {
-                this.ids = [];
-                this.dialogvisible = false
-            },
+      onno() {
+          this.ids = [];
+          this.dialogvisible = false
+      },
 
-            onnoson() {
-                this.ids = [];
-                this.dialogvisibleson = false
-            },
+      onnoson() {
+          this.ids = [];
+          this.dialogvisibleson = false
+      },
 
-            // 分页配置
-            onShowSizeChange(current, pageSize) {
-                this.query.page = 1
-                this.query.page_size = pageSize
-                this.gettabledata()
-            },
-            pageonChange(pageNumber) {
-                this.query.page = pageNumber
-                this.gettabledata()
-            },
+      // 分页配置
+      onShowSizeChange(current, pageSize) {
+          this.query.page = 1
+          this.query.page_size = pageSize
+          this.gettabledata()
+      },
+      pageonChange(pageNumber) {
+          this.query.page = pageNumber
+          this.gettabledata()
+      },
 
 
         }
