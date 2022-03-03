@@ -189,7 +189,7 @@
                 </template>
             </a-modal>
             <!-- 编辑表单 -->
-            <a-modal v-model="innervisible" title="任务编辑" on-ok="innerhandleOk" :maskClosable="false" @afterClose="innerhandleCancel()">
+            <a-modal v-model="innervisible" :title="taskname" on-ok="innerhandleOk" :maskClosable="false" @afterClose="innerhandleCancel()">
                 <template slot="footer">
                     <a-button key="back" @click="innerhandleCancel">
                         取消
@@ -272,7 +272,7 @@
             </a-modal>
 
             <!-- uid对应的消耗和佣金 -->
-            <a-modal v-model="visibleuid" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceluid()" :width='850'>
+            <a-modal v-model="visibleuid" title="消耗和佣金" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceluid()" :width='850'>
                 <template slot="footer">
                     <a-button key="back" @click="handleCanceluid">
                         取消
@@ -432,9 +432,9 @@
         innerData,
         query: {
           page: 1,
-                    page_size: 10,
-                    card_number: '',
-                    platform: '',
+          page_size: 10,
+          card_number: '',
+          platform: '',
         },
         form: {
           uid: '',
@@ -470,6 +470,7 @@
         advanced: true,
         selectedRows: [],
         tablename: '',
+        taskname: '',
         visible: false,
         visibleuid: false,
         innervisible: false,
@@ -607,8 +608,6 @@
             if (this.innerform.uid.indexOf("uuid") != -1){
               console.log("uuid")
               console.log(this.innerform.uid)
-              console.log("uuid")
-              console.log(this.innerform.uid)
               this.innerform.account_id = this.innerform.uid.split("uuid")[1]
               PatchTaskListData(this.innerform).then(res => {
                 console.log("成功")
@@ -621,7 +620,6 @@
             }else{
               console.log("uuid+++++")
               console.log(this.innerform.uid)
-              console.log("uuid+++++")
               AddCardAccount({uid: this.innerform.uid}).then(res => {
                 console.log("创建成功")
                 console.log(res)
@@ -642,7 +640,7 @@
             // PatchTaskListData(this.innerform).then(res => {
             //   console.log("成功")
             //   console.log(res)
-              this.innerloading = false;
+            //   this.innerloading = false;
             //   this.gettabledata()
             //   this.innervisible = false;
             // })
@@ -746,8 +744,9 @@
       )
       },
       adddata() {
-          console.log('ok');
-          this.visibleadd = true
+        this.innervisible = true
+        console.log("任务新增")
+        this.taskname = "任务新增"
       },
       handleCanceladd(){
           this.visibleadd = false;
@@ -780,6 +779,8 @@
         // console.log(this.innerData);
         console.log(data);
         this.innervisible = true;
+        // console.log("任务编辑")
+        this.taskname = "任务编辑"
         this.innerform.id = data.id
         this.innerform.uid = data.uid
         this.innerform.account_id = data.account_id
