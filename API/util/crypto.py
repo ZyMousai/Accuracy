@@ -4,8 +4,8 @@ from Crypto.Cipher import AES
 import hashlib
 
 # 如果text不足16位的倍数就用空格补足为16位
-PASSWORD_KEY = 'Never give up999'
-IV = '7683425105789011'
+PASSWORD_KEY = ''
+IV = ''
 PASSWORD_KEY_BYTE = PASSWORD_KEY.encode()
 IV_BYTE = IV.encode()
 

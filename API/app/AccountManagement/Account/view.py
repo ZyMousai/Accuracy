@@ -105,8 +105,9 @@ async def delete_account(ids: Optional[List[int]] = Query(...), dbs: AsyncSessio
     return response_json
 
 
-@account_router.get("/password/{account_id}")
-async def decode_password(account_id: int, dbs: AsyncSession = Depends(db_session)):
-    result = await Account.get_one_detail(dbs, account_id)
-    result.password = decrypt(result.password)
-    return {"data": result.password}
+# 暂时屏蔽解密接口
+# @account_router.get("/password/{account_id}")
+# async def decode_password(account_id: int, dbs: AsyncSession = Depends(db_session)):
+#     result = await Account.get_one_detail(dbs, account_id)
+#     result.password = decrypt(result.password)
+#     return {"data": result.password}
