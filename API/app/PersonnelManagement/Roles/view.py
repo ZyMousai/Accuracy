@@ -115,7 +115,16 @@ async def get_role_one(role_id: Optional[int] = Query(None), dbs: AsyncSession =
     :param dbs:
     :return:
     """
-    return {"data": await Roles.get_one_detail(dbs, role_id)}
+    filter_condition = [
+        ('role_id', f'=={role_id}', role_id),
+        ('is_delete', '==0', 0)
+    ]
+    results = await RolePermissionMapping.get_all(dbs, *filter_condition)
+    permission_id_list = [i.permission_id for i in results]
+    return {
+        "data": await Roles.get_one_detail(dbs, role_id),
+        "permission_id_list": permission_id_list
+    }
 
 
 @roles_router.delete('/')

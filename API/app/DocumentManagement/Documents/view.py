@@ -13,7 +13,8 @@ from config import globals_config
 
 documents_router = APIRouter(
     prefix="/documents/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["DocumentManagement"])
 
 
 @documents_router.get("/download/{file_name}")

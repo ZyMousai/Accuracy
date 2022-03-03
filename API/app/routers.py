@@ -22,7 +22,7 @@ clerk_router.include_router(clerk_card_router)
 clerk_router.include_router(track_router)
 
 # ### DocumentManagement
-doc_man_router = APIRouter(prefix="/api/DocumentManagement", tags=["DocumentManagement"])
+doc_man_router = APIRouter(prefix="/api/DocumentManagement")
 doc_man_router.include_router(documents_router)
 doc_man_router.include_router(recycle_router)
 

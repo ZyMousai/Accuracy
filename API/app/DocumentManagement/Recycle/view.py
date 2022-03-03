@@ -13,7 +13,8 @@ from app.DocumentManagement.schemas import SearchDocumentManagement
 
 recycle_router = APIRouter(
     prefix="/recycle/v1",
-    responses={404: {"description": "Not found"}}, )
+    responses={404: {"description": "Not found"}},
+    tags=["Recycle"])
 
 
 async def query_parm(filename: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None,
