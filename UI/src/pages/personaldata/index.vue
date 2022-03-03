@@ -124,7 +124,7 @@
       title: '账户密码',
     }
   ];
-  import {mapState, mapGetters} from 'vuex'
+  import {mapMutations, mapState} from 'vuex'
   import { UserData, UpUserData } from '@/services/user';
   export default {
     name: 'personaldata',
@@ -175,6 +175,7 @@
         data,
         visible: false,
         buttonloading: false,
+        alone: '',
         wdform: {
           password: '',
           editrepassword: ''
@@ -195,8 +196,8 @@
       }
     },
     computed: {
+      ...mapMutations('account', ['setUser']),
       ...mapState('setting', ['pageMinHeight']),
-      ...mapGetters('account', ['user']),
       desc() {
         return this.$t('description')
       }
@@ -207,11 +208,14 @@
     methods: {
       // 获取用户信息
       getuserdata() {
+        this.alone = process.env.VUE_APP_API_ALONE_URL
         const id = localStorage.getItem('id')
         UserData(id).then(res => {
           this.form = res.data.data
+          localStorage.name = this.form.name
+          localStorage.avatar = this.form.avatar
           this.form.gender = this.form.gender + ''
-          this.imageUrl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/avatar/${this.form.avatar}`;
+          this.imageUrl = `${this.alone}/PersonnelManagement/users/v1/avatar/${this.form.avatar}`;
           this.user.avatar = this.form.avatar
           this.user.name = this.form.name
         })
@@ -231,7 +235,7 @@
       beforeUpload(file) {
         const id = localStorage.getItem('id')
         const account = localStorage.getItem('account')
-        this.upactionurl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/upload_avatar?account=${account}&user_id=${id}`
+        this.upactionurl = `${this.alone}/PersonnelManagement/users/v1/upload_avatar?account=${account}&user_id=${id}`
         const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
         if (!isJpgOrPng) {
           this.$message.error('You can only upload JPG file!');

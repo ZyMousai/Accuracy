@@ -48,7 +48,7 @@ export async function UsersAddRole(form) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function UsersAddDepartment(form) {
-    return request(DepartmentRoleMapping, METHOD.POST, form)
+    return request(DepartmentUserMapping, METHOD.POST, form)
 }
 
 /**
@@ -59,6 +59,26 @@ export async function UsersAddDepartment(form) {
  */
 export async function UsersEdit(form) {
     return request(USERS, 'PATCH', form)
+}
+
+/**
+ * 用户页面
+ * 修改用户，删除用户绑定角色
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UsersDeleteRole(form) {
+    return request(RoleUser, 'DELETE1', form)
+}
+
+/**
+ * 用户页面
+ * 修改用户，删除用户绑定部门
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UsersDeleteDepartment(form) {
+    return request(DepartmentUserMapping, 'DELETE1', form)
 }
 
 /**
@@ -80,6 +100,16 @@ export async function DeleteUsers(id) {
  */
 export async function RolesDate(query) {
     return request(ROLES, METHOD.GET, query)
+}
+
+/**
+ * 角色管理页面
+ * 获取单个角色信息
+ * @param id  查询请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetOneRolesDate(id) {
+    return request(ROLES + id, METHOD.GET, '')
 }
 
 /**

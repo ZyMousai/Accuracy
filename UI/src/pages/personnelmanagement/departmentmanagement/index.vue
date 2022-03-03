@@ -213,6 +213,9 @@
                 for (var key in this.query) {
                     this.query[key] = ''
                 }
+                this.query.page = 1
+                this.query.page_size = 10
+                this.gettabledata()
             },
             // 新增角色
             adddepartment() {

@@ -1,7 +1,7 @@
 <template>
   <a-dropdown>
     <div class="header-avatar" style="cursor: pointer">
-      <a-avatar class="avatar" size="large" shape="circle" :src="'http://192.168.50.49:8000/api/PersonnelManagement/users/v1/avatar/' + user.avatar"/>
+      <a-avatar class="avatar" size="large" shape="circle" :src="`${this.alone}/PersonnelManagement/users/v1/avatar/` + user.avatar"/>
       <span class="name">{{user.name}}</span>
     </div>
     <a-menu :class="['avatar-menu']" slot="overlay">
@@ -24,6 +24,13 @@ import {logout} from '@/services/user'
 
 export default {
   name: 'HeaderAvatar',
+  data () {
+    return {
+      alone: '',
+      name: '',
+      avatar: ''
+    }
+  },
   computed: {
     ...mapGetters('account', ['user']),
   },
@@ -32,7 +39,9 @@ export default {
     },
   methods: {
     getuserdata() {
-      console.log(this.user);
+      this.name = localStorage.getItem('name')
+      this.avatar = localStorage.getItem('avatar')
+      this.alone = process.env.VUE_APP_API_ALONE_URL
     },
     logout() {
       logout()

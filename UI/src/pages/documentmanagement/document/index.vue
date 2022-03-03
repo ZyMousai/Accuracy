@@ -232,6 +232,7 @@ export default {
         department_id: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
       },
       tableloading: false,
+      alone: '',
       headers: {
         accept: 'application/json',
         authorization: 'authorization-text',
@@ -244,6 +245,7 @@ export default {
   methods: {
     // 获取表格数据
     gettabledata () {
+      this.alone = process.env.VUE_APP_API_ALONE_URL
       this.tableloading = true
       DocumentDate(this.query).then(res => {
         if (res.status === 200) {
@@ -382,7 +384,7 @@ export default {
     beforeUpload() {
       const user_id  = localStorage.getItem('id')
       const department_id  = localStorage.getItem('department_id ')
-      this.updocuurl = `http://192.168.50.49:8000/api/PersonnelManagement/users/v1/upload_avatar?user_id=${user_id}&department_id=${department_id}`
+      this.updocuurl = `${this.alone}/PersonnelManagement/users/v1/upload_avatar?user_id=${user_id}&department_id=${department_id}`
     },
     // 自定义删除对话框底部按钮
     modalfooter() {

@@ -10,7 +10,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.department" placeholder="请输入" />
+              <a-input v-model="query.role" placeholder="请输入" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -105,7 +105,7 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        department: ''
+        role: ''
       },
       total: 0,
       tableloading: false,
@@ -144,7 +144,7 @@ export default {
     },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.gettabledata()
     },
     // 批量删除
     Batchdelete() {

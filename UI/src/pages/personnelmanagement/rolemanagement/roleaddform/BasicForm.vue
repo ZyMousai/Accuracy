@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import {GetRoleMenu, AddRole, AddRoleMenu, AddRolePermission} from '@/services/personnelmanagement'
+import {GetRoleMenu, AddRole, AddRoleMenu, AddRolePermission, GetOneRolesDate} from '@/services/personnelmanagement'
 export default {
   name: 'BasicForm',
   data () {
@@ -53,6 +53,7 @@ export default {
         permissionarr: []
       },
       roleid: '',
+      editroleid: '',
       isdisabled: true,
       menuoptions: [],
       useroptions: [],
@@ -68,9 +69,21 @@ export default {
     }
   },
   created() {
-      this.gerallmenu()
+    this.gerallmenu()
+    this.geturldata()
   },
   methods: {
+    // 获取url的参数
+    geturldata() {
+      this.form = {}
+      this.editroleid = location.href.split("?")[1]
+      console.log(this.editroleid);
+      if (this.editroleid) {
+        GetOneRolesDate(this.editroleid).then(res => {
+          console.log(res);
+        })
+      }
+    },
     gerallmenu() {
       GetRoleMenu().then(res => {
         if (res.status === 200) {

@@ -105,6 +105,7 @@
             afterLogin(res) {
                 this.logging = false
                 const loginRes = res.data
+                console.log(loginRes);
                 localStorage.id = res.data.user.id
                 localStorage.name = res.data.user.name
                 localStorage.account = res.data.user.account
@@ -134,6 +135,8 @@
                     //   this.$message.success(loginRes.message, 3)
                     // })
                 } else {
+                    this.$message.error('登陆失败！')
+                    this.logging = false
                     this.error = loginRes.message
                 }
             },

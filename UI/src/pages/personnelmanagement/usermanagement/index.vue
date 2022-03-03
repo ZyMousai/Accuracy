@@ -19,9 +19,9 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item['department']" :value="item['id']">
-                  {{item['department']}}
+              <a-select v-model="query.department_id" placeholder="请选择">
+                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                  {{item.department}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -32,7 +32,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department" placeholder="请选择">
+              <a-select v-model="query.department_id" placeholder="请选择">
                 <a-select-option v-for="item in roleoptions" :key="item" :value="item">
                   {{item}}
                 </a-select-option>
@@ -68,8 +68,11 @@
         {{ record.gender ? '男' : '女' }}
       </span>
         <div slot="action" slot-scope="{record}">
+          <a @click="modifypermissions(record.id)" style="margin-right: 8px">
+            <a-icon type="usergroup-delete" />修改权限
+          </a>
           <a @click="showModal(record)" style="margin-right: 8px">
-            <a-icon type="edit"/>修改
+            <a-icon type="edit"/>修改信息
           </a>
           <a-popconfirm
             title="你确定要重置密码吗？"
@@ -136,19 +139,15 @@
           </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="部门" prop="department">
-            <a-select v-model="form.department" placeholder="请选择部门">
-              <a-select-option v-for="item in departmentoptions" :key="item['department']" :value="item['id']">
-                {{item['department']}}
-              </a-select-option>
-            </a-select>
-          </a-form-model-item>
+            <a-form-model-item label="入职时间" prop="entry_time">
+              <a-date-picker v-model="form.entry_time" style="width: 100%" :value-format="dateFormat" placeholder="请选择入职时间" />
+            </a-form-model-item>
           </a-col>
         </a-row>
-        <a-row :gutter="16">
+        <a-row :gutter="16" v-if="this.tablename === '新增'">
           <a-col :span="10">
-            <a-form-model-item label="角色" prop="role">
-            <a-select v-model="form.role" placeholder="请选择角色">
+            <a-form-model-item label="角色" prop="role_id">
+            <a-select v-model="form.role_id" placeholder="请选择角色">
               <a-select-option v-for="item in ruleslist" :key="item.role" :value="item.id">
                 {{item.role}}
               </a-select-option>
@@ -156,8 +155,12 @@
           </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="入职时间" prop="entry_time">
-            <a-date-picker v-model="form.entry_time" style="width: 100%" :value-format="dateFormat" placeholder="请选择入职时间" />
+            <a-form-model-item label="部门" prop="department_id">
+            <a-select v-model="form.department_id" placeholder="请选择部门">
+              <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                {{item.department}}
+              </a-select-option>
+            </a-select>
           </a-form-model-item>
           </a-col>
         </a-row>
@@ -185,7 +188,49 @@
         <div>2.所有用户的初始密码为123456，创建成功后请尽快修改密码。</div>
         </a-form-model>
       </template>
-    </a-modal>
+      </a-modal>
+      <!-- 权限修改表单 -->
+      <a-modal v-model="permissionsvisible" :title="tablename" on-ok="permissionsOkhandleOk" :maskClosable="false" @afterClose="permissionshandleCancel()" :width='850'>
+      <template slot="footer">
+        <a-button key="back" @click="permissionshandleCancel">
+          取消
+        </a-button>
+        <a-button key="submit" type="primary" :loading="permissionsloading" @click="permissionsOkhandleOk">
+          提交
+        </a-button>
+      </template>
+      <template>
+        <a-form-model
+          ref="permissionsruleForm"
+          :model="permissionsform"
+          :rules="permissionsrules"
+          :label-col="{ span: 6 }"
+          :wrapper-col="{ span: 14 }"
+          layout="vertical"
+        >
+        <a-row :gutter="16">
+          <a-col :span="10">
+            <a-form-model-item label="角色" prop="role_id">
+            <a-select v-model="permissionsform.role_id" placeholder="请选择角色">
+              <a-select-option v-for="item in ruleslist" :key="item.role" :value="item.id">
+                {{item.role}}
+              </a-select-option>
+            </a-select>
+          </a-form-model-item>
+          </a-col>
+          <a-col :span="10">
+            <a-form-model-item label="部门" prop="department_id">
+            <a-select v-model="permissionsform.department_id" placeholder="请选择部门">
+              <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                {{item.department}}
+              </a-select-option>
+            </a-select>
+          </a-form-model-item>
+          </a-col>
+        </a-row>
+        </a-form-model>
+      </template>
+      </a-modal>
     </div>
     <!-- 删除确认对话框 -->
     <a-modal
@@ -201,7 +246,7 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {UsersDate, DeleteUsers, DepartmentDate, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit, UsersAddRole, UsersAddDepartment} from '@/services/personnelmanagement'
+import {UsersDate, DeleteUsers, DepartmentDate, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit, UsersAddRole, UsersAddDepartment, UsersDeleteRole, UsersDeleteDepartment} from '@/services/personnelmanagement'
 const columns = [
   {
     title: '序号',
@@ -261,12 +306,12 @@ export default {
         page: 1,
         page_size: 10,
         platform: '',
-        department: ''
+        department_id: ''
       },
       form: {
         account: '',
-        role: '',
-        department: '',
+        role_id: '',
+        department_id: '',
         name: '',
         gender: null,
         birth: '',
@@ -289,12 +334,26 @@ export default {
       visible: false,
       loading: false,
       userid: '',
+      permissionsloading: false,
+      permissionsvisible: false,
+      permissionsform: {
+        role_id: '',
+        department_id: ''
+      },
+      repermissionsform: {
+        role_id: '',
+        department_id: ''
+      },
+      permissionsrules: {
+        department_id: [{ required: true, message: '请选择部门', trigger: 'change' }],
+        role_id: [{ required: true, message: '请选择角色', trigger: 'change' }],
+      },
       rules: {
         account: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
         gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-        department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-        role: [{ required: true, message: '请选择角色', trigger: 'change' }],
+        department_id: [{ required: true, message: '请选择部门', trigger: 'change' }],
+        role_id: [{ required: true, message: '请选择角色', trigger: 'change' }],
         entry_time: [{ required: true, message: '请选择入职时间', trigger: 'change' }],
         phone: [{ required: true, message: '请填写手机号', trigger: 'blur' },
                   { validator: checkMobile, rtigger:'blur'  }],
@@ -358,13 +417,9 @@ export default {
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1);
-      this.selectedRows = []
-    },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.gettabledata()
     },
     // 批量删除
     Batchdelete() {
@@ -379,6 +434,9 @@ export default {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = 1
+      this.query.page_size = 10
+      this.gettabledata()
     },
     // 打开编辑表单
     showModal(data) {
@@ -387,6 +445,13 @@ export default {
         this.tablename = '编辑'
         GetOneUsersDate(data.id).then(res => {
           this.form = res.data.data
+          this.userid = this.form.id
+          this.ruleslist.forEach(i => {
+            if (i.role === this.form.users_role) {
+              this.form.role_id = i.id
+              return
+            }
+          })
           this.form.gender = this.form.gender + ''
           this.visible = true;
         })
@@ -419,7 +484,8 @@ export default {
       UsersAdd(this.form).then(res => {
         if (res.status === 200) {
           this.userid = res.data.id
-          this.adduserrole()
+          this.adduserrole(this.form)
+          this.adduserDepartment(this.form)
         } else {
           this.$message.error(`${this.tablename}失败！`);
           this.loading = false;
@@ -439,45 +505,110 @@ export default {
         }
       })
     },
+    // 修改用户权限
+    modifypermissions(data) {
+      this.tablename = '修改'
+      this.permissionsvisible = true
+      this.userid = data
+      GetOneUsersDate(data).then(res => {
+        this.ruleslist.forEach(i => {
+          if (i.role === res.data.data.users_role) {
+            this.repermissionsform.role_id = i.id
+            this.permissionsform.role_id = i.id
+            return
+          }
+        })
+        this.permissionsform.department_id = res.data.data.department_id
+        this.repermissionsform.department_id = res.data.data.department_id
+      })
+    },
+    // 提交权限编辑表单
+    permissionsOkhandleOk() {
+      this.permissionsloading = true
+      this.$refs.permissionsruleForm.validate(valid => {
+        if (valid) {
+          this.deleteuserrole(this.repermissionsform)
+          this.deleteuserDepartment(this.repermissionsform)
+        }
+      })
+    },
+    // 关闭权限编辑表单
+    permissionshandleCancel() {
+      this.permissionsvisible = false
+      this.$refs.permissionsruleForm.resetFields();
+    },
     // 添加用户关联角色
-    adduserrole() {
+    adduserrole(data) {
       const form = {
-        role_id: this.form.role,
+        role_id: data.role_id,
         ids: []
       }
       form.ids.push(this.userid)
       UsersAddRole(form).then(res => {
         if (res.status === 200) {
-          console.log(res);
-          this.adduserDepartment()
+          this.$message.success(`角色添加成功！`);
         } else {
           this.$message.error(`${this.tablename}失败！`);
+          this.permissionsloading = false
           this.loading = false;
         }
       })
     },
     // 删除用户关联角色
-    deleteuserrole() {},
-    // 添加用户关联部门
-    adduserDepartment() {
+    deleteuserrole(data) {
       const form = {
-        department_id: this.form.department,
+        role_id: data.role_id,
+        ids: []
+      }
+      form.ids.push(this.userid)
+      UsersDeleteRole(form).then(res => {
+        if (res.status === 200) {
+          this.adduserrole(this.permissionsform)
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.permissionsloading = false
+          this.loading = false;
+        }
+      })
+    },
+    // 添加用户关联部门
+    adduserDepartment(data) {
+      const form = {
+        department_id: data.department_id,
         ids: []
       }
       form.ids.push(this.userid)
       UsersAddDepartment(form).then(res => {
         if (res.status === 200) {
-          console.log(res);
+          this.$message.success(`用户部门添加成功！`);
+          this.$message.success(`${this.tablename}成功！`);
           this.gettabledata()
+          this.handleCancel()
+          this.permissionshandleCancel()
           this.loading = false;
-          this.visible = false;
+          this.permissionsloading = false
         } else {
           this.$message.error(`${this.tablename}失败！`);
+          this.permissionsloading = false
           this.loading = false;
         }
       })},
     // 删除用户关联部门  
-    deleteuserDepartment() {},
+    deleteuserDepartment(data) {
+      const form = {
+        department_id: data.department_id,
+        ids: []
+      }
+      form.ids.push(this.userid)
+      UsersDeleteDepartment(form).then(res => {
+        if (res.status === 200) {
+          this.adduserDepartment(this.permissionsform)
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.permissionsloading = false
+          this.loading = false;
+        }
+      })},
     // 关闭编辑表单
     handleCancel() {
       this.visible = false;

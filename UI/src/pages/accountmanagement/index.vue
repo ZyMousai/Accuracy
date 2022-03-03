@@ -67,7 +67,7 @@
       <!-- 表单 -->
       <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
-        <a-button key="back" @click="handleCancel">
+        <a-button key="back" @click="handleCancel()">
           取消
         </a-button>
         <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
@@ -296,6 +296,7 @@ export default {
     },
     // 打开编辑表单
     showModal(data) {
+      this.form = {}
       if (data.id) {
         this.tablename = '编辑'
         GetOngAccountDate(data.id).then(res => {
