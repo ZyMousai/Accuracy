@@ -124,12 +124,32 @@ export async function AddRole(from) {
 
 /**
  * 角色页面
+ * 增加角色
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function EditRole(from) {
+    return request(ROLES, "PATCH", from)
+}
+
+/**
+ * 角色页面
  * 添加角色菜单
  * @param from  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function AddRoleMenu(from) {
     return request(RoleMenu, METHOD.POST, from)
+}
+
+/**
+ * 角色页面
+ * 删除 角色菜单
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteRoleMenu(from) {
+    return request(RoleMenu, 'DELETE1', from)
 }
 
 /**
@@ -143,8 +163,18 @@ export async function AddRolePermission(from) {
 }
 
 /**
+ * 角色页面
+ * 删除角色权限
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteRolePermission(from) {
+    return request(RolePermission, 'DELETE1', from)
+}
+
+/**
  * 角色添加修改页面
- * 获取角色对应的菜单
+ * 获取角色详情信息
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetRoleMenu() {
