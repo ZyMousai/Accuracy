@@ -47,6 +47,15 @@
         :pagination="false"
         :rowKey='record=>record.id'
       >
+        <div slot="password" slot-scope="{record}">
+          {{record.password}}
+          <a @click="showPassword(record)" style="margin-left: 8px">
+            <a-icon type="sync" />解密
+          </a>
+          <a @click="hidePassword(record)" style="margin-left: 8px">
+            <a-icon type="sync" />加密
+          </a>
+        </div>
         <div slot="action" slot-scope="{record}">
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
@@ -102,10 +111,10 @@
           </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="权限角色" prop="department">
-            <a-select v-model="form.department" placeholder="请选择角色">
-              <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                {{item}}
+            <a-form-model-item label="权限角色" prop="role_id">
+            <a-select v-model="form.role_id" placeholder="请选择角色">
+              <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                {{item.role}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
@@ -137,7 +146,8 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {AccountDate, GetDownmenutDate, AddAccount, GetOngAccountDate, DeleteDate, EditAccount} from '@/services/accountmanagement'
+import CryptoJS from 'crypto-js/crypto-js'
+import {AccountDate, GetDownmenutDate, AddAccount, GetOngAccountDate, DeleteDate, EditAccount, AddAccountRole, DeleteAccountRole} from '@/services/accountmanagement'
 const columns = [
   {
     title: '序号',
@@ -150,7 +160,9 @@ const columns = [
   },
   {
     title: '密码',
-    dataIndex: 'password'
+    dataIndex: 'password',
+    width: 800,
+    scopedSlots: { customRender: 'password' }
   },
   {
     title: '备注',
@@ -164,6 +176,9 @@ const columns = [
 
 const dataSource = []
 
+const KEY = CryptoJS.enc.Utf8.parse(" ");
+const IV = CryptoJS.enc.Utf8.parse(" "); 
+
 export default {
   name: 'QueryList',
   components: {StandardTable},
@@ -173,16 +188,20 @@ export default {
         page: 1,
         page_size: 10,
         account: '',
-        platform: '',
-        password: '',
-        remark: '',
+        platform: ''
       },
       form: {
         account: '',
         platform: '',
         remark: '',
+        role_id: '',
         password: ''
       },
+      reform: {
+        role_id: ''
+      },
+      KEY: KEY,
+      IV: IV,
       total: 0,
       advanced: true,
       columns: columns,
@@ -194,12 +213,14 @@ export default {
       loading: false,
       tableloading: false,
       dialogvisible: false,
+      isciphertext: true,
+      accountid: '',
       ids: [],
       rules: {
         platform: [{ required: true, message: '请输入平台', trigger: 'blur' }],
         account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-        department: [{ required: true, message: '请选择角色', trigger: 'change' }],
+        role_id: [{ required: true, message: '请选择角色', trigger: 'change' }],
         remark: [{ required: false, trigger: 'blur' }],
       }
     }
@@ -230,9 +251,7 @@ export default {
     getdowndata() {
       GetDownmenutDate().then(res => {
         if (res.status === 200) {
-          res.data.data.forEach(item => {
-            this.departmentoptions.push(item.role)
-          })
+          this.departmentoptions = res.data.data
         } else {
           this.$message.error(`获取角色菜单数据失败！`);
         }
@@ -240,15 +259,6 @@ export default {
     },
     toggleAdvanced () {
       this.advanced = !this.advanced
-    },
-    remove () {
-      this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-      this.selectedRows = []
-    },
-    handleMenuClick (e) {
-      if (e.key === 'delete') {
-        this.remove()
-      }
     },
     // 查询
     queryevents() {
@@ -301,6 +311,9 @@ export default {
         this.tablename = '编辑'
         GetOngAccountDate(data.id).then(res => {
           this.form = res.data.data
+          this.form.password = this.Decrypt(this.form.password)
+          this.reform.role_id = res.data.data.role_id
+          this.accountid = data.id
           this.visible = true;
         })
       } else {
@@ -312,6 +325,7 @@ export default {
     handleOk() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
+          this.form.password = this.Encrypt(this.encryption(this.form.password))
           this.loading = true;
           this.tablename === '新增' ? this.addadta() : this.ediddata()
         }
@@ -320,10 +334,9 @@ export default {
     addadta() {
       AddAccount(this.form).then(res => {
         if (res.status === 200) {
-          this.$message.success(`${this.tablename}成功！`);
-          this.gettabledata()
-          this.handleCancel()
-          this.loading = false;
+          console.log(res.data.id);
+          this.accountid = res.data.id
+          this.addaccountrole(this.form)
         } else {
           this.$message.error(`${this.tablename}失败！`);
           this.loading = false;
@@ -333,20 +346,70 @@ export default {
     ediddata() {
       EditAccount(this.form).then(res => {
         if (res.status === 200) {
-          this.$message.success(`${this.tablename}成功！`);
-          this.gettabledata()
-          this.handleCancel()
-          this.loading = false;
+          this.deleteaccountrole(this.reform)
         } else {
           this.$message.error(`${this.tablename}失败！`);
           this.loading = false;
         }
       })
     },
+    // 添加用户关联角色
+    addaccountrole(data) {
+      console.log(data);
+      const form = {
+        role_id: data.role_id,
+        ids: []
+      }
+      form.ids.push(this.accountid)
+      AddAccountRole(form).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`${this.tablename}成功！`);
+          this.loading = false;
+          this.accountid = ''
+          this.gettabledata()
+          this.handleCancel()
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    // 删除用户关联角色
+    deleteaccountrole(data) {
+      const form = {
+        role_id: data.role_id,
+        ids: []
+      }
+      form.ids.push(this.accountid)
+      DeleteAccountRole(form).then(res => {
+        if (res.status === 200) {
+          this.addaccountrole(this.form)
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    encryption(data) {
+      var ciphertext = data
+      for (let i = 0; i < 10; i++) {
+        ciphertext += '/0'
+      }
+      return ciphertext
+    },
     // 关闭编辑表单
     handleCancel() {
       this.visible = false;
       this.$refs.ruleForm.resetFields();
+    },
+    // 显示密码
+    showPassword(data) {
+      console.log(data);
+      data.password = this.Decrypt(data.password)
+    },
+    hidePassword(data) {
+      console.log(data);
+      data.password = this.Encrypt(this.encryption(data.password))
     },
     // 分页配置
     onShowSizeChange(current, pageSize) {
@@ -358,6 +421,46 @@ export default {
       this.query.page = pageNumber
       this.gettabledata()
     },
+    // AES加密
+    Encrypt(str, keyStr, ivStr) {
+      let key = this.KEY
+      let iv = this.IV
+      
+      if (keyStr && ivStr) {
+          key = CryptoJS.enc.Utf8.parse(keyStr);
+          iv = CryptoJS.enc.Utf8.parse(ivStr);
+      }
+      
+      let srcs = CryptoJS.enc.Utf8.parse(str);
+      var encrypt = CryptoJS.AES.encrypt(srcs, key, {
+          iv: iv,
+          mode: CryptoJS.mode.CBC,            //这里可以选择AES加密的模式
+          padding: CryptoJS.pad.Pkcs7
+      });
+      return CryptoJS.enc.Base64.stringify(encrypt.ciphertext);
+    },
+    // AES解密
+    Decrypt(str, keyStr, ivStr) {
+      let key = this.KEY
+      let iv = this.IV
+      
+      if (keyStr && ivStr) {
+          key = CryptoJS.enc.Utf8.parse(keyStr);
+          iv = CryptoJS.enc.Utf8.parse(ivStr);
+      }
+      
+      let base64 = CryptoJS.enc.Base64.parse(str);
+      let src = CryptoJS.enc.Base64.stringify(base64);
+      
+      var decrypt = CryptoJS.AES.decrypt(src, key, {
+          iv: iv,
+          mode: CryptoJS.mode.CBC,            //这里可以选择AES解密的模式
+          padding: CryptoJS.pad.Pkcs7
+      });
+      
+      var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8).split('/0')[0];
+      return decryptedStr.toString();
+    }
   }
 }
 </script>

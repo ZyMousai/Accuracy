@@ -7,8 +7,8 @@
         :label-col="{ span: 7 }"
         :wrapper-col="{ span: 10 }"
       >
-    <a-form-model-item ref="name" label="角色名" prop="name">
-      <a-input v-model="form.name" />
+    <a-form-model-item ref="role" label="角色名" prop="role">
+      <a-input v-model="form.role" />
     </a-form-model-item>
     <a-form-model-item label="菜单选择" prop="menu">
       <a-select v-model="form.menu" placeholder="请选择菜单" mode="multiple">
@@ -39,31 +39,30 @@
 </template>
 
 <script>
-import {GetRoleMenu, AddRole, AddRoleMenu, AddRolePermission, GetOneRolesDate} from '@/services/personnelmanagement'
+import {GetRoleMenu, AddRole, EditRole, AddRoleMenu, AddRolePermission, GetOneRolesDate, DeleteRoleMenu, DeleteRolePermission} from '@/services/personnelmanagement'
 export default {
   name: 'BasicForm',
   data () {
     return {
       value: 1,
       form: {
-        name: '',
+        role: '',
         menu: [],
-        firstmenu: [],
-        sontmenu: [],
+        permissionarr: []
+      },
+      reform: {
+        menu: [],
         permissionarr: []
       },
       roleid: '',
-      editroleid: '',
       isdisabled: true,
       menuoptions: [],
       useroptions: [],
-      operationoptions: [{id: 1, operate:'新增'}, {id: 2, operate:'修改'},{id: 3, operate:'删除'},{id: 4, operate:'查看'},{id: 5, operate:'搜索'}],
+      operationoptions: [{id: 1, operate:'新增'}, {id: 2, operate:'修改'},{id: 3, operate:'查看'},{id: 4, operate:'删除'}],
       secondarymenuoptions: [],
       rules: {
-        name: [{ required: true, message: '请填写角色名', trigger: 'blur' }],
+        role: [{ required: true, message: '请填写角色名', trigger: 'blur' }],
         menu: [{type: 'array', required: true, message: '请选择菜单', trigger: 'change' }],
-        firstmenu: [{type: 'array', required: true, message: '请选择一级菜单', trigger: 'change' }],
-        sontmenu: [{type: 'array', required: true, message: '请至少选择一个二级菜单', trigger: 'change',}],
         permissionarr: [{type: 'array', required: true, message: '请至少选择一个权限', trigger: 'change',}]
       },
     }
@@ -75,12 +74,14 @@ export default {
   methods: {
     // 获取url的参数
     geturldata() {
-      this.form = {}
-      this.editroleid = location.href.split("?")[1]
-      console.log(this.editroleid);
-      if (this.editroleid) {
-        GetOneRolesDate(this.editroleid).then(res => {
-          console.log(res);
+      this.roleid = location.href.split("?")[1]
+      if (this.roleid) {
+        GetOneRolesDate(this.roleid).then(res => {
+          this.form.role = res.data.data.role
+          this.form.permissionarr.push(...res.data.permission_id_list)
+          this.reform.permissionarr.push(...res.data.permission_id_list)
+          this.form.menu.push(...res.data.menu_id_list)
+          this.reform.menu.push(...res.data.menu_id_list)
         })
       }
     },
@@ -96,50 +97,86 @@ export default {
     onSubmit() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
-          this.addrole()
+          if (this.roleid) {
+            this.editrole()
+          } else {
+            this.addrole()
+          }
         }
       });
     },
     // 新增角色
     addrole() {
       const data = {
-        role: this.form.name,
+        role: this.form.role,
         creator: localStorage.getItem('name')
       }
       AddRole(data).then(res => {
         if (res.status === 200) {
           this.roleid = res.data.id
-          this.addrolemenu()
+          this.addrolemenu(this.form)
+          this.addoperationauthority(this.form)
         } else {
           this.$message.error(`添加角色失败！`);
         }
       })
     },
+    // 编辑角色名
+    editrole() {
+      const data = {
+        id: this.roleid,
+        role: this.form.role
+      }
+      EditRole(data).then(res => {
+        if (res.status === 200) {
+          this.daleterolemenu(this.reform)
+          this.daleteoperationauthority(this.reform)
+        } else {
+          this.$message.error(`编辑角色失败！`);
+        }
+      })
+    },
     // 新增菜单
-    addrolemenu() {
+    addrolemenu(from) {
       const data = {
         role_id: this.roleid,
-        ids: this.form.menu
+        ids: from.menu
       }
       AddRoleMenu(data).then(res => {
-        if (res.status === 200) {
-          this.addoperationauthority()
-        } else {
+        if (res.status !== 200) {
           this.$message.error(`添加角色失败！`);
         }
       })
     },
     // 删除菜单
-    // 新增操作权限
-    addoperationauthority() {
+    daleterolemenu(from) {
       const data = {
         role_id: this.roleid,
-        ids: this.form.permissionarr
+        ids: from.menu
+      }
+      DeleteRoleMenu(data).then(res => {
+        if (res.status === 200) {
+          this.addrolemenu(this.form)
+        } else {
+          this.$message.error(`修改角色失败！`);
+        }
+      })
+    },
+    // 新增操作权限
+    addoperationauthority(from) {
+      const data = {
+        role_id: this.roleid,
+        ids: from.permissionarr
       }
       AddRolePermission(data).then(res => {
         if (res.status === 200) {
-          this.$message.success(`添加角色成功！`);
+          this.$message.success(`操作成功！`);
           this.$router.push('/personnelmanagement/rolemanagement')
+          this.roleid = ''
+          this.reform = {
+            menu: [],
+            permissionarr: []
+          }
           this.$refs.ruleForm.resetFields();
         } else {
           this.$message.error(`添加角色失败！`);
@@ -147,6 +184,19 @@ export default {
       })
     },
     // 删除操作权限
+    daleteoperationauthority(from) {
+      const data = {
+        role_id: this.roleid,
+        ids: from.menu
+      }
+      DeleteRolePermission(data).then(res => {
+        if (res.status === 200) {
+          this.addoperationauthority(this.form)
+        } else {
+          this.$message.error(`修改角色失败！`);
+        }
+      })
+    },
     resetForm() {
       this.$refs.ruleForm.resetFields();
     },
