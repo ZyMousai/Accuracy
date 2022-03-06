@@ -99,6 +99,7 @@
                 <div slot="operation" slot-scope="record">
                     <a slot="operation" @click="edit(record)">编辑</a>
                     <a slot="operation" style="margin-left: 5px;" @click="table_delete(record.id)">删除</a>
+                    <a slot="operation" style="margin-left: 5px;" @click="table_add(record.id)">新增子表</a>
                 </div>
                 <a-table
                         slot="expandedRowRender"
@@ -667,11 +668,11 @@
       },
       // 子表添加按钮
       onHeaderCell() {
-        return (
-                <div style="text-align:left">
-                <a-button onClick={this.inneredit} size="small">新增数据</a-button>
-                </div>
-      )
+      //   return (
+      //           <div style="text-align:left">
+      //           <a-button onClick={this.inneredit} size="small">新增数据</a-button>
+      //           </div>
+      // )
       },
       innerhandleChange(value, id, column) {
         const newData = [...this.innerData];
