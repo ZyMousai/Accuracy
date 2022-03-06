@@ -1,4 +1,4 @@
-import { Accountmanagement, ROLES } from '@/services/api'
+import { Accountmanagement, ROLES, RoleAccount } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -22,7 +22,7 @@ export async function GetDownmenutDate() {
 
 /**
  * 账号管理页面
- * 添加用户
+ * 添加账号
  * @param from  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
@@ -32,7 +32,27 @@ export async function AddAccount(from) {
 
 /**
  * 账号管理页面
- * 编辑用户
+ * 添加账号对应角色
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddAccountRole(from) {
+    return request(RoleAccount, METHOD.POST, from)
+}
+
+/**
+ * 账号管理页面
+ * 删除账号对应角色
+ * @param from  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DeleteAccountRole(from) {
+    return request(RoleAccount, 'DELETE1', from)
+}
+
+/**
+ * 账号管理页面
+ * 编辑账号
  * @param from  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */

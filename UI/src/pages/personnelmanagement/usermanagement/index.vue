@@ -240,6 +240,7 @@
      cancel-text="否"
      @ok="user_onok"
      @cancel="user_onno">
+      <p>删除后将无法恢复！</p>
     </a-modal>
   </a-card>
 </template>
