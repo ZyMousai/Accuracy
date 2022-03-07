@@ -324,7 +324,7 @@
       PatchCardListData,
       PatchTaskListData,
       table_delete,
-      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount
+      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -388,7 +388,7 @@
           id: '',
           uid: '',
           account_id: '',
-          // card_id: '',
+          card_id: '',
           task: '',
           commission: '',
           consume: '',
@@ -526,25 +526,47 @@
         console.log(id);
         this.innervisible = true;
       },
-      // 提交编辑表单
+      // 提交子表的编辑表单
       innerhandleOk() {
-        if (this.taskname === "任务编辑"){
         this.$refs.innerruleForm.validate(valid => {
+          // "secondary_consumption": 0
           if (valid) {
             this.innerloading = true;
             console.log(this.innerform)
+            var addinnerform = {
+              "card_id": this.innerform.card_id,
+              "account_id": this.innerform.account_id,
+              "task": this.innerform.task,
+              "note": this.innerform.note,
+              "commission": this.innerform.commission,
+              "consume": this.innerform.consume,
+              "user": this.innerform.user,
+              "secondary_consumption": 0
+            }
             if (this.innerform.uid.indexOf("uuid") != -1){
               console.log("uuid")
               console.log(this.innerform.uid)
               this.innerform.account_id = this.innerform.uid.split("uuid")[1]
-              PatchTaskListData(this.innerform).then(res => {
-                console.log("成功")
-                console.log(res)
-                this.innerloading = false;
-                this.gettabledata()
-                this.innervisible = false;
-              })
-
+              addinnerform["account_id"] = this.innerform.account_id
+              if (this.taskname === "任务编辑"){
+                PatchTaskListData(this.innerform).then(res => {
+                  console.log("修改成功")
+                  console.log(res)
+                  // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                })
+              } else {
+                AddCreditTask(addinnerform).then(res => {
+                  console.log("创建成功")
+                  console.log(res)
+                  // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                })
+              }
             }else{
               console.log("uuid+++++")
               console.log(this.innerform.uid)
@@ -554,30 +576,30 @@
                 var id = res.data.data
                 console.log(id)
                 this.innerform.account_id = id
-                PatchTaskListData(this.innerform).then(res => {
-                  console.log("成功")
-                  console.log(res)
-                  this.innerloading = false;
-                  this.gettabledata()
-                  this.innervisible = false;
-                })
-
+                addinnerform["account_id"] = id
+                if (this.taskname === "任务编辑") {
+                  PatchTaskListData(this.innerform).then(res => {
+                    console.log("成功")
+                    console.log(res)
+                    // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                  })
+                } else {
+                  AddCreditTask(addinnerform).then(res => {
+                    console.log("创建成功")
+                    console.log(res)
+                    // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                  })
+                }
               })
-
             }
-            // PatchTaskListData(this.innerform).then(res => {
-            //   console.log("成功")
-            //   console.log(res)
-            //   this.innerloading = false;
-            //   this.gettabledata()
-            //   this.innervisible = false;
-            // })
-            console.log('ok');
           }
-        })}
-        else {
-            console.log(1223)
-        }
+        })
       },
       // 关闭编辑表单
       innerhandleCancel() {
@@ -623,7 +645,9 @@
         PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
           console.log("成功")
           console.log(res)
-          this.gettabledata()
+          // this.gettabledata()
+          //此处未完成，需要刷新子表，或重新展开，暂定刷新页面
+          location.reload()
         })
       },
       // 修改主表是否保留
@@ -632,8 +656,8 @@
         PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
           // console.log("成功")
           console.log(res)
-          // this.gettabledata()
-          //此处未完成，需要刷新子表，或重新展开
+          this.gettabledata()
+
         })
       },
       // 上传文件
@@ -683,6 +707,21 @@
           this.innerData = newData;
         }
       },
+      //显示新增子表的模态框
+      table_add(id){
+        console.log(id)
+        this.taskname = '任务新增'
+        this.innervisible = true;
+        this.innerform.card_id= id
+        this.innerform.uid = ""
+        this.innerform.account_id = ""
+        this.innerform.task = ""
+        this.innerform.commission = ""
+        this.innerform.consume = ""
+        this.innerform.user = ""
+
+      },
+      //修改子表
       inneredit(data) {
         // const newData = [...this.innerData];
         // console.log(newData);
@@ -694,24 +733,19 @@
         //   this.innerData = newData;
         // }
         // console.log(this.innerData);
-      if (data.id) {
-          console.log(data);
-          this.innervisible = true;
-          // console.log("任务编辑")
-          this.taskname = "任务编辑"
-          this.innerform.id = data.id
-          this.innerform.uid = data.uid
-          this.innerform.account_id = data.account_id
-          // this.innerform.card_id = data.card_id
-          this.innerform.task = data.task
-          this.innerform.commission = data.commission
-          this.innerform.consume = data.consume
-          this.innerform.user = data.user
-      } else {
-          console.log(data, 132123132)
-          this.taskname = '任务新增'
-          this.innervisible = true;
-      }},
+        console.log(data);
+        this.innervisible = true;
+        // console.log("任务编辑")
+        this.taskname = "任务编辑"
+        this.innerform.id = data.id
+        this.innerform.uid = data.uid
+        this.innerform.account_id = data.account_id
+        this.innerform.card_id = data.card_id
+        this.innerform.task = data.task
+        this.innerform.commission = data.commission
+        this.innerform.consume = data.consume
+        this.innerform.user = data.user
+      },
       innersave(id) {
           const newData = [...this.innerData];
           const newCacheData = [...this.cacheData];
