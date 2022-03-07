@@ -62,13 +62,14 @@
                 <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
             </a-space>
             <a-table
-                    :columns="columns"
-                    :data-source="data"
-                    class="components-table-demo-nested"
-                    :rowKey='record=>record.id'
-                    :expandedRowKeys="expandedRowKeys"
-                    @expand="expandinnerlist"
-                    :pagination="false"
+              :columns="columns"
+              :data-source="data"
+              class="components-table-demo-nested"
+              :rowKey='record=>record.id'
+              :expandedRowKeys="expandedRowKeys"
+              @expand="expandinnerlist"
+              :pagination="false"
+              :key="componentKey"
             >
                 <!--        note-->
 
@@ -363,6 +364,7 @@
     data () {
       this.cacheData = innerData.map(item => ({ ...item }));
       return {
+        isRouterAlive: true,
         data,
         columns,
         innerColumns,
@@ -396,6 +398,7 @@
         },
         uuidSelect: {},
         advanced: true,
+        componentKey: 0,
         selectedRows: [],
         tablename: '',
         taskname: '',
@@ -458,6 +461,7 @@
           this.data = re_da
           this.total = res.data.total
           console.log(res);
+          // this.componentKey = this.componentKey === 0 ? 1 : 0;
         })
       },
       toggleAdvanced () {
@@ -553,18 +557,20 @@
                   console.log("修改成功")
                   console.log(res)
                   // this.innerloading = false;
-                    // this.gettabledata()
-                    // this.innervisible = false;
-                    location.reload()
+                  // this.gettabledata()
+                  // this.innervisible = false;
+                  location.reload()
+                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
                 })
               } else {
                 AddCreditTask(addinnerform).then(res => {
                   console.log("创建成功")
                   console.log(res)
                   // this.innerloading = false;
-                    // this.gettabledata()
-                    // this.innervisible = false;
-                    location.reload()
+                  // this.gettabledata()
+                  // this.innervisible = false;
+                  location.reload()
+                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
                 })
               }
             }else{
@@ -585,6 +591,7 @@
                     // this.gettabledata()
                     // this.innervisible = false;
                     location.reload()
+                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
                   })
                 } else {
                   AddCreditTask(addinnerform).then(res => {
@@ -594,6 +601,7 @@
                     // this.gettabledata()
                     // this.innervisible = false;
                     location.reload()
+                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
                   })
                 }
               })
@@ -648,6 +656,7 @@
           // this.gettabledata()
           //此处未完成，需要刷新子表，或重新展开，暂定刷新页面
           location.reload()
+          // this.componentKey = this.componentKey === 0 ? 1 : 0;
         })
       },
       // 修改主表是否保留
