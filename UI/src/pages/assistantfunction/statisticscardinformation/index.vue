@@ -208,21 +208,22 @@
                             :label-col="{ span: 4 }"
                             :wrapper-col="{ span: 14 }"
                     >
-                        <a-row :gutter="16">
+                        <a-row :gutter="32">
                             <!--              <a-col :span="10">-->
                             <!--                <a-form-model-item ref="uid" label="uuid" prop="creator">-->
                             <!--                  <a-input v-model="innerform.uid" />-->
                             <!--                </a-form-model-item>-->
                             <!--              </a-col>-->
-                            <a-col :span="10">
-                                <a-select mode="tags" v-model="innerform.uid" ref="uid" label="uuid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
-                                    <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
-                                    <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
-                                        {{ item.uid }}
-                                    </a-select-option>
+                            <a-col :span="15">
+                              <a-form-model-item ref="uid" label="UUID" prop="creator">
+                                <a-select mode="tags" v-model="innerform.uid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
+                                  <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
+                                  <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
+                                      {{ item.uid }}
+                                  </a-select-option>
                                 </a-select>
+                              </a-form-model-item>
                             </a-col>
-
                             <a-col :span="15">
                                 <a-form-model-item ref="task" label="任务名" prop="creator">
                                     <a-input v-model="innerform.task" />
