@@ -20,9 +20,14 @@ documents_router = APIRouter(
 @documents_router.get("/download/{file_name}")
 async def download_file(file_name: Any):
     """
-    下载文件
-    :param file_name: 下载的文件名
-    :return: 返回文件流，直接下载，下载后的文件名与显示的文件名一样。
+        下载文件
+
+    param file_name:
+
+        下载的文件名
+    return:
+
+        返回文件流，直接下载，下载后的文件名与显示的文件名一样。
     """
     final_file = os.path.join(globals_config.DocumentStoragePath, file_name)
     file_response = FileResponse(final_file, filename=file_name)
@@ -33,7 +38,20 @@ async def download_file(file_name: Any):
 async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocumentManagement),
                         dbs: AsyncSession = Depends(db_session)):
     """
-    默认获取文档页当前第一页数据
+        默认获取文档页当前第一页数据,也可根据条件获取所有文档信息
+
+    param query:
+
+        对应文档搜索的参数
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        返回分页信息，重新渲染后的文档的参数
+
     """
     # 站点域名和端口配置
     filter_condition = [
@@ -77,7 +95,20 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
 @documents_router.get('/{file_id}')
 async def get_doc_one(file_id: int = Path(..., description='文件id', ge=1), dbs: AsyncSession = Depends(db_session)):
     """
-    根据file的id来获取对应数据
+        默认获取文档页当前第一页数据
+
+    param query:
+
+        对应文档搜索的参数
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        返回分页信息，重新渲染后的文档的参数
+
     """
     result = await DocumentManagement.get_one_detail(dbs, file_id)
     if not result:
@@ -99,7 +130,23 @@ async def delete_doc(ids: Optional[List[int]] = Query(...),
                      is_logic_del: int = Query(ge=0, le=1, default=0),
                      dbs: AsyncSession = Depends(db_session)):
     """
-    逻辑删除和真实删除
+        逻辑删除和真实删除
+
+    param ids:
+
+        需要删除的文档id
+
+    param is_logic_del:
+
+        逻辑删除的参数，1就是逻辑删除，0就是真实删除
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        删除的文档的id
     """
     if is_logic_del:
         # 更新逻辑删除的时间
@@ -124,7 +171,27 @@ async def delete_doc(ids: Optional[List[int]] = Query(...),
 async def upload_doc(user_id: int, department_id: str, files: List[UploadFile] = File(...),
                      dbs: AsyncSession = Depends(db_session)):
     """
-    文件上传
+        文件上传
+
+    param user_id:
+
+        上传人的id
+
+    param department_id:
+
+        上传人的部门id
+
+    param files:
+
+        上传的文件
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        上传的文件名
     """
     for idx, f in enumerate(files):
         filename = f.filename
@@ -152,10 +219,19 @@ async def upload_doc(user_id: int, department_id: str, files: List[UploadFile] =
 async def update_doc(info: UpdateDocumentManagement,
                      dbs: AsyncSession = Depends(db_session)):
     """
-    修改文档部门id
-    :param info:
-    :param dbs:
-    :return:
+        修改文档的信息
+
+    param info:
+
+        文件修改信息参数
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        更新文档后文档的内容参数
     """
     update_data_dict = info.dict(exclude_unset=True)
     if len(update_data_dict) > 1:
