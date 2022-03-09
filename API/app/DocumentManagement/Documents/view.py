@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List, Any
 
 from fastapi import APIRouter, Depends, Query, File, UploadFile, Path, HTTPException
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse,StreamingResponse
 from sql_models.db_config import db_session
 from sql_models.DocumentManagement.OrmDocumentManagement import DocumentManagement
 from app.DocumentManagement.schemas import *
@@ -30,8 +30,15 @@ async def download_file(file_name: Any):
         返回文件流，直接下载，下载后的文件名与显示的文件名一样。
     """
     final_file = os.path.join(globals_config.DocumentStoragePath, file_name)
-    file_response = FileResponse(final_file, filename=file_name)
-    return file_response
+
+    def iterfile():
+        # 通过使用 with 块，确保在生成器函数完成后关闭类文件对象
+        with open(final_file, "rb") as file_like:
+            # yield from 告诉函数迭代名为 file_like 的东西
+            # 对于迭代的每个部分，yield 的内容作为来自这个生成器函数
+            yield from file_like
+
+    return StreamingResponse(iterfile())
 
 
 @documents_router.get('/')
@@ -57,8 +64,8 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
     filter_condition = [
         ("filename", f'.like(f"%{query.filename}%")', query.filename),
         # ("filename",f'.like(f"%{query.filename}%")',query.filename),
-        ("created_time", f'>"{query.start_time}"', query.start_time),
-        ("created_time", f'<"{query.end_time}"', query.end_time),
+        ("created_time", f'>="{query.start_time}"', query.start_time),
+        ("created_time", f'<="{query.end_time}"', query.end_time),
         ("is_delete", '==0', 0),
         ("department_id", f'=={query.department_id}', query.department_id),
     ]
@@ -78,7 +85,6 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
             "file_size": res.file_size,
             "updated_time": res.updated_time,
             "department_id": res.department_id,
-            "file_url": 'http://127.0.0.1:8000/api/DocumentManagement/documents/v1/download/' + res.filename,
             "uploader_name": uploader_name,
         }
         new_result.append(new_res)
@@ -150,11 +156,14 @@ async def delete_doc(ids: Optional[List[int]] = Query(...),
     """
     if is_logic_del:
         # 更新逻辑删除的时间
-        update_data_dict = {
-            "id": ids[0],
-            "updated_time": datetime.now()
-        }
-        await DocumentManagement.update_data(dbs, update_data_dict, is_delete=0)
+
+        for doc_id in ids:
+            update_data_dict = {
+                "id": doc_id,
+                "updated_time": datetime.now()
+            }
+            await DocumentManagement.update_data(dbs, update_data_dict, is_delete=0)
+
         return await DocumentManagement.delete_data_logic(dbs, ids)
     else:
         for doc_id in ids:
@@ -168,7 +177,7 @@ async def delete_doc(ids: Optional[List[int]] = Query(...),
 
 
 @documents_router.post('/upload')
-async def upload_doc(user_id: int, department_id: str, files: List[UploadFile] = File(...),
+async def upload_doc(user_id: int, department_id: int, files: List[UploadFile] = File(...),
                      dbs: AsyncSession = Depends(db_session)):
     """
         文件上传
@@ -202,8 +211,14 @@ async def upload_doc(user_id: int, department_id: str, files: List[UploadFile] =
         if result:
             raise HTTPException(status_code=403, detail="Duplicate filename.")
         content = await f.read()
-        file_size = str(float('%.2f' % (len(content) / 1024 / 1024))) + "M"
-        created_time = datetime.strptime(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
+
+        size = len(content) / 1024
+        if size > 1024:
+            file_size = str(float('%.2f' % (len(content) / 1024 / 1024))) + "M"
+        else:
+            file_size = str(float('%.2f' % (len(content) / 1024))) + "KB"
+
+        created_time = datetime.strptime(datetime.now().strftime('%Y-%m-%d'), '%Y-%m-%d')
         doc_model = DocumentManagement(filename=filename, file_size=file_size, user_id=user_id,
                                        department_id=department_id,
                                        created_time=created_time)
