@@ -251,11 +251,10 @@ async def login(dbs: AsyncSession = Depends(db_session),
     """
     # 校验用户密码逻辑, 返回user_id
     user: Users = await authenticate(dbs, form_data.username, form_data.password)
-
     if not user:
         raise HTTPException(status_code=401, detail='Account password verification failed.')
-
     role: Roles = await Roles.get_role_user(dbs, user.id)
+    permission_list = [i.permission_id for i in (await RolePermissionMapping.get_permission_role(dbs, role.id))]
     # 获取department_id创建的条件
     args = [
         ('user_id', f'=={user.id}', user.id),
@@ -290,4 +289,5 @@ async def login(dbs: AsyncSession = Depends(db_session),
     # print("加入完成")
     # await request.app.state.redis.get(user.email)
     # noinspection PyArgumentList
-    return {"access_token": token, "token_type": "bearer", "user": user, "department_id": department_id}
+    return {"access_token": token, "token_type": "bearer", "user": user, "department_id": department_id,
+            "permission_list": permission_list, "role_id": role.id}

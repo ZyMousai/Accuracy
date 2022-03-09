@@ -18,7 +18,7 @@ class Users(PBaseModel):
     entry_time = BaseType.BaseColumn(BaseType.BaseDate, nullable=False)  # 入职时间
     phone = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False)  # 电话
     address = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False)  # 地址  添加地址长度
-    avatar = BaseType.BaseColumn(BaseType.BaseString(88), nullable=True, default='default.gif')  #  头像的路径 添加默认头像
+    avatar = BaseType.BaseColumn(BaseType.BaseString(88), nullable=True, default='default.gif')  # 头像的路径 添加默认头像
     creator = BaseType.BaseColumn(BaseType.BaseString(30), nullable=False, default='admin')  # 创建人
     update_password_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False,
                                                default=datetime.datetime.now() - datetime.timedelta(days=30))  # 密码修改时间
@@ -102,6 +102,12 @@ class RolePermissionMapping(PBaseModel):
     __tablename__ = 'role_permission_mapping'
     role_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 角色id
     permission_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 权限id
+
+    @classmethod
+    async def get_permission_role(cls, dbs, role_id):
+        _orm = select(cls).where(cls.is_delete == 0, cls.role_id == role_id)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
 
 
 class RoleAccountMapping(PBaseModel):
