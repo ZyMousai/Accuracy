@@ -24,6 +24,14 @@ class DocumentManagement(PBaseModel):
         result = (await dbs.execute(_orm)).scalars().first()
         return result.name
 
+    @classmethod
+    async def get_document_user_id(cls, dbs, user_name):
+        print(user_name)
+        _orm = select(Users).where(Users.is_delete == 0, Users.name == user_name)
+        result = (await dbs.execute(_orm)).scalars().first()
+        print(result.id)
+        return result.id
+
 
 if __name__ == '__main__':
     create_table()
