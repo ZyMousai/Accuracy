@@ -18,10 +18,19 @@ clerk_card_router = APIRouter(
 @clerk_card_router.get('/card')
 async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = Depends(db_session), ):
     """
-    获取卡号列表
-    :param info:
-    :param dbs:
-    :return:
+        获取卡号列表，对应卡号绑定的任务，根据传递的参数来决定列表内容，逻辑较多，重新构建两次字典，绑定的任务通过构建卡号字典的task_set字段展示出来
+    param info:
+
+        查询的条件，作为依赖项目，根据依赖来决定是否必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        卡号信息，余额(由绑定的任务而产生)，卡号对应绑定的任务
+
     """
     filter_condition = [
         ('card_number', f'.like("%{info.card_number}%")', info.card_number),
@@ -117,10 +126,19 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
 async def get_card_one(card_id: int = Path(..., title='卡号id', description="卡号id", ge=1),
                        dbs: AsyncSession = Depends(db_session)):
     """
-    获取某个卡号的信息
-    :param card_id:
-    :param dbs:
-    :return:
+        单独一张卡的信息，不包含绑定的任务
+    param card_id:
+
+        卡号的id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        单独一张卡的信息，不包含绑定的任务
+
     """
     result = await TbCard.get_one_detail(dbs, card_id)
     if not result:
@@ -132,10 +150,19 @@ async def get_card_one(card_id: int = Path(..., title='卡号id', description="�
 @clerk_card_router.delete('/card')
 async def delete_card(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
-    删除卡号 可批量
-    :param ids:
-    :param dbs:
-    :return:
+        逻辑删除一张卡，后续需要改成真实删除，记得改！目前未改！
+    param ids:
+
+        卡号的id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        逻辑删除一张卡
+
     """
     result = await TbCard.delete_data_logic(dbs, tuple(ids))
     if not result:
@@ -147,10 +174,19 @@ async def delete_card(ids: List[int] = Query(...), dbs: AsyncSession = Depends(d
 @clerk_card_router.post('/card')
 async def create_card(info: AddCard, dbs: AsyncSession = Depends(db_session)):
     """
-    创建单条卡号
-    :param info:
-    :param dbs:
-    :return:
+        创建单独的一张卡
+    param info:
+
+        对应的卡号的信息，依赖给的不是必传，但逻辑上是每个字段都要传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        创建单独的一张卡
+
     """
     filter_condition = [
         ('card_number', f'=="{info.card_number}"', info.card_number)
@@ -166,10 +202,19 @@ async def create_card(info: AddCard, dbs: AsyncSession = Depends(db_session)):
 @clerk_card_router.post('/cards')
 async def create_cards(information: List[AddCard], dbs: AsyncSession = Depends(db_session)):
     """
-    创建单条或者多条卡号
-    :param information:
-    :param dbs:
-    :return:
+        创建单独的一张卡或者多张卡
+    param info:
+
+        对应的卡号的信息，依赖给的不是必传，但逻辑上是每个字段都要传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        创建单独的一张卡或者多张卡
+
     """
     for info in information:
         filter_condition = [
@@ -345,10 +390,19 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
 @clerk_card_router.patch('/card')
 async def update_card(info: UpdateCard, dbs: AsyncSession = Depends(db_session)):
     """
-    修改卡号信息
-    :param info:
-    :param dbs:
-    :return:
+        更新卡号信息
+    param info:
+
+        对应的卡号的信息，依赖给的不是必传，但逻辑上是每个字段都要传，id必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        更新卡号信息
+
     """
     update_data_dict = info.dict(exclude_unset=True)
     # filter_condition = [
@@ -368,10 +422,19 @@ async def update_card(info: UpdateCard, dbs: AsyncSession = Depends(db_session))
 @clerk_card_router.get('/account')
 async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSession = Depends(db_session), ):
     """
-    获取账号列表
-    :param info:
-    :param dbs:
-    :return:
+        获取账号信息
+    param info:
+
+        对应的账号信息，参数不是必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        获取账号信息，包含了分页
+
     """
     filter_condition = [
         # ('account_name', f'.like("%{info.account_name}%")', info.account_name),
@@ -391,10 +454,19 @@ async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSe
 async def get_account_one(account_id: int = Path(..., title='账号id', description="账号id", ge=1),
                           dbs: AsyncSession = Depends(db_session)):
     """
-    获取某个账号的信息
-    :param account_id:
-    :param dbs:
-    :return:
+        获取某个账号信息
+    param account_id:
+
+        账号的id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        获取某个账号信息
+
     """
     result = await TbAccount.get_one_detail(dbs, account_id)
     if not result:
@@ -406,10 +478,19 @@ async def get_account_one(account_id: int = Path(..., title='账号id', descript
 @clerk_card_router.delete('/account')
 async def delete_account(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
-    删除账号 可批量
-    :param ids:
-    :param dbs:
-    :return:
+        逻辑删除账号信息，后续需要改成真实删除
+    param ids:
+
+        需要删除的账号列表，元素是id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        被逻辑删除的账号的id
+
     """
     result = await TbAccount.delete_data_logic(dbs, tuple(ids))
     if not result:
@@ -421,10 +502,19 @@ async def delete_account(ids: List[int] = Query(...), dbs: AsyncSession = Depend
 @clerk_card_router.post('/account')
 async def create_account(user: AddAccount, dbs: AsyncSession = Depends(db_session)):
     """
-    创建账号
-    :param user:
-    :param dbs:
-    :return:
+        创建单个账户，账户实际是uid，要和id区分开，id是自增的主键
+    param user:
+
+        需要创建的用户的字段值
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        创建的单个用户的信息
+
     """
     filter_condition = [
         ('uid', f'=="{user.uid}"', user.uid),
@@ -446,10 +536,19 @@ async def create_account(user: AddAccount, dbs: AsyncSession = Depends(db_sessio
 @clerk_card_router.patch('/account')
 async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_session)):
     """
-    修改账号信息
-    :param user:
-    :param dbs:
-    :return:
+        更新账户信息
+    param user:
+
+        需要更新的账户信息
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        更新后的账户的值
+
     """
     update_data_dict = user.dict(exclude_unset=True)
     # filter_condition = [
@@ -563,10 +662,19 @@ async def update_account(user: UpdateAccount, dbs: AsyncSession = Depends(db_ses
 @clerk_card_router.get('/task')
 async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = Depends(db_session)):
     """
-    获取任务列表
-    :param info:
-    :param dbs:
-    :return:
+        获取任务信息列表，这里把通用方法重写了一遍，因为获取的值有一定的差异
+    param info:
+
+        对应的任务信息，参数不是必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        获取任务信息，包含了分页
+
     """
     args = [
         ('task', f'.like("%{info.task}%")', info.task),
@@ -637,10 +745,19 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
 async def get_task_one(task_id: int = Path(..., title='任务id', description="任务id", ge=1),
                        dbs: AsyncSession = Depends(db_session)):
     """
-    获取某个任务的信息
-    :param task_id:
-    :param dbs:
-    :return:
+        获取某个任务信息
+    param task_id:
+
+        任务的id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        获取某个任务信息
+
     """
     result = await TbTask.get_one_detail(dbs, task_id)
     if not result:
@@ -652,10 +769,19 @@ async def get_task_one(task_id: int = Path(..., title='任务id', description="�
 @clerk_card_router.delete('/task')
 async def delete_task(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
     """
-    删除任务 可批量
-    :param ids:
-    :param dbs:
-    :return:
+        逻辑删除任务信息，后续需要改成真实删除
+    param ids:
+
+        需要删除的账号列表，元素是id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        被逻辑删除的任务的id
+
     """
     result = await TbTask.delete_data_logic(dbs, tuple(ids))
     if not result:
@@ -667,10 +793,19 @@ async def delete_task(ids: List[int] = Query(...), dbs: AsyncSession = Depends(d
 @clerk_card_router.post('/task')
 async def create_task(info: AddTask, dbs: AsyncSession = Depends(db_session)):
     """
-    创建任务，任务名可以重复，只要绑定对应的Account_id就可以，Account表对应的是uuid
-    :param info:
-    :param dbs:
-    :return:
+        创建任务，任务名可以重复，只要绑定对应的Account_id就可以，Account表对应的是uuid
+    param info:
+
+        对应的需要新增的任务字段，有些必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        创建后的任务的任务信息
+
     """
     # filter_condition = [
     #     ('task', f'=="{info.task}"', info.task)
@@ -686,10 +821,19 @@ async def create_task(info: AddTask, dbs: AsyncSession = Depends(db_session)):
 @clerk_card_router.patch('/task')
 async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session)):
     """
-    修改任务信息
-    :param info:
-    :param dbs:
-    :return:
+        修改任务信息
+    param info:
+
+        对应的需要修改的任务字段
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        更新后的任务的任务信息
+
     """
     update_data_dict = info.dict(exclude_unset=True)
     # filter_condition = [
