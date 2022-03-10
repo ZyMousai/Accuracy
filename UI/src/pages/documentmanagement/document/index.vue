@@ -28,9 +28,9 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department_id" placeholder="请选择">
-                <a-select-option v-for="item in departmentoptions" :key="item" :value="item">
-                  {{item}}
+              <a-select v-model="query.department_id" placeholder="请选择" :allowClear="true">
+                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                  {{item.department}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -43,7 +43,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD"/>
+              <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -52,7 +52,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD" />
+              <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -68,20 +68,20 @@
       </a-form>
     </div>
     <div>
+      <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
+      <a-button type="primary" @click="Batchdwon()" style="margin-left: 5px;"><a-icon type="cloud-download" />批量下载</a-button>
       <a-space class="operator">
         <a-upload
           name="files"
           :multiple="true"
           :action="updocuurl"
           :headers="headers"
-          :showUploadList="false"
           :before-upload="beforeUpload"
           @change="handleChange"
+          style="margin-left: 5px;"
         >
         <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
         </a-upload>
-        <a-button type="primary" @click="Batchdwon()"><a-icon type="cloud-download" />批量下载</a-button>
-        <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
       <standard-table
         :columns="columns"
@@ -92,7 +92,7 @@
         :pagination="false"
       >
         <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px" :href=record.file_url target="_blank">
+          <a style="margin-right: 8px" @click="downdocument(record.file_url, record.filename)">
             <a-icon type="cloud-download"/>下载
           </a>
           <a @click="showModal(record)" style="margin-right: 8px">
@@ -136,27 +136,25 @@
             />
           </a-form-model-item>
           <a-form-model-item label="权限部门" prop="department_id">
-            <a-radio-group v-model="editform.department_id">
-              <a-radio value="1">
-                运营部
-              </a-radio>
-              <a-radio value="2">
-                技术部
-              </a-radio>
-            </a-radio-group>
+            <a-select v-model="editform.department_id" placeholder="请选择" :allowClear="true">
+              <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                {{item.department}}
+              </a-select-option>
+            </a-select>
           </a-form-model-item>
         </a-form-model>
       </template>
     </a-modal>
     <!-- 删除确认对话框 -->
     <a-modal
-     title="是否将所选项放入回收站"
+     title="系统消息"
      :visible="dialogvisible"
      :closable="false"
      @icon="oncancel"
      :footer="modalfooter"
     >
-      <p>如果不放入回收站则直接删除，无法恢复</p>
+      <p>是否放入回收站</p>
+      <p>小提示：如果不放入回收站则直接删除，无法恢复!</p>
     </a-modal>
     </div>
   </a-card>
@@ -165,6 +163,7 @@
 <script>
 import StandardTable from '@/components/table/StandardTable'
 import {DocumentDate, DeleteDocuments, EditDate} from '@/services/documentmanagement'
+import {DepartmentDate} from '@/services/personnelmanagement'
 const columns = [
   {
     title: '序号',
@@ -226,7 +225,7 @@ export default {
       start_time: '',
       end_time: '',
       dialogvisible: false,
-      departmentoptions: ['商务部', '技术部'],
+      departmentoptions: [],
       editrules: {
         filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
         department_id: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
@@ -240,9 +239,21 @@ export default {
     }
   },
   created () {
-    this.gettabledata()
+    this.getdepartmentoptions()
   },
   methods: {
+    //获取部门列表
+    getdepartmentoptions(){
+      DepartmentDate().then(res => {
+        if (res.status === 200) {
+          this.departmentoptions = res.data.data
+          this.gettabledata()
+          this.query.department_id = localStorage.getItem('department_id') - ''
+        } else {
+          this.$message.error('获取部门列表失败！')
+        }
+      })
+    },
     // 获取表格数据
     gettabledata () {
       this.alone = process.env.VUE_APP_API_ALONE_URL
@@ -256,7 +267,9 @@ export default {
           this.tableloading = false
           for (var i = 0; i < this.dataSource.length; i++) {
             this.dataSource[i]["index"] = i + 1
+            this.dataSource[i]["file_url"] = this.alone + '/DocumentManagement/documents/v1/download/' + this.dataSource[i].filename
           }
+          console.log(this.dataSource);
         } else {
           this.tableloading = false
           this.$message.error(`获取数据失败！`);
@@ -283,7 +296,7 @@ export default {
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
-        this.query[key] = ''
+        this.query[key] = null
       }
       this.query.page = '1'
       this.query.page_size = '10'
@@ -291,9 +304,11 @@ export default {
     },
     // 打开编辑表单
     showModal(data) {
+      console.log(data);
       this.editform.id = data.id
-      this.editform.department_id = data.department_id
+      this.editform.department_id = data.department_id  - ''
       this.editform.filename = data.filename
+      console.log(this.editform);
       this.visible = true;
     },
     // 提交编辑表单
@@ -383,18 +398,31 @@ export default {
     },
     beforeUpload() {
       const user_id  = localStorage.getItem('id')
-      const department_id  = localStorage.getItem('department_id ')
-      this.updocuurl = `${this.alone}/PersonnelManagement/users/v1/upload_avatar?user_id=${user_id}&department_id=${department_id}`
+      const department_id  = localStorage.getItem('department_id')
+      this.updocuurl = `${this.alone}/DocumentManagement/documents/v1/upload?user_id=${user_id}&department_id=${department_id}`
     },
     // 自定义删除对话框底部按钮
     modalfooter() {
       return (
         <div>
           <a-button onClick={this.onok}  type="primary">是</a-button>
-          <a-button onClick={this.onno}  type="danger">否</a-button>
+          <a-button onClick={this.onno}  type="danger">直接删除</a-button>
           <a-button onClick={this.canceldelete}>取消</a-button>
         </div>
       )
+    },
+    // 文档下载
+    downdocument(url, name) {
+      console.log(URL);
+      const a = document.createElement('a')
+      fetch(url).then(res => res.blob()).then(blob => {
+        a.href = URL.createObjectURL(blob)
+        a.download = name || ''
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(a.href);
+        document.body.removeChild(a);
+      })
     },
     // 分页配置
     onShowSizeChange(current, pageSize) {
@@ -410,7 +438,7 @@ export default {
     Batchdwon() {
       console.log(this.selectedRows);
       for (let i = 0; i < this.selectedRows.length; i++) {
-        window.open(this.selectedRows[i].file_url, "_blank"); 
+        this.downdocument(this.selectedRows[i].file_url, this.selectedRows[i].filename)
       }
     }
   }

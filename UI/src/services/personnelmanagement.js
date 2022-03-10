@@ -174,7 +174,7 @@ export async function DeleteRolePermission(from) {
 
 /**
  * 角色添加修改页面
- * 获取角色详情信息
+ * 获取角色对应菜单
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetRoleMenu() {

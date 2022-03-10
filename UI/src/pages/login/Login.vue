@@ -76,8 +76,9 @@
     // import {login, getRoutesConfig} from '@/services/user'
     import {login} from '@/services/user'
     import {setAuthorization} from '@/utils/request'
-    // import {loadRoutes} from '@/utils/routerUtil'
+    import {loadRoutes} from '@/utils/routerUtil'
     import {mapMutations} from 'vuex'
+    import {GetRoleMenu} from '@/services/personnelmanagement'
 
     export default {
         username: 'Login',
@@ -105,35 +106,31 @@
             afterLogin(res) {
                 this.logging = false
                 const loginRes = res.data
-                console.log(loginRes);
+                console.log(res);
                 localStorage.id = res.data.user.id
+                localStorage.department_id = loginRes.department_id
                 localStorage.name = res.data.user.name
                 localStorage.account = res.data.user.account
                 if (loginRes.access_token) {
                     this.setUser(loginRes.user)
-                    let permissions = [{
-                        id: 'form',                                    //权限ID
-                        operation: ['add', 'delete', 'edit', 'close']  //权限下的操作权限
-                    }]
                     let roles = [{
                         id: 'test',                                   //角色ID
                         operation: ['add', 'delete', 'edit', 'close']  //角色的操作权限
                     }]
                     // const {user, permissions, roles} = loginRes.data
                     // this.setUser(user)
-                    this.setPermissions(permissions)
+                    // this.setPermissions(permissions)
                     this.setRoles(roles)
                     // setAuthorization({token: loginRes.access_token, expireAt: new Date(loginRes.data.expireAt)})
                     setAuthorization({token: loginRes.access_token})
-                    this.$router.push('/dashboard')
                     this.$message.success("欢迎回来！", 3)
                     // 获取路由配置
-                    // getRoutesConfig().then(result => {
-                    //   const routesConfig = result.data.data
-                    //   loadRoutes(routesConfig)
-                    //   this.$router.push('/dashboard')
-                    //   this.$message.success(loginRes.message, 3)
-                    // })
+                    GetRoleMenu().then(result => {
+                      const routesConfig = result.data.data2
+                      loadRoutes(routesConfig)
+                      this.$router.push('/dashboard')
+                      this.$message.success(loginRes.message, 3)
+                    })
                 } else {
                     this.$message.error('登陆失败！')
                     this.logging = false

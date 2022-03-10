@@ -10,7 +10,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.platform" placeholder="请输入" />
+              <a-input v-model="query.name_or_url" placeholder="请输入" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -19,7 +19,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.account" style="width: 100%" placeholder="请输入" />
+              <a-input v-model="query.track_url" style="width: 100%" placeholder="请输入" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -190,8 +190,8 @@ export default {
       query: {
         page: '1',
         page_size: '10',
-        name: '',
-        url: '',
+        name_or_url: '',
+        track_url: '',
       },
       form: {
         name: '',
@@ -243,13 +243,16 @@ export default {
     },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.gettabledata()
     },
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = '1'
+      this.query.page_size = '10'
+      this.gettabledata()
     },
     // 打开父表表单
     showModal(data) {

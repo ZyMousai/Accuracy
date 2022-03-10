@@ -95,13 +95,13 @@
     </a-modal>
     <!-- 删除确认对话框 -->
     <a-modal
-     title="是否删除所选项？"
+     title="系统消息"
      :visible="dialogvisible"
      ok-text="是"
      cancel-text="否"
      @ok="onok"
      @cancel="onno">
-      <p>删除后将无法恢复！</p>
+      <p>是否删除所选项，删除后将无法恢复！</p>
     </a-modal>
     </div>
   </a-card>

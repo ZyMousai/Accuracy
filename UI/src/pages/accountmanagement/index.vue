@@ -49,12 +49,12 @@
       >
         <div slot="password" slot-scope="{record}">
           {{record.password}}
-          <a @click="showPassword(record)" style="margin-left: 8px">
-            <a-icon type="sync" />解密
-          </a>
-          <a @click="hidePassword(record)" style="margin-left: 8px">
-            <a-icon type="sync" />加密
-          </a>
+          <a-button type="link" @click="showPassword(record)" style="padding: 0 5px 0;" :disabled="record.isciphertext ? false : true">
+            <a-icon type="sync" /><span style="margin: 0;">解密</span>
+          </a-button>
+          <a-button type="link" @click="hidePassword(record)" style="padding: 0 5px 0" :disabled="record.isciphertext ? true : false">
+            <a-icon type="sync" /><span style="margin: 0;">加密</span>
+          </a-button>
         </div>
         <div slot="action" slot-scope="{record}">
           <a @click="showModal(record)" style="margin-right: 8px">
@@ -132,7 +132,7 @@
     </a-modal>
     <!-- 删除确认对话框 -->
     <a-modal
-     title="是否删除所选项？"
+     title="系统消息"
      :visible="dialogvisible"
      ok-text="是"
      cancel-text="否"
@@ -159,6 +159,10 @@ const columns = [
     dataIndex: 'platform'
   },
   {
+    title: '账号',
+    dataIndex: 'account'
+  },
+  {
     title: '密码',
     dataIndex: 'password',
     width: 800,
@@ -176,8 +180,8 @@ const columns = [
 
 const dataSource = []
 
-const KEY = CryptoJS.enc.Utf8.parse(" ");
-const IV = CryptoJS.enc.Utf8.parse(" "); 
+const KEY = CryptoJS.enc.Utf8.parse("Never give up999");
+const IV = CryptoJS.enc.Utf8.parse("7683425105789011"); 
 
 export default {
   name: 'QueryList',
@@ -213,7 +217,6 @@ export default {
       loading: false,
       tableloading: false,
       dialogvisible: false,
-      isciphertext: true,
       accountid: '',
       ids: [],
       rules: {
@@ -240,6 +243,7 @@ export default {
           this.tableloading = false
           for (var i = 0; i < this.dataSource.length; i++) {
             this.dataSource[i]["index"] = i + 1
+            this.dataSource[i]["isciphertext"] = true
           }
         } else {
           this.tableloading = false
@@ -262,7 +266,7 @@ export default {
     },
     // 查询
     queryevents() {
-      console.log(this.query);
+      this.gettabledata()
     },
     // 删除对话框
     DeleteDate(id) {
@@ -303,6 +307,9 @@ export default {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = 1
+      this.query.page_size = 10
+      this.gettabledata()
     },
     // 打开编辑表单
     showModal(data) {
@@ -405,10 +412,12 @@ export default {
     // 显示密码
     showPassword(data) {
       console.log(data);
+      data.isciphertext = false
       data.password = this.Decrypt(data.password)
     },
     hidePassword(data) {
       console.log(data);
+      data.isciphertext = true
       data.password = this.Encrypt(this.encryption(data.password))
     },
     // 分页配置

@@ -1,4 +1,4 @@
-import { LOGIN, ROUTES, USERS } from '@/services/api'
+import { LOGIN, ROUTES, USERS, UpdatePassword } from '@/services/api'
 import { request, METHOD, removeAuthorization } from '@/utils/request'
 
 /**
@@ -35,6 +35,15 @@ export async function UserData(id) {
  */
 export async function UpUserData(userform) {
     return request(USERS, 'PATCH', userform)
+}
+
+/**
+ * 更新用户密码
+ * @param form  请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function UpPassword(form) {
+    return request(UpdatePassword, 'PATCH', form)
 }
 
 /**
