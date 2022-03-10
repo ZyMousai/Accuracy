@@ -9,6 +9,8 @@ from app.DocumentManagement.Recycle.view import recycle_router
 from app.PersonnelManagement.Departments.view import departments_router
 from app.PersonnelManagement.Roles.view import roles_router
 from app.PersonnelManagement.Users.view import users_router
+from app.ServerManagenebt.ServerConfig.view import server_router
+
 
 # =====注册二级路由=====
 # ### AccountManagement
@@ -31,3 +33,7 @@ per_man_router = APIRouter(prefix="/api/PersonnelManagement")
 per_man_router.include_router(departments_router)
 per_man_router.include_router(roles_router)
 per_man_router.include_router(users_router)
+
+# ### ServerManagement
+server_man_router = APIRouter(prefix="/api/ServerManagement")
+server_man_router.include_router(server_router)

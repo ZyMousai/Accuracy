@@ -33,6 +33,16 @@ export async function CreditTaskListData(query) {
 
 /**
  * 统计卡页面
+ * 新增统计卡 子表格数据
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddCreditTask(query) {
+    return request(GetTaskListData, METHOD.POST, query)
+}
+
+/**
+ * 统计卡页面
  * 修改统计卡 子表格数据
  * @param query  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}

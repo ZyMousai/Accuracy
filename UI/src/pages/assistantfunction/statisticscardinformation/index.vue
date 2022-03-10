@@ -62,13 +62,14 @@
                 <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
             </a-space>
             <a-table
-                    :columns="columns"
-                    :data-source="data"
-                    class="components-table-demo-nested"
-                    :rowKey='record=>record.id'
-                    :expandedRowKeys="expandedRowKeys"
-                    @expand="expandinnerlist"
-                    :pagination="false"
+              :columns="columns"
+              :data-source="data"
+              class="components-table-demo-nested"
+              :rowKey='record=>record.id'
+              :expandedRowKeys="expandedRowKeys"
+              @expand="expandinnerlist"
+              :pagination="false"
+              :key="componentKey"
             >
                 <!--        note-->
 
@@ -99,6 +100,7 @@
                 <div slot="operation" slot-scope="record">
                     <a slot="operation" @click="edit(record)">编辑</a>
                     <a slot="operation" style="margin-left: 5px;" @click="table_delete(record.id)">删除</a>
+                    <a slot="operation" style="margin-left: 5px;" @click="table_add(record.id)">新增子表</a>
                 </div>
                 <a-table
                         slot="expandedRowRender"
@@ -206,21 +208,22 @@
                             :label-col="{ span: 4 }"
                             :wrapper-col="{ span: 14 }"
                     >
-                        <a-row :gutter="16">
+                        <a-row :gutter="32">
                             <!--              <a-col :span="10">-->
                             <!--                <a-form-model-item ref="uid" label="uuid" prop="creator">-->
                             <!--                  <a-input v-model="innerform.uid" />-->
                             <!--                </a-form-model-item>-->
                             <!--              </a-col>-->
-                            <a-col :span="10">
-                                <a-select mode="tags" v-model="innerform.uid" ref="uid" label="uuid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
-                                    <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
-                                    <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
-                                        {{ item.uid }}
-                                    </a-select-option>
+                            <a-col :span="15">
+                              <a-form-model-item ref="uid" label="UUID" prop="creator">
+                                <a-select mode="tags" v-model="innerform.uid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
+                                  <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
+                                  <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
+                                      {{ item.uid }}
+                                  </a-select-option>
                                 </a-select>
+                              </a-form-model-item>
                             </a-col>
-
                             <a-col :span="15">
                                 <a-form-model-item ref="task" label="任务名" prop="creator">
                                     <a-input v-model="innerform.task" />
@@ -323,7 +326,7 @@
       PatchCardListData,
       PatchTaskListData,
       table_delete,
-      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount
+      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -362,6 +365,7 @@
     data () {
       this.cacheData = innerData.map(item => ({ ...item }));
       return {
+        isRouterAlive: true,
         data,
         columns,
         innerColumns,
@@ -387,7 +391,7 @@
           id: '',
           uid: '',
           account_id: '',
-          // card_id: '',
+          card_id: '',
           task: '',
           commission: '',
           consume: '',
@@ -395,6 +399,7 @@
         },
         uuidSelect: {},
         advanced: true,
+        componentKey: 0,
         selectedRows: [],
         tablename: '',
         taskname: '',
@@ -457,6 +462,7 @@
           this.data = re_da
           this.total = res.data.total
           console.log(res);
+          // this.componentKey = this.componentKey === 0 ? 1 : 0;
         })
       },
       toggleAdvanced () {
@@ -525,25 +531,49 @@
         console.log(id);
         this.innervisible = true;
       },
-      // 提交编辑表单
+      // 提交子表的编辑表单
       innerhandleOk() {
-        if (this.taskname === "任务编辑"){
         this.$refs.innerruleForm.validate(valid => {
+          // "secondary_consumption": 0
           if (valid) {
             this.innerloading = true;
             console.log(this.innerform)
+            var addinnerform = {
+              "card_id": this.innerform.card_id,
+              "account_id": this.innerform.account_id,
+              "task": this.innerform.task,
+              "note": this.innerform.note,
+              "commission": this.innerform.commission,
+              "consume": this.innerform.consume,
+              "user": this.innerform.user,
+              "secondary_consumption": 0
+            }
             if (this.innerform.uid.indexOf("uuid") != -1){
               console.log("uuid")
               console.log(this.innerform.uid)
               this.innerform.account_id = this.innerform.uid.split("uuid")[1]
-              PatchTaskListData(this.innerform).then(res => {
-                console.log("成功")
-                console.log(res)
-                this.innerloading = false;
-                this.gettabledata()
-                this.innervisible = false;
-              })
-
+              addinnerform["account_id"] = this.innerform.account_id
+              if (this.taskname === "任务编辑"){
+                PatchTaskListData(this.innerform).then(res => {
+                  console.log("修改成功")
+                  console.log(res)
+                  // this.innerloading = false;
+                  // this.gettabledata()
+                  // this.innervisible = false;
+                  location.reload()
+                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                })
+              } else {
+                AddCreditTask(addinnerform).then(res => {
+                  console.log("创建成功")
+                  console.log(res)
+                  // this.innerloading = false;
+                  // this.gettabledata()
+                  // this.innervisible = false;
+                  location.reload()
+                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                })
+              }
             }else{
               console.log("uuid+++++")
               console.log(this.innerform.uid)
@@ -553,30 +583,32 @@
                 var id = res.data.data
                 console.log(id)
                 this.innerform.account_id = id
-                PatchTaskListData(this.innerform).then(res => {
-                  console.log("成功")
-                  console.log(res)
-                  this.innerloading = false;
-                  this.gettabledata()
-                  this.innervisible = false;
-                })
-
+                addinnerform["account_id"] = id
+                if (this.taskname === "任务编辑") {
+                  PatchTaskListData(this.innerform).then(res => {
+                    console.log("成功")
+                    console.log(res)
+                    // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                  })
+                } else {
+                  AddCreditTask(addinnerform).then(res => {
+                    console.log("创建成功")
+                    console.log(res)
+                    // this.innerloading = false;
+                    // this.gettabledata()
+                    // this.innervisible = false;
+                    location.reload()
+                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                  })
+                }
               })
-
             }
-            // PatchTaskListData(this.innerform).then(res => {
-            //   console.log("成功")
-            //   console.log(res)
-            //   this.innerloading = false;
-            //   this.gettabledata()
-            //   this.innervisible = false;
-            // })
-            console.log('ok');
           }
-        })}
-        else {
-            console.log(1223)
-        }
+        })
       },
       // 关闭编辑表单
       innerhandleCancel() {
@@ -622,7 +654,10 @@
         PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
           console.log("成功")
           console.log(res)
-          this.gettabledata()
+          // this.gettabledata()
+          //此处未完成，需要刷新子表，或重新展开，暂定刷新页面
+          location.reload()
+          // this.componentKey = this.componentKey === 0 ? 1 : 0;
         })
       },
       // 修改主表是否保留
@@ -631,8 +666,8 @@
         PatchCardListData({retain: retain ? 0 : 1, id: id}).then(res => {
           // console.log("成功")
           console.log(res)
-          // this.gettabledata()
-          //此处未完成，需要刷新子表，或重新展开
+          this.gettabledata()
+
         })
       },
       // 上传文件
@@ -667,11 +702,11 @@
       },
       // 子表添加按钮
       onHeaderCell() {
-        return (
-                <div style="text-align:left">
-                <a-button onClick={this.inneredit} size="small">新增数据</a-button>
-                </div>
-      )
+      //   return (
+      //           <div style="text-align:left">
+      //           <a-button onClick={this.inneredit} size="small">新增数据</a-button>
+      //           </div>
+      // )
       },
       innerhandleChange(value, id, column) {
         const newData = [...this.innerData];
@@ -682,6 +717,21 @@
           this.innerData = newData;
         }
       },
+      //显示新增子表的模态框
+      table_add(id){
+        console.log(id)
+        this.taskname = '任务新增'
+        this.innervisible = true;
+        this.innerform.card_id= id
+        this.innerform.uid = ""
+        this.innerform.account_id = ""
+        this.innerform.task = ""
+        this.innerform.commission = ""
+        this.innerform.consume = ""
+        this.innerform.user = ""
+
+      },
+      //修改子表
       inneredit(data) {
         // const newData = [...this.innerData];
         // console.log(newData);
@@ -693,24 +743,19 @@
         //   this.innerData = newData;
         // }
         // console.log(this.innerData);
-      if (data.id) {
-          console.log(data);
-          this.innervisible = true;
-          // console.log("任务编辑")
-          this.taskname = "任务编辑"
-          this.innerform.id = data.id
-          this.innerform.uid = data.uid
-          this.innerform.account_id = data.account_id
-          // this.innerform.card_id = data.card_id
-          this.innerform.task = data.task
-          this.innerform.commission = data.commission
-          this.innerform.consume = data.consume
-          this.innerform.user = data.user
-      } else {
-          console.log(data, 132123132)
-          this.taskname = '任务新增'
-          this.innervisible = true;
-      }},
+        console.log(data);
+        this.innervisible = true;
+        // console.log("任务编辑")
+        this.taskname = "任务编辑"
+        this.innerform.id = data.id
+        this.innerform.uid = data.uid
+        this.innerform.account_id = data.account_id
+        this.innerform.card_id = data.card_id
+        this.innerform.task = data.task
+        this.innerform.commission = data.commission
+        this.innerform.consume = data.consume
+        this.innerform.user = data.user
+      },
       innersave(id) {
           const newData = [...this.innerData];
           const newCacheData = [...this.cacheData];
