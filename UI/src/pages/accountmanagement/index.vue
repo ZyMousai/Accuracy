@@ -4,25 +4,25 @@
       <a-form layout="horizontal" :model="query">
         <div :class="advanced ? null: 'fold'">
           <a-row >
-            <a-col :md="8" :sm="24" >
-              <a-form-item
-                      label="平台"
-                      :labelCol="{span: 5}"
-                      :wrapperCol="{span: 18, offset: 1}"
-              >
-                <a-input v-model="query.platform" placeholder="请输入" />
-              </a-form-item>
-            </a-col>
-            <a-col :md="8" :sm="24" >
-              <a-form-item
-                      label="账号"
-                      :labelCol="{span: 5}"
-                      :wrapperCol="{span: 18, offset: 1}"
-              >
-                <a-input v-model="query.account" style="width: 100%" placeholder="请输入" />
-              </a-form-item>
-            </a-col>
-          </a-row>
+          <a-col :md="8" :sm="24" >
+            <a-form-item
+              label="平台"
+              :labelCol="{span: 5}"
+              :wrapperCol="{span: 18, offset: 1}"
+            >
+              <a-input v-model="query.platform" placeholder="请输入" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :sm="24" >
+            <a-form-item
+              label="账号"
+              :labelCol="{span: 5}"
+              :wrapperCol="{span: 18, offset: 1}"
+            >
+              <a-input v-model="query.account" style="width: 100%" placeholder="请输入" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         </div>
         <span style="float: right; margin-top: 3px;">
           <a-button type="primary" @click="queryevents">查询</a-button>
@@ -40,12 +40,12 @@
         <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       </a-space>
       <standard-table
-              :columns="columns"
-              :dataSource="dataSource"
-              :selectedRows.sync="selectedRows"
-              :loading="tableloading"
-              :pagination="false"
-              :rowKey='record=>record.id'
+        :columns="columns"
+        :dataSource="dataSource"
+        :selectedRows.sync="selectedRows"
+        :loading="tableloading"
+        :pagination="false"
+        :rowKey='record=>record.id'
       >
         <div slot="password" slot-scope="{record}">
           {{record.password}}
@@ -66,13 +66,13 @@
         </div>
       </standard-table>
       <a-pagination
-              style="margin-top: 15px;"
-              v-model="query.page"
-              :total="total"
-              show-size-changer
-              @showSizeChange="onShowSizeChange"
-              :show-total="total => `一共 ${total} 条`"
-              @change="pageonChange" />
+        style="margin-top: 15px;"
+        v-model="query.page"
+        :total="total"
+        show-size-changer
+        @showSizeChange="onShowSizeChange"
+        :show-total="total => `一共 ${total} 条`"
+        @change="pageonChange" />
       <!-- 表单 -->
       <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()" :width='850'>
       <template slot="footer">
@@ -180,8 +180,8 @@ const columns = [
 
 const dataSource = []
 
-const KEY = CryptoJS.enc.Utf8.parse("Never give up999");
-const IV = CryptoJS.enc.Utf8.parse("7683425105789011"); 
+const KEY = CryptoJS.enc.Utf8.parse(" ");
+const IV = CryptoJS.enc.Utf8.parse(" "); 
 
 export default {
   name: 'QueryList',
@@ -251,6 +251,16 @@ export default {
         }
       })
     },
+    // 获取角色下拉菜单数据
+    getdowndata() {
+      GetDownmenutDate().then(res => {
+        if (res.status === 200) {
+          this.departmentoptions = res.data.data
+        } else {
+          this.$message.error(`获取角色菜单数据失败！`);
+        }
+      })
+    },
     toggleAdvanced () {
       this.advanced = !this.advanced
     },
@@ -268,16 +278,10 @@ export default {
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteDate(this.ids[i]).then(res => {
           if (res.status === 200) {
-            this.dataSource = res.data.data
-            this.total = res.data.total
-            this.tableloading = false
-            for (var i = 0; i < this.dataSource.length; i++) {
-              this.dataSource[i]["index"] = i + 1
-            }
+            this.$message.success(`删除成功！`);
           } else {
-            this.tableloading = false
-            this.$message.error(`获取数据失败！`);
-          }
+            this.$message.error(`删除失败！`);
+          }  
         })
       }
       const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
@@ -309,93 +313,52 @@ export default {
     },
     // 打开编辑表单
     showModal(data) {
-        this.form = {}
-        if (data.id) {
-          this.tablename = '编辑'
-          GetOngAccountDate(data.id).then(res => {
-            this.form = res.data.data
-            this.form.password = this.Decrypt(this.form.password)
-            this.reform.role_id = res.data.data.role_id
-            this.accountid = data.id
-            this.visible = true;
-          })
-        }
-      },
-      // 提交表单
-      handleOk() {
-        this.$refs.ruleForm.validate(valid => {
-          if (valid) {
-            this.form.password = this.Encrypt(this.encryption(this.form.password))
-            this.loading = true;
-            this.tablename === '新增' ? this.addadta() : this.ediddata()
-          }
+      this.form = {}
+      if (data.id) {
+        this.tablename = '编辑'
+        GetOngAccountDate(data.id).then(res => {
+          this.form = res.data.data
+          this.form.password = this.Decrypt(this.form.password)
+          this.reform.role_id = res.data.data.role_id
+          this.accountid = data.id
+          this.visible = true;
         })
-      },
-      addadta() {
-        AddAccount(this.form).then(res => {
-          if (res.status === 200) {
-            console.log(res.data.id);
-            this.accountid = res.data.id
-            this.addaccountrole(this.form)
-          } else {
-            this.$message.error(`${this.tablename}失败！`);
-            this.loading = false;
-          }
-        })
-      },
-      ediddata() {
-        EditAccount(this.form).then(res => {
-          if (res.status === 200) {
-            this.deleteaccountrole(this.reform)
-          } else {
-            this.$message.error(`${this.tablename}失败！`);
-            this.loading = false;
-          }
-        })
-      },
-      // 添加用户关联角色
-      addaccountrole(data) {
-        console.log(data);
-        const form = {
-          role_id: data.role_id,
-          ids: []
-        }
-        form.ids.push(this.accountid)
-        AddAccountRole(form).then(res => {
-          if (res.status === 200) {
-            this.$message.success(`${this.tablename}成功！`);
-            this.loading = false;
-            this.accountid = ''
-            this.gettabledata()
-            this.handleCancel()
-          } else {
-            this.$message.error(`${this.tablename}失败！`);
-            this.loading = false;
-          }
-        })
-      },
-      // 删除用户关联角色
-      deleteaccountrole(data) {
-        const form = {
-          role_id: data.role_id,
-          ids: []
-        }
-        form.ids.push(this.accountid)
-        DeleteAccountRole(form).then(res => {
-          if (res.status === 200) {
-            this.addaccountrole(this.form)
-          } else {
-            this.$message.error(`${this.tablename}失败！`);
-            this.loading = false;
-          }
-        })
-      },
-      encryption(data) {
-        var ciphertext = data
-        for (let i = 0; i < 10; i++) {
-          ciphertext += '/0'
-        }
+      } else {
+        this.tablename = '新增'
+        this.visible = true;
       }
+    },
+    // 提交表单
+    handleOk() {
+      this.$refs.ruleForm.validate(valid => {
+        if (valid) {
+          this.form.password = this.Encrypt(this.encryption(this.form.password))
+          this.loading = true;
+          this.tablename === '新增' ? this.addadta() : this.ediddata()
+        }
+      })
+    },
+    addadta() {
+      AddAccount(this.form).then(res => {
+        if (res.status === 200) {
+          console.log(res.data.id);
+          this.accountid = res.data.id
+          this.addaccountrole(this.form)
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
+    },
+    ediddata() {
+      EditAccount(this.form).then(res => {
+        if (res.status === 200) {
+          this.deleteaccountrole(this.reform)
+        } else {
+          this.$message.error(`${this.tablename}失败！`);
+          this.loading = false;
+        }
+      })
     },
     // 添加用户关联角色
     addaccountrole(data) {
@@ -473,38 +436,37 @@ export default {
       let iv = this.IV
       
       if (keyStr && ivStr) {
-          key = CryptoJS.enc.Utf8.parse(keyStr);
-          iv = CryptoJS.enc.Utf8.parse(ivStr);
-        }
-
-        let srcs = CryptoJS.enc.Utf8.parse(str);
-        var encrypt = CryptoJS.AES.encrypt(srcs, key, {
+        key = CryptoJS.enc.Utf8.parse(keyStr);
+        iv = CryptoJS.enc.Utf8.parse(ivStr);
+      }
+      let srcs = CryptoJS.enc.Utf8.parse(str);
+      var encrypt = CryptoJS.AES.encrypt(srcs, key, {
           iv: iv,
           mode: CryptoJS.mode.CBC,            //这里可以选择AES加密的模式
           padding: CryptoJS.pad.Pkcs7
-        });
-        return CryptoJS.enc.Base64.stringify(encrypt.ciphertext);
-      },
-      // AES解密
-      Decrypt(str, keyStr, ivStr) {
-        let key = this.KEY
-        let iv = this.IV
-        if (keyStr && ivStr) {
+      });
+      return CryptoJS.enc.Base64.stringify(encrypt.ciphertext);
+    },
+    // AES解密
+    Decrypt(str, keyStr, ivStr) {
+      let key = KEY
+      let iv = IV
+      if (keyStr && ivStr) {
           key = CryptoJS.enc.Utf8.parse(keyStr);
           iv = CryptoJS.enc.Utf8.parse(ivStr);
-        }
-        let base64 = CryptoJS.enc.Base64.parse(str);
-        let src = CryptoJS.enc.Base64.stringify(base64);
-
-        var decrypt = CryptoJS.AES.decrypt(src, key, {
+      }
+      let base64 = CryptoJS.enc.Base64.parse(str);
+      let src = CryptoJS.enc.Base64.stringify(base64);
+      var decrypt = CryptoJS.AES.decrypt(src, key, {
           iv: iv,
           mode: CryptoJS.mode.CBC,            //这里可以选择AES解密的模式
           padding: CryptoJS.pad.Pkcs7
-        })
-        var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8).split('/0')[0];
-        return decryptedStr.toString();
-      }
+      });
+      var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8).split('/0')[0];
+      return decryptedStr.toString();
+    }
   }
+}
 </script>
 
 <style lang="less" scoped>

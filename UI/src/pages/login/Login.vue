@@ -126,7 +126,22 @@
                     this.$message.success("欢迎回来！", 3)
                     // 获取路由配置
                     GetRoleMenu().then(result => {
-                      const routesConfig = result.data.data2
+                      console.log(result.data.data);
+                      const routesConfig = [{
+                          router: 'rootrout',
+                          children: [{ router: 'dashboard' }, { router: 'personaldata' }]
+                      }]
+                      result.data.data.forEach(e => {
+                          const routername = {
+                              router: '',
+                              children: []
+                          }
+                          routername.router = e.path
+                          e.children.forEach(i => {
+                              routername.children.push(i.path)
+                          })
+                          routesConfig[0].children.push(routername)
+                      })
                       loadRoutes(routesConfig)
                       this.$router.push('/dashboard')
                       this.$message.success(loginRes.message, 3)

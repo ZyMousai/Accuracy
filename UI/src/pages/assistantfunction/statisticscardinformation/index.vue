@@ -723,13 +723,13 @@
         this.taskname = '任务新增'
         this.innervisible = true;
         this.innerform.card_id= id
-        this.innerform.uid = ""
+        this.innerform.uid = []
         this.innerform.account_id = ""
         this.innerform.task = ""
         this.innerform.commission = ""
         this.innerform.consume = ""
         this.innerform.user = ""
-
+        console.log(this.innerform);
       },
       //修改子表
       inneredit(data) {
