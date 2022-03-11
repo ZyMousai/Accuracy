@@ -40,5 +40,7 @@ class SearchUser(BaseModel):
     name: Optional[str] = Query(None)
     gender: Optional[bool] = Query(None)
     creator: Optional[str] = Query(None)
+    department_id: Optional[int] = Query(None)
+    role_id: Optional[int] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10

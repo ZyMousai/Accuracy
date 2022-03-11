@@ -23,22 +23,22 @@ async def read_root():
 # 中间件
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    response = await call_next(request)
     # # 判断不是登录接口的链接就验证token
     path = str(request.url.path)
     if path == '/api/PersonnelManagement/users/v1/login' \
-            or path == '/docs' or path == '/redocs' or path == '/openapi.json':
-        return response
+            or path == '/docs' or path == '/redocs' or path == '/openapi.json' or 'avatar' in path:
+        return await call_next(request)
     if request.method == "OPTIONS":
-        return response
+        return await call_next(request)
     try:
-        token = request.headers["Authorization"]
+        token = request.headers["token"]
         payload = await Permissions.verify(token)
         request.state.user_id = payload.get("user_id")
         request.state.account = payload.get("account")
         request.state.username = payload.get("name")
         request.state.role = payload.get("role")
         request.state.role_id = payload.get("role_id")
+        response = await call_next(request)
         if request.state.role_id == 1:
             return response
     except Exception as e:
@@ -48,6 +48,7 @@ async def add_process_time_header(request: Request, call_next):
     auth_tag = await AuthPermissions.auth(request)
     if not auth_tag:
         return JSONResponse(status_code=403, content={"detail": "Authorization authentication failed."})
+    return response
 
 
 # # 在FastAPI创建前创建Redis连接

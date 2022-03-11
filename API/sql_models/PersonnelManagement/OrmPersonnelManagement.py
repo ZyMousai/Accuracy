@@ -44,6 +44,13 @@ class Users(PBaseModel):
         result = (await dbs.execute(_orm)).scalars().all()
         return result
 
+    @classmethod
+    async def get_user_role(cls, dbs, role_id):
+        _orm = select(cls).outerjoin(RoleUserMapping, cls.id == RoleUserMapping.user_id). \
+            where(cls.is_delete == 0, RoleUserMapping.role_id == role_id)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result
+
 
 class Roles(PBaseModel):
     __tablename__ = 'roles'
