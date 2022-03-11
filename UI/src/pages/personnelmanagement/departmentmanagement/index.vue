@@ -66,13 +66,13 @@
                 @change="pageonChange" />
             <!-- 删除确认对话框 -->
             <a-modal
-                    title="您确定要删除吗？不可恢复噢！"
+                    title="系统消息"
                     :visible="dialogvisible"
                     ok-text="是"
                     cancel-text="否"
                     @ok="onok"
                     @cancel="onno">
-                <p style="color: darkred">请认真思考后再进行删除噢！</p>
+                <p>是否删除所选部门，删除后将无法恢复！</p>
             </a-modal>
 
         </div>
@@ -178,6 +178,7 @@
             },
             // 查询
             queryevents() {
+                console.log(this.query);
                 this.gettabledata();
             },
             // 批量删除

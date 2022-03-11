@@ -73,9 +73,8 @@
       <a-tab-pane key="2" tab="安全设置">
         <a-list item-layout="horizontal" :data-source="data" >
           <a-list-item slot="renderItem" slot-scope="item">
-            <a slot="actions" style="margin-right: 15px;" @click="showModal">修改</a>
             <a-list-item-meta>
-              <a slot="title" style="float: left;">{{ item.title }}</a>
+              <a slot="title" style="float: left;" @click="showModal"><a-button type="primary"><a-icon type="user" />{{ item.title }}</a-button></a>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -87,18 +86,17 @@
         <a-button key="back" @click="handleCancel">
           取消
         </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+        <a-button key="submit" type="primary"  :loading="buttonloading" @click="handleOk">
           提交
         </a-button>
       </template>
       <template>
         <a-form-model
           ref="ruleForm"
-          :model="form"
+          :model="wdform"
           :rules="wprules"
           :label-col="{ span: 6 }"
           :wrapper-col="{ span: 14 }"
-          :layout="form.layout"
         >
         <a-row :gutter="16">
           <a-col :span="10">
@@ -107,8 +105,8 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
-            <a-form-model-item label="确认密码" prop="editrepassword">
-              <a-input v-model="wdform.editrepassword" />
+            <a-form-model-item label="确认密码" prop="repassword">
+              <a-input v-model="wdform.repassword" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -121,16 +119,15 @@
 <script>
   const data = [
     {
-      title: '账户密码',
+      title: '修改密码',
     }
   ];
-  import {mapMutations, mapState} from 'vuex'
-  import { UserData, UpUserData } from '@/services/user';
+  import {mapMutations, mapState, mapGetters} from 'vuex'
+  import { UserData, UpUserData, UpPassword, logout } from '@/services/user';
   export default {
     name: 'personaldata',
     data() {
     var checkMobile = (rule, value, cb) => {
-      console.log(value);
       const regMobile = /^(0|86|17951)?(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$/;
       if (regMobile.test(value)) {
           // 合法的手机号码
@@ -140,7 +137,6 @@
     }
     // 验证密码是否相同
     var validatePass = (rule, value, callback) => {
-      console.log(value);
       if (!value) {
         callback(new Error('请输入新密码！'))
       } else if (value.toString().length < 6) {
@@ -149,8 +145,7 @@
         callback()
       }
     }
-    var validatePass2 = (rule, value, callback) => {
-      console.log(value);
+    var revalidatePass = (rule, value, callback) => {
       if (value === '') {
           callback(new Error('请重新输入你的密码！'))
       } else if (value !== this.wdform.password) {
@@ -178,7 +173,7 @@
         alone: '',
         wdform: {
           password: '',
-          editrepassword: ''
+          repassword: ''
         },
         userdatarules: {
           phone: [{ required: false, trigger: 'blur' },
@@ -187,8 +182,8 @@
         wprules: {
           password: [{ required: false, trigger: 'blur' },
                      { validator: validatePass, rtigger:'blur'}],
-          editrepassword: [{ required: false, trigger: 'blur' },
-                           { validator: validatePass2, rtigger:'blur'}]
+          repassword: [{ required: false, trigger: 'blur' },
+                           { validator: revalidatePass, rtigger:'blur'}]
         },
         headers: {
           accept: 'application/json'
@@ -198,6 +193,7 @@
     computed: {
       ...mapMutations('account', ['setUser']),
       ...mapState('setting', ['pageMinHeight']),
+      ...mapGetters('account', ['user']),
       desc() {
         return this.$t('description')
       }
@@ -268,8 +264,7 @@
       })
       },
       // 打开编辑表单
-      showModal(id) {
-        typeof id === 'number' ? this.tablename = '编辑' : this.tablename = '新增'
+      showModal() {
         this.visible = true;
       },
       // 关闭编辑表单
@@ -281,7 +276,25 @@
         console.log(this.wdform);
         this.$refs.ruleForm.validate(valid => {
           if (valid) {
-            console.log(this.wdform);
+            this.buttonloading = true
+            const data = {
+              id: this.user.id,
+              password: this.wdform.password
+            }
+            UpPassword(data).then(res => {
+              if (res.status === 200) {
+                this.$message.success('修改密码成功，请重新登陆！')
+                this.$refs.ruleForm.resetFields();
+                this.buttonloading = false
+                this.visible = false
+                logout()
+                this.$router.push('/login')
+                localStorage.clear()
+              } else {
+                this.$message.error('更新失败！')
+                this.buttonloading = false
+              }
+            })
           }
         })
       }

@@ -1,4 +1,4 @@
-import { Document } from '@/services/api'
+import { Document, DocumentDownloadURL } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -9,6 +9,20 @@ import { request, METHOD } from '@/utils/request'
  */
 export async function DocumentDate(query) {
     return request(Document, METHOD.GET, query)
+}
+
+/**
+ * 文档页面
+ * 下载文档
+ * @param filename  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function DocumentDownload(filename) {
+    return request(DocumentDownloadURL + '/' + filename, METHOD.GET, '', {
+        headers: {
+            responseType: 'arraybuffer'
+        }
+    })
 }
 
 /**

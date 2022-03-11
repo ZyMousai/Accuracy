@@ -19,16 +19,27 @@
                                     :labelCol="{span: 5}"
                                     :wrapperCol="{span: 18, offset: 1}"
                             >
-                                <a-input v-model="query.uploadusers" style="width: 100%" placeholder="请输入"/>
+                                <a-input v-model="query.user_name" style="width: 100%" placeholder="请输入"/>
                             </a-form-item>
                         </a-col>
                         <a-col :md="8" :sm="24">
                             <a-form-item
-                                    label="上传日期"
+                                    label="开始时间"
                                     :labelCol="{span: 5}"
                                     :wrapperCol="{span: 18, offset: 1}"
                             >
-                                <a-date-picker v-model="query.uploaddate" style="width: 100%" placeholder="请输入更新日期"/>
+                                <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD"/>
+                            </a-form-item>
+                        </a-col>
+                    </a-row>
+                    <a-row>
+                        <a-col :md="8" :sm="24">
+                            <a-form-item
+                                    label="结束时间"
+                                    :labelCol="{span: 5}"
+                                    :wrapperCol="{span: 18, offset: 1}"
+                            >
+                                <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入更新日期" format="YYYY-MM-DD"/>
                             </a-form-item>
                         </a-col>
                     </a-row>
@@ -59,8 +70,6 @@
                     :columns="columns"
                     :dataSource="dataSource"
                     :selectedRows.sync="selectedRows"
-                    @clear="onClear"
-                    @change="onChange"
                     :rowKey='record=>record.id'
                     :pagination="false"
                     :loading="tableloading"
@@ -78,9 +87,6 @@
                         彻底删除
                     </a>
                 </div>
-                <template slot="statusTitle">
-                    <a-icon @click.native="onStatusTitleClick" type="info-circle"/>
-                </template>
             </standard-table>
             <a-pagination
                 style="margin-top: 15px;"
@@ -92,24 +98,24 @@
                 @change="pageonChange" />
             <!-- 删除确认对话框 -->
             <a-modal
-                    title="您确定要删除吗？删除之后无法恢复！"
+                    title="系统消息"
                     :visible="dialogvisible"
                     ok-text="是"
                     cancel-text="否"
                     @ok="onok"
                     @cancel="onno">
-                <p style="color: darkred">请认真思考后再进行删除！</p>
+                <p>您确定要删除吗？删除之后无法恢复！</p>
             </a-modal>
 
             <!-- 恢复确认对话框 -->
             <a-modal
-                    title="您确定要恢复吗？"
+                    title="系统消息"
                     :visible="recovervisible"
                     ok-text="是"
                     cancel-text="否"
                     @ok="onokrecover"
                     @cancel="onnorecover">
-                <p style="color: darkred">请认真思考后再进行恢复！</p>
+                <p>确定恢复此文件吗？</p>
             </a-modal>
 
         </div>
@@ -162,11 +168,15 @@
                 query: {
                     page: 1,
                     page_size: 10,
-                    filename: '',
-                    uploadusers: '',
-                    uploaddate: ''
+                    department_id: null,
+                    filename: null,
+                    user_name: null,
+                    end_time: null,
+                    start_time: null
                 },
                 total: 0,
+                start_time: '',
+                end_time: '',
                 tableloading: false,
                 advanced: true,
                 columns: columns,
@@ -188,6 +198,7 @@
             // 获取表格数据
             gettabledata() {
                 this.tableloading = true
+                this.query.department_id = localStorage.getItem('department_id')
                 RecycleDocumentDate(this.query).then(res => {
                     if (res.status === 200) {
                       console.log(res);
@@ -205,41 +216,24 @@
                     }
                 })
             },
-
-
             toggleAdvanced() {
                 this.advanced = !this.advanced
             },
-            remove() {
-                this.dataSource = this.dataSource.filter(item => this.selectedRows.findIndex(row => row.key === item.key) === -1)
-                this.selectedRows = []
-            },
-            onClear() {
-                this.$message.info('您清空了勾选的所有行')
-            },
-            onStatusTitleClick() {
-                this.$message.info('你点击了状态栏表头')
-            },
-            onChange(current) {
-                console.log(current);
-                this.$message.info('表格状态改变了')
-            },
-            handleMenuClick(e) {
-                if (e.key === 'delete') {
-                    this.remove()
-                }
-            },
             // 查询
             queryevents() {
+                this.query.start_time = this.start_time ? this.start_time.format('YYYY-MM-DD') : null
+                this.query.end_time = this.end_time ? this.end_time.format('YYYY-MM-DD') : null
                 this.gettabledata();
             },
-
-
             async onok() {
                 let is_logic_del = '0';
                 for (let i = 0; i < this.ids.length; i++) {
                     await RecycleDeleteDocuments(this.ids[i], is_logic_del).then(res => {
-                        console.log(res);
+                        if (res.status === 200) {
+                          this.$message.success(`删除成功！`);
+                        } else {
+                          this.$message.error(`删除失败！`);
+                        }
                     })
                 }
                 this.gettabledata();
@@ -253,7 +247,11 @@
             async onokrecover() {
                 for (let i = 0; i < this.ids.length; i++) {
                     await RecycleRecoverManagement(this.ids[i]).then(res => {
-                        console.log(res);
+                        if (res.status === 200) {
+                          this.$message.success(`恢复成功！`);
+                        } else {
+                          this.$message.error(`恢复失败！`);
+                        }
                     })
                 }
                 this.gettabledata();
@@ -285,8 +283,11 @@
             // 重置查询表单
             resettingqueryform() {
                 for (var key in this.query) {
-                    this.query[key] = ''
+                    this.query[key] = null
                 }
+                this.query.page = '1'
+                this.query.page_size = '10'
+                this.gettabledata()
             },
             // 删除对话框
             showdeleConfirm(id) {

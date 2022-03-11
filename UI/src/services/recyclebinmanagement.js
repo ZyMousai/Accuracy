@@ -18,7 +18,7 @@ export async function RecycleDocumentDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function RecycleDeleteDocuments(id, is_logic_del) {
-    return request(RecycleClear, METHOD.DELETE, {
+    return request(RecycleClear, "DELETE", {
         ids: id,
         is_logic_del: is_logic_del
     })

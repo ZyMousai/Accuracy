@@ -58,12 +58,13 @@
     </div>
     <!-- 删除确认对话框 -->
     <a-modal
-     title="是否删除此用户"
+     title="系统消息"
      :visible="dialogvisible"
      ok-text="是"
      cancel-text="否"
      @ok="user_onok"
      @cancel="user_onno">
+     <p>是否删除所选角色，删除后将无法恢复！</p>
     </a-modal>
   </a-card>
 </template>
@@ -159,6 +160,9 @@ export default {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = 1
+      this.query.page_size = 10
+      this.gettabledata()
     },
     // 新增角色
     addrole() {
