@@ -29,15 +29,26 @@ async def get_departments(info: SearchDepartment = Depends(SearchDepartment),
         ('is_delete', '==0', 0)
     ]
     result, count, total_page = await Departments.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+
+    new_result = []
+    for res in result:
+        new_res = {
+            "id": res.id,
+            "department": res.department,
+            "creator": res.creator,
+            "create_time": res.create_time.strftime("%Y-%m-%d")
+        }
+        new_result.append(new_res)
+
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
                      "total_page": total_page,
-                     "data": result}
+                     "data": new_result}
     return response_json
 
 
-@departments_router.get('/Department/{department_id}')
+@departments_router.get('/Department/detail')
 async def get_departments_one(department_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个部门的信息
@@ -153,7 +164,7 @@ async def get_department_role(dbs: AsyncSession = Depends(db_session), departmen
         p_role = {
             "id": p.id,
             "role": p.role,
-            "create_time": p.create_time,
+            "create_time": p.create_time.strftime("%Y-%m-%d"),
         }
         response_data.append(p_role)
     response_json = {"data": response_data}

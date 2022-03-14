@@ -98,8 +98,8 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
     return response_json
 
 
-@documents_router.get('/{file_id}')
-async def get_doc_one(file_id: int = Path(..., description='文件id', ge=1), dbs: AsyncSession = Depends(db_session)):
+@documents_router.get('/detail')
+async def get_doc_one(file_id: int = Query(..., description='文件id', ge=1), dbs: AsyncSession = Depends(db_session)):
     """
         默认获取文档页当前第一页数据
 

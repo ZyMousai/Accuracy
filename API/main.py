@@ -1,7 +1,7 @@
 import uvicorn
 # import aioredis
 from starlette.responses import JSONResponse
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request,HTTPException
 
 from app.Clerk.VoluumSiteId.VoluumSpider import VoluumData
 from initialize import init_app
@@ -80,4 +80,4 @@ async def add_process_time_header(request: Request, call_next):
 # master_scheduler.start()
 
 if __name__ == '__main__':
-    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)

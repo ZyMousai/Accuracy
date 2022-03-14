@@ -60,7 +60,7 @@ async def get_user(info: SearchUser = Depends(SearchUser),
     return response_json
 
 
-@users_router.get('/{user_id}')
+@users_router.get('/detail')
 async def get_user_one(user_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个用户的信息
