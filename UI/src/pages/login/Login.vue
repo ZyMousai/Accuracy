@@ -87,11 +87,12 @@
             return {
                 logging: false,
                 error: '',
-                form: this.$form.createForm(this)
+                form: this.$form.createForm(this),
+                operationoptions: [{id: 1, operate:'新增'}, {id: 2, operate:'修改'},{id: 3, operate:'查看'},{id: 4, operate:'删除'}],
             }
         },
         methods: {
-            ...mapMutations('account', ['setUser', 'setPermissions', 'setRoles']),
+            ...mapMutations('account', ['setUser', 'setRoles']),
             onSubmit(e) {
                 e.preventDefault()
                 this.form.validateFields((err) => {
@@ -106,17 +107,26 @@
             afterLogin(res) {
                 this.logging = false
                 const loginRes = res.data
-                console.log(res);
+                console.log(loginRes);
                 localStorage.id = res.data.user.id
                 localStorage.department_id = loginRes.department_id
                 localStorage.name = res.data.user.name
                 localStorage.account = res.data.user.account
                 if (loginRes.access_token) {
                     this.setUser(loginRes.user)
-                    let roles = [{
-                        id: 'test',                                   //角色ID
-                        operation: ['add', 'delete', 'edit', 'close']  //角色的操作权限
+                    const roles = [{
+                        id: '',        //角色ID
+                        operation: []  //角色的操作权限
                     }]
+                    roles[0].id = loginRes.role_id
+                    this.operationoptions.forEach(e => {
+                        loginRes.permission_list.forEach(i => {
+                            if (e.id === i) {
+                                roles[0].operation.push(e.operate)
+                                return
+                            }
+                        })
+                    })
                     // const {user, permissions, roles} = loginRes.data
                     // this.setUser(user)
                     // this.setPermissions(permissions)
@@ -144,12 +154,10 @@
                       })
                       loadRoutes(routesConfig)
                       this.$router.push('/dashboard')
-                      this.$message.success(loginRes.message, 3)
                     })
                 } else {
                     this.$message.error('登陆失败！')
                     this.logging = false
-                    this.error = loginRes.message
                 }
             },
             onClose() {

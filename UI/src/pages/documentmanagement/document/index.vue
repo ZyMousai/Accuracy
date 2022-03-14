@@ -164,6 +164,8 @@
 import StandardTable from '@/components/table/StandardTable'
 import {DocumentDate, DeleteDocuments, EditDate} from '@/services/documentmanagement'
 import {DepartmentDate} from '@/services/personnelmanagement'
+import {OperationVerification} from '@/plugins/permissionverify'
+import Cookie from 'js-cookie'
 const columns = [
   {
     title: '序号',
@@ -235,6 +237,7 @@ export default {
       headers: {
         accept: 'application/json',
         authorization: 'authorization-text',
+        token: Cookie.get('Authorization')
       }
     }
   },
@@ -242,6 +245,7 @@ export default {
     this.getdepartmentoptions()
   },
   methods: {
+    OperationVerification,
     //获取部门列表
     getdepartmentoptions(){
       DepartmentDate().then(res => {
@@ -300,6 +304,7 @@ export default {
       }
       this.query.page = '1'
       this.query.page_size = '10'
+      this.query.department_id = localStorage.getItem('department_id') - ''
       this.gettabledata()
     },
     // 打开编辑表单

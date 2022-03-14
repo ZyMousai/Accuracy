@@ -4,8 +4,8 @@ import Cookie from 'js-cookie'
 // 跨域认证信息 header 名
 const xsrfHeaderName = 'Authorization'
 
-axios.defaults.timeout = 5000
-axios.defaults.withCredentials = true
+// axios.defaults.timeout = 5000
+// axios.defaults.withCredentials = true
 axios.defaults.xsrfHeaderName = xsrfHeaderName
 axios.defaults.xsrfCookieName = xsrfHeaderName
 
@@ -90,19 +90,19 @@ function removeAuthorization(authType = AUTH_TYPE.BEARER) {
  */
 function checkAuthorization(authType = AUTH_TYPE.BEARER) {
     console.log(authType);
-    // switch (authType) {
-    //     case AUTH_TYPE.BEARER:
-    //         if (Cookie.get(xsrfHeaderName)) {
-    //             return true
-    //         }
-    //         break
-    //     case AUTH_TYPE.BASIC:
-    //     case AUTH_TYPE.AUTH1:
-    //     case AUTH_TYPE.AUTH2:
-    //     default:
-    //         break
-    // }
-    return true
+    switch (authType) {
+        case AUTH_TYPE.BEARER:
+            if (Cookie.get(xsrfHeaderName)) {
+                return true
+            }
+            break
+        case AUTH_TYPE.BASIC:
+        case AUTH_TYPE.AUTH1:
+        case AUTH_TYPE.AUTH2:
+        default:
+            break
+    }
+    return false
 }
 
 /**

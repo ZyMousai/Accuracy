@@ -10,7 +10,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.platform" placeholder="请输入" />
+              <a-input v-model="query.name" placeholder="请输入" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -19,9 +19,22 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
+              <a-select v-model="query.role_id" placeholder="请选择">
+                <a-select-option v-for="item in ruleslist" :key="item.role" :value="item.id">
+                  {{item.role}}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :sm="24" >
+            <a-form-item
+              label="部门"
+              :labelCol="{span: 5}"
+              :wrapperCol="{span: 18, offset: 1}"
+            >
               <a-select v-model="query.department_id" placeholder="请选择">
-                <a-select-option v-for="item in roleoptions" :key="item" :value="item">
-                  {{item}}
+                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
+                  {{item.department}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -106,7 +119,7 @@
         <a-row :gutter="16">
           <a-col :span="10">
             <a-form-model-item ref="account" label="用户名" prop="account">
-              <a-input v-model="form.account" />
+              <a-input v-model="form.account" :disabled="isdisabled" />
             </a-form-model-item>
           </a-col>
           <a-col :span="10">
@@ -216,7 +229,7 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {UsersDate, DeleteUsers, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit, UsersAddRole, UsersDeleteRole} from '@/services/personnelmanagement'
+import {UsersDate, DeleteUsers, RolesDate, RolesResetPassword, UsersAdd, GetOneUsersDate, UsersEdit, UsersAddRole, UsersDeleteRole, DepartmentDate} from '@/services/personnelmanagement'
 const columns = [
   {
     title: '序号',
@@ -275,8 +288,9 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        platform: '',
-        department_id: ''
+        name: null,
+        department_id: null,
+        role_id: null
       },
       form: {
         account: '',
@@ -295,9 +309,9 @@ export default {
       selectedRows: [],
       ids: [],
       tableloading: false,
-      roleoptions: ['商务', "技术"],
       genderlist: [['男', "true"], ["女", "false"]],
       ruleslist: [],
+      departmentoptions: [],
       dialogvisible: false,
       tablename: '',
       visible: false,
@@ -305,6 +319,7 @@ export default {
       userid: '',
       permissionsloading: false,
       permissionsvisible: false,
+      isdisabled: false,
       permissionsform: {
         role_id: '',
         department_id: ''
@@ -339,7 +354,18 @@ export default {
     //获取部门列表和角色列表
     getdepartmentoptions(){
       RolesDate().then(res => {
-        this.ruleslist = res.data.data
+        if (res.status === 200) {
+          this.ruleslist = res.data.data
+        } else {
+          this.$message.error('获取角色列表失败！')
+        }
+      })
+      DepartmentDate().then(res => {
+        if (res.status === 200) {
+          this.departmentoptions = res.data.data
+        } else {
+          this.$message.error('获取部门列表失败！')
+        }
       })
     },
     // 获取表格数据
@@ -398,7 +424,7 @@ export default {
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
-        this.query[key] = ''
+        this.query[key] = null
       }
       this.query.page = 1
       this.query.page_size = 10
@@ -409,6 +435,7 @@ export default {
       this.form = {}
       if (data.id) {
         this.tablename = '编辑'
+        this.isdisabled = true
         GetOneUsersDate(data.id).then(res => {
           this.form = res.data.data
           this.userid = this.form.id
@@ -423,6 +450,7 @@ export default {
         })
       } else {
         this.tablename = '新增'
+        this.isdisabled = false
         this.visible = true;
       }
     },
@@ -483,13 +511,10 @@ export default {
             return
           }
         })
-        this.permissionsform.department_id = res.data.data.department_id
-        this.repermissionsform.department_id = res.data.data.department_id
       })
     },
     // 提交权限编辑表单
     permissionsOkhandleOk() {
-      this.permissionsloading = true
       this.$refs.permissionsruleForm.validate(valid => {
         if (valid) {
           this.deleteuserrole(this.repermissionsform)
@@ -510,9 +535,14 @@ export default {
       form.ids.push(this.userid)
       UsersAddRole(form).then(res => {
         if (res.status === 200) {
-          this.$message.success(`角色添加成功！`);
+          this.$message.success(`角色${this.tablename}成功！`);
+          this.loading = true;
+          this.visible = false;
+          this.permissionsloading = false
+          this.permissionsvisible = false
+          this.gettabledata()
         } else {
-          this.$message.error(`${this.tablename}失败！`);
+          this.$message.error(`角色${this.tablename}失败！`);
           this.permissionsloading = false
           this.loading = false;
         }
@@ -524,6 +554,7 @@ export default {
         role_id: data.role_id,
         ids: []
       }
+      this.permissionsloading = true
       form.ids.push(this.userid)
       UsersDeleteRole(form).then(res => {
         if (res.status === 200) {

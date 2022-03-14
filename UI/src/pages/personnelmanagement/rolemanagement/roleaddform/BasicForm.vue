@@ -10,24 +10,42 @@
     <a-form-model-item ref="role" label="角色名" prop="role">
       <a-input v-model="form.role" />
     </a-form-model-item>
-    <a-form-model-item label="菜单选择" prop="menu">
+    <!-- <a-form-model-item label="菜单选择" prop="menu">
       <a-select v-model="form.menu" placeholder="请选择菜单" mode="multiple">
-        <a-select-opt-group v-for="item in menuoptions" :label="item.menu_name" :key="item.id">
-          <a-select-option v-for="sonitem in item.son_menu" :value="sonitem.id" :key="sonitem.id">
-            {{sonitem.menu_name}}
+        <a-select-opt-group v-for="item in menuoptions" :label="item.name" :key="item.id">
+          <a-select-option v-for="sonitem in item.children" :value="sonitem.id" :key="sonitem.id">
+            {{sonitem.name}}
           </a-select-option>
         </a-select-opt-group>
       </a-select>
+    </a-form-model-item> -->
+    <a-form-model-item label="菜单选择" prop="menu">
+      <a-tree-select
+        v-model="preselectionmenu"
+        :treeCheckable="true"
+        style="width: 100%"
+        placeholder="选择菜单"
+        allow-clear
+        showCheckedStrategy="SHOW_ALL"
+        @change="onchange"
+      >
+        <a-tree-select-node v-for="item in menuoptions" :key="item.name" :title="item.name" :value="item.name">
+          <a-tree-select-node v-for="sonitem in item.children" :key="sonitem.name" :title="sonitem.name" :value="sonitem.name">
+            <a-tree-select-node v-for="operateitem in sonitem.permission" :value="operateitem.id" :key="operateitem.id" :title="operateitem.operate">
+            </a-tree-select-node>
+          </a-tree-select-node>
+        </a-tree-select-node>
+      </a-tree-select>
     </a-form-model-item>
-    <a-form-model-item label="权限选择" prop="permissionarr">
+    <!-- <a-form-model-item label="权限选择" prop="permissionarr">
       <a-checkbox-group v-model="form.permissionarr">
         <a-checkbox v-for="item in operationoptions" :value="item.id" name="type" :key="item.id">
           {{ item.operate }}
         </a-checkbox>
       </a-checkbox-group>
-    </a-form-model-item>
+    </a-form-model-item> -->
     <a-form-model-item style="margin-top: 24px" :wrapperCol="{span: 10, offset: 7}">
-      <a-button type="primary" @click="onSubmit">
+      <a-button type="primary" @click="onSubmit" :disabled="isdisabled">
         提交
       </a-button>
       <a-button style="margin-left: 10px;" @click="resetForm">
@@ -55,15 +73,18 @@ export default {
         permissionarr: []
       },
       roleid: '',
-      isdisabled: true,
+      isdisabled: false,
       menuoptions: [],
       useroptions: [],
+      checkList: [],
+      menudata: [],
+      preselectionmenu: [],
       operationoptions: [{id: 1, operate:'新增'}, {id: 2, operate:'修改'},{id: 3, operate:'查看'},{id: 4, operate:'删除'}],
       secondarymenuoptions: [],
       rules: {
         role: [{ required: true, message: '请填写角色名', trigger: 'blur' }],
-        menu: [{type: 'array', required: true, message: '请选择菜单', trigger: 'change' }],
-        permissionarr: [{type: 'array', required: true, message: '请至少选择一个权限', trigger: 'change',}]
+        // menu: [{type: 'array', required: true, message: '请选择菜单', trigger: 'change' }],
+        // permissionarr: [{type: 'array', required: true, message: '请至少选择一个权限', trigger: 'change',}]
       },
     }
   },
@@ -78,7 +99,7 @@ export default {
       if (this.roleid) {
         GetOneRolesDate(this.roleid).then(res => {
           this.form.role = res.data.data.role
-          this.form.permissionarr.push(...res.data.permission_id_list)
+          this.preselectionmenu.push(...res.data.permission_id_list)
           this.reform.permissionarr.push(...res.data.permission_id_list)
           this.form.menu.push(...res.data.menu_id_list)
           this.reform.menu.push(...res.data.menu_id_list)
@@ -97,6 +118,8 @@ export default {
     onSubmit() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
+          this.isdisabled = true
+          console.log(this.form);
           if (this.roleid) {
             this.editrole()
           } else {
@@ -177,6 +200,7 @@ export default {
             menu: [],
             permissionarr: []
           }
+          this.isdisabled = false
           this.$refs.ruleForm.resetFields();
         } else {
           this.$message.error(`添加角色失败！`);
@@ -187,7 +211,7 @@ export default {
     daleteoperationauthority(from) {
       const data = {
         role_id: this.roleid,
-        ids: from.menu
+        ids: from.permissionarr
       }
       DeleteRolePermission(data).then(res => {
         if (res.status === 200) {
@@ -199,7 +223,31 @@ export default {
     },
     resetForm() {
       this.$refs.ruleForm.resetFields();
+      this.preselectionmenu = []
     },
+    onchange(value, node, extra) {
+      this.form.menu = []
+      const halfCheckedKeys = extra.triggerNode.vcTree._data._halfCheckedKeys
+      this.form.permissionarr = value.toString().match(/\d+/g)
+      this.menuoptions.forEach(e => {
+        e.children.forEach(i => {
+          value.forEach(y => {
+            if (i.name === y) {
+              this.form.menu.push(i.id)
+            }
+          })
+        })
+      })
+      this.menuoptions.forEach(e => {
+        e.children.forEach(i => {
+          halfCheckedKeys.forEach(y => {
+            if (i.name === y) {
+              this.form.menu.push(i.id)
+            }
+          })
+        })
+      })
+    }
   }
 }
 </script>

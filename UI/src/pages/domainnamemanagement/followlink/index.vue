@@ -142,6 +142,9 @@ export default {
       for(var key in this.query) {
         this.query[key] = ''
       }
+      this.query.page = '1'
+      this.query.page_size = '10'
+      this.dataSource = []
     }
   }
 }
