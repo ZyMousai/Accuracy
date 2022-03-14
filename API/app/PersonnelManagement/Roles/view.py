@@ -16,13 +16,17 @@ roles_router = APIRouter(
 
 
 def get_role_id(request: Request):
-    # return request.state.role_id
-    return 1
+    return request.state.role_id
+    # return 1
+    # return 4
 
 
 @roles_router.get("/RoleMenu")
 async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends(get_role_id)):
     """获取菜单 根据role"""
+
+    # 通过role_menu_mapping去查询menu_id，给对应的menu_id赋值
+
 
     # 根据role获取菜单
     menu_list = await Menu.get_menu_role(dbs, role_id)
@@ -32,22 +36,21 @@ async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends
             p_menu = {
                 "id": p.id,
                 "pid": p.pid,
-                "menu_name": p.menu_name,
-                "menu_path": p.menu_path,
-                "son_menu": list()
+                "name": p.menu_name,
+                "path": p.menu_path,
+                "children": list()
             }
             for s in menu_list:
                 if p.id == s.pid:
                     s_menu = {
                         "id": s.id,
                         "pid": s.pid,
-                        "menu_name": s.menu_name,
-                        "menu_path": s.menu_path,
+                        "name": s.menu_name,
+                        "path": s.menu_path,
                     }
-                    p_menu.get("son_menu").append(s_menu)
-            p_menu['son_menu'] = sorted(p_menu['son_menu'], key=lambda x: x['id'])
+                    p_menu.get("children").append(s_menu)
+            p_menu['children'] = sorted(p_menu['children'], key=lambda x: x['id'])
             response_data.append(p_menu)
-
     response_json = {"data": response_data}
     return response_json
 

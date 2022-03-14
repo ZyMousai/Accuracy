@@ -1,5 +1,5 @@
 # 权限验证
-from sql_models.PersonnelManagement.OrmPersonnelManagement import RoleAccountMapping, Permission
+from sql_models.PersonnelManagement.OrmPersonnelManagement import RoleAccountMapping, Permission, RoleUserMapping
 from sql_models.db_config import db_session2
 from fastapi import Request
 
@@ -14,17 +14,17 @@ class AuthPermissions(object):
         url = str(request.url.path)
         method = request.method
         role_id = request.state.role_id
-        account_id = request.state.user_id
+        user_id = request.state.user_id
 
         # 连接数据库
         dbs = await db_session2()
 
         # 验证用户和角色是否存在关联
         filter_c = [
-            ("account_id", f"=={account_id}", account_id),
+            ("user_id", f"=={user_id}", user_id),
             ("role_id", f"=={role_id}", role_id)
         ]
-        r = await RoleAccountMapping.get_one(dbs, *filter_c)
+        r = await RoleUserMapping.get_one(dbs, *filter_c)
 
         if not r:
             return auth_tag

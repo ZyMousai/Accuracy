@@ -32,12 +32,25 @@ async def get_user(info: SearchUser = Depends(SearchUser),
     :param dbs:
     :return:
     """
-    filter_condition = [
-        ('name', f'.like(f"%{info.name}%")', info.name),
-        ('gender', f'=={info.gender}', info.gender),
-        ('creator', f'.like(f"%{info.creator}%")', info.creator),
-        ('is_delete', '==0', 0)
-    ]
+    if info.department_id:
+        dep_user_ids = [i.id for i in (await Users.get_user_department(dbs, info.department_id))]
+        filter_condition = [
+            ('id', f'.in_(' + str(dep_user_ids) + ')', dep_user_ids),
+            ('is_delete', '==0', 0)
+        ]
+    elif info.role_id:
+        role_user_ids = [i.id for i in (await Users.get_user_role(dbs, info.role_id))]
+        filter_condition = [
+            ('id', f'.in_(' + str(role_user_ids) + ')', role_user_ids),
+            ('is_delete', '==0', 0)
+        ]
+    else:
+        filter_condition = [
+            ('name', f'.like(f"%{info.name}%")', info.name),
+            ('gender', f'=={info.gender}', info.gender),
+            ('creator', f'.like(f"%{info.creator}%")', info.creator),
+            ('is_delete', '==0', 0)
+        ]
     result, count, total_page = await Users.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
     response_json = {"total": count,
                      "page": info.page,
