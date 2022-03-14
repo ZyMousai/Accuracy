@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.PersonnelManagement.Roles.DataValidation import SearchRole, AddRole, UpdateRole, RoleAbout
 from sql_models.PersonnelManagement.OrmPersonnelManagement import Roles, Menu, RoleMenuMapping, DepartmentRoleMapping, \
-    RoleUserMapping, RolePermissionMapping, RoleAccountMapping
+    RoleUserMapping, RolePermissionMapping, RoleAccountMapping, Permission
 from sql_models.db_config import db_session
 
 roles_router = APIRouter(
@@ -21,36 +21,88 @@ def get_role_id(request: Request):
     # return 4
 
 
+operate_dict ={
+    1:"新增",
+    2:"修改",
+    3:"查看",
+    4:"删除",
+}
+
+
 @roles_router.get("/RoleMenu")
 async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends(get_role_id)):
     """获取菜单 根据role"""
 
     # 通过role_menu_mapping去查询menu_id，给对应的menu_id赋值
 
-
     # 根据role获取菜单
     menu_list = await Menu.get_menu_role(dbs, role_id)
+
+    filter_condition = [
+        ('role_id', f'=={role_id}', role_id),
+        ('is_delete', '==0', 0)
+    ]
+    results = await RolePermissionMapping.get_all(dbs, *filter_condition)
+
+    menu_permission = await Permission.get_all(dbs, *[('is_delete', '==0', 0)])
+
+    result_menu_hash = {menu.id: menu for menu in await Menu.get_all(dbs, *[('is_delete', '==0', 0)])}
+
+    parent_menu_ids = [menu.id for menu in await Menu.get_all(dbs, *[('is_delete', '==0', 0)]) if menu.pid == 0]
+
     response_data = []
-    for p in menu_list:
-        if p.pid == 0:
-            p_menu = {
-                "id": p.id,
-                "pid": p.pid,
-                "name": p.menu_name,
-                "path": p.menu_path,
-                "children": list()
-            }
-            for s in menu_list:
-                if p.id == s.pid:
-                    s_menu = {
-                        "id": s.id,
-                        "pid": s.pid,
-                        "name": s.menu_name,
-                        "path": s.menu_path,
-                    }
-                    p_menu.get("children").append(s_menu)
-            p_menu['children'] = sorted(p_menu['children'], key=lambda x: x['id'])
+    for parent_id in parent_menu_ids:
+        p_menu = {
+            "id": result_menu_hash[parent_id].id,
+            "pid": result_menu_hash[parent_id].pid,
+            "name": result_menu_hash[parent_id].menu_name,
+            "path": result_menu_hash[parent_id].menu_path,
+            "children": list()
+        }
+        for children_menu in menu_list:
+            if children_menu.pid == parent_id:
+                s_menu = {
+                    "id": children_menu.id,
+                    "pid": children_menu.pid,
+                    "name": children_menu.menu_name,
+                    "path": children_menu.menu_path,
+                    "permission": list()
+                }
+                for menu_permission_item in menu_permission:
+                    if menu_permission_item.menu_id == children_menu.id:
+                        permission = {
+                            "id": menu_permission_item.id,
+                            "p_method": menu_permission_item.p_method,
+                            "operate": operate_dict[menu_permission_item.operate],
+                            "menu_id": menu_permission_item.menu_id,
+                        }
+                        s_menu.get('permission').append(permission)
+                p_menu.get("children").append(s_menu)
+        p_menu['children'] = sorted(p_menu['children'], key=lambda x: x['id'])
+        if p_menu['children']:
             response_data.append(p_menu)
+
+    # response_data = []
+    # for p in menu_list:
+    #     if p.pid == 0:
+    #         p_menu = {
+    #             "id": p.id,
+    #             "pid": p.pid,
+    #             "name": p.menu_name,
+    #             "path": p.menu_path,
+    #             "children": list()
+    #         }
+    #         for s in menu_list:
+    #             if p.id == s.pid:
+    #                 s_menu = {
+    #                     "id": s.id,
+    #                     "pid": s.pid,
+    #                     "name": s.menu_name,
+    #                     "path": s.menu_path,
+    #                 }
+    #                 p_menu.get("children").append(s_menu)
+    #         p_menu['children'] = sorted(p_menu['children'], key=lambda x: x['id'])
+    #         response_data.append(p_menu)
     response_json = {"data": response_data}
     return response_json
 

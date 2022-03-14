@@ -92,6 +92,7 @@ class Permission(PBaseModel):
     p_url = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False)  # 权限url
     p_method = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False)  # 方法
     operate = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 操作 1.新增 2.修改 3.查看 4.删除
+    menu_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)
 
     @classmethod
     async def filter_get_permission(cls, dbs, role_id, url, method):

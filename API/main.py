@@ -26,7 +26,7 @@ async def add_process_time_header(request: Request, call_next):
     # # 判断不是登录接口的链接就验证token
     path = str(request.url.path)
     if path == '/api/PersonnelManagement/users/v1/login' \
-            or path == '/docs' or path == '/redocs' or path == '/openapi.json' or 'avatar' in path:
+            or path == '/docs' or path == '/redocs' or path == '/openapi.json' or 'avatar' in path or 'download' in path:
         return await call_next(request)
     if request.method == "OPTIONS":
         return await call_next(request)
@@ -38,16 +38,17 @@ async def add_process_time_header(request: Request, call_next):
         request.state.username = payload.get("name")
         request.state.role = payload.get("role")
         request.state.role_id = payload.get("role_id")
-        response = await call_next(request)
+        # 权限验证
         if request.state.role_id == 1:
-            return response
+            return await call_next(request)
+
+        from app.PersonnelManagement.Roles.AuthPermissions import AuthPermissions
+        auth_tag = await AuthPermissions.auth(request)
+        if not auth_tag:
+            return JSONResponse(status_code=403, content={"detail": "Authorization authentication failed."})
+        response = await call_next(request)
     except Exception as e:
         return JSONResponse(status_code=401, content={"detail": str(e)})
-    # 权限验证
-    from app.PersonnelManagement.Roles.AuthPermissions import AuthPermissions
-    auth_tag = await AuthPermissions.auth(request)
-    if not auth_tag:
-        return JSONResponse(status_code=403, content={"detail": "Authorization authentication failed."})
     return response
 
 
@@ -79,4 +80,4 @@ async def add_process_time_header(request: Request, call_next):
 # master_scheduler.start()
 
 if __name__ == '__main__':
-    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=False)
