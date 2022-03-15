@@ -41,5 +41,8 @@ export async function DeleteDate(id) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetUrl(m_id, s_id) {
-    return request(getVoluumsiteIdUrl + m_id + '/' + s_id, METHOD.GET, '')
+    return request(getVoluumsiteIdUrl, METHOD.GET, {
+        m_id: m_id,
+        s_id: s_id
+    })
 }

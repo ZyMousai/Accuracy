@@ -25,7 +25,9 @@ export async function getRoutesConfig() {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function UserData(id) {
-    return request(USERS + id, METHOD.GET, '')
+    return request(USERS, METHOD.GET, {
+        user_id: id
+    })
 }
 
 /**

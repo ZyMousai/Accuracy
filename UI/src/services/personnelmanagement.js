@@ -1,4 +1,4 @@
-import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping, RoleMenu, RolePermission, RoleUser } from '@/services/api'
+import { USERS, ROLES, DEPARTMENTS, UpdatePassword, DepartmentRoleMapping, DepartmentUserMapping, RoleMenu, RolePermission, RoleUser, GetOneUSERS, GetOneROLES, GetOneDEPARTMENTS } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -18,7 +18,9 @@ export async function UsersDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetOneUsersDate(id) {
-    return request(USERS + id, METHOD.GET, '')
+    return request(GetOneUSERS, METHOD.GET, {
+        user_id: id
+    })
 }
 
 /**
@@ -109,7 +111,9 @@ export async function RolesDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetOneRolesDate(id) {
-    return request(ROLES + id, METHOD.GET, '')
+    return request(GetOneROLES, METHOD.GET, {
+        role_id: id
+    })
 }
 
 /**
@@ -219,7 +223,9 @@ export async function DepartmentDate(query) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetOneDepartmentDate(id) {
-    return request(DEPARTMENTS + '/' + id, METHOD.GET, '')
+    return request(GetOneDEPARTMENTS, METHOD.GET, {
+        department_id: id
+    })
 }
 
 /**

@@ -10,7 +10,7 @@ const resp401 = {
     onFulfilled(response, options) {
         const { message } = options
         if (response.code === 401) {
-            message.error('无此权限')
+            message.error('无此权限，如有疑问请联系管理员')
         }
         return response
     },
@@ -24,7 +24,7 @@ const resp401 = {
         const { message } = options
         const { response } = error
         if (response.status === 401) {
-            message.error('无此权限')
+            message.error('无此权限，如有疑问请联系管理员')
         }
         return Promise.reject(error)
     }
@@ -34,7 +34,7 @@ const resp403 = {
     onFulfilled(response, options) {
         const { message } = options
         if (response.code === 403) {
-            message.error('请求被拒绝')
+            message.error('无此权限，如有疑问请联系管理员')
         }
         return response
     },
@@ -42,7 +42,7 @@ const resp403 = {
         const { message } = options
         const { response } = error
         if (response.status === 403) {
-            message.error('请求被拒绝')
+            message.error('无此权限，如有疑问请联系管理员')
         }
         return Promise.reject(error)
     }
@@ -72,6 +72,7 @@ const reqCommon = {
      */
     onRejected(error, options) {
         const { message } = options
+        console.log(error);
         message.error(error.message)
         return Promise.reject(error)
     }

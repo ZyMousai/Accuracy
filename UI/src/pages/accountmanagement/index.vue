@@ -180,8 +180,8 @@ const columns = [
 
 const dataSource = []
 
-const KEY = CryptoJS.enc.Utf8.parse("Never give up999");
-const IV = CryptoJS.enc.Utf8.parse("7683425105789011"); 
+const KEY = CryptoJS.enc.Utf8.parse(" ");
+const IV = CryptoJS.enc.Utf8.parse(" "); 
 
 export default {
   name: 'QueryList',

@@ -116,5 +116,7 @@ export async function CardAccountdelete(id) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function CommissionConsumetion(uid) {
-    return request(CommissionConsume + uid, METHOD.GET,'')
+    return request(CommissionConsume, METHOD.GET, {
+        uid: uid
+    })
 }

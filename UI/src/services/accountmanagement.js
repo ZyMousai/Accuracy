@@ -1,4 +1,4 @@
-import { Accountmanagement, ROLES, RoleAccount } from '@/services/api'
+import { Accountmanagement, ROLES, RoleAccount, GetOneAccountmanagement } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -66,7 +66,9 @@ export async function EditAccount(from) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function GetOngAccountDate(id) {
-    return request(Accountmanagement + '/' + id, METHOD.GET, '')
+    return request(GetOneAccountmanagement, METHOD.GET, {
+        account_id: id
+    })
 }
 
 /**
