@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
-from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float, or_
+from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float, or_, desc
 from sqlalchemy import select, func, delete
 
 async_session_local = None
@@ -93,6 +93,28 @@ class PBaseModel(Base):
         # 查询数据
         # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
         _orm = select(cls).where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
+        result = (await dbs.execute(_orm)).scalars().all()
+        return result, count, total_page
+
+    @classmethod
+    async def get_all_detail_page_desc(cls, dbs, page, page_size, *args):
+        """倒序获取所有数据-分页"""
+        # 构建查询条件
+        filter_condition = list()
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+        # 处理分页
+        count = await cls.get_data_count(dbs, *filter_condition)
+        remainder = count % page_size
+        if remainder == 0:
+            total_page = int(count // page_size)
+        else:
+            total_page = int(count // page_size) + 1
+
+        # 查询数据
+        # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
+        _orm = select(cls).where(*filter_condition).order_by(desc('id')).limit(page_size).offset((page - 1) * page_size)
         result = (await dbs.execute(_orm)).scalars().all()
         return result, count, total_page
 

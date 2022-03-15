@@ -39,7 +39,7 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
         ('retain', f'=={info.retain}', info.retain),
         ('card_status', f'=={info.card_status}', info.card_status),
     ]
-    result, count, total_page = await TbCard.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+    result, count, total_page = await TbCard.get_all_detail_page_desc(dbs, info.page, info.page_size, *filter_condition)
 
     # 获取所有卡id
     all_card_id = []
@@ -147,30 +147,6 @@ async def get_card_one(card_id: int = Query(..., title='卡号id', description="
     return response_json
 
 
-@clerk_card_router.delete('/card')
-async def delete_card(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
-    """
-        逻辑删除一张卡，后续需要改成真实删除，记得改！目前未改！
-    param ids:
-
-        卡号的id
-
-    param dbs:
-
-        数据库依赖
-
-    return:
-
-        逻辑删除一张卡
-
-    """
-    result = await TbCard.delete_data_logic(dbs, tuple(ids))
-    if not result:
-        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
-    response_json = {"data": ids}
-    return response_json
-
-
 @clerk_card_router.post('/card')
 async def create_card(info: AddCard, dbs: AsyncSession = Depends(db_session)):
     """
@@ -196,6 +172,30 @@ async def create_card(info: AddCard, dbs: AsyncSession = Depends(db_session)):
         raise HTTPException(status_code=403, detail="Duplicate card.")
     result = await TbCard.add_data(dbs, info)
     response_json = {"data": result}
+    return response_json
+
+
+@clerk_card_router.delete('/card')
+async def delete_card(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
+    """
+        逻辑删除一张卡，后续需要改成真实删除，记得改！目前未改！
+    param ids:
+
+        卡号的id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        逻辑删除一张卡
+
+    """
+    result = await TbCard.delete_data_logic(dbs, tuple(ids))
+    if not result:
+        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+    response_json = {"data": ids}
     return response_json
 
 
