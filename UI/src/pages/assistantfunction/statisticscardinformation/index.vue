@@ -454,6 +454,13 @@
   export default {
     name: 'QueryList',
     data () {
+      var checkMobile = (rule, value, callback) => {
+        if (!value) {
+          callback('请输入面值')
+        } else {
+          /[^\d]+/g.test(value) ? callback('必须是数字类型') : callback();
+        }
+      }
       this.cacheData = innerData.map(item => ({ ...item }));
       return {
         isRouterAlive: true,
@@ -498,11 +505,11 @@
           face_value: '',
           valid_period: '',
           cvv: '',
-          card_status: '',
+          card_status: 1,
           name: '',
           platform: '',
           note: '',
-          retain: '',
+          retain: 1,
           card_name: ''
         },
         uuidSelect: {},
@@ -531,7 +538,8 @@
           department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
         },
         addcadrrules: {
-          card_number: [{ required: true, message: '请输入卡号', trigger: 'blur' }]
+          card_number: [{ required: true, message: '请输入卡号', trigger: 'blur' }],
+          face_value: [{ required: true, validator: checkMobile, trigger: 'blur' }]
         },
         timer : {},
         total: 0,
