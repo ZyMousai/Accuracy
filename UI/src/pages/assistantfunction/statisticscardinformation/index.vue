@@ -49,13 +49,9 @@
                 >
                     <a-button type="primary">
                         <a-icon type="cloud-upload"/>
-                        批量上传
+                        上传excel
                     </a-button>
                 </a-upload>
-                <a-button type="primary">
-                    <a-icon type="cloud-download"/>
-                    批量下载
-                </a-button>
                 <a-button type="primary" @click="showModaluid">
                     <a-icon type="plus-circle" />
                     uid消耗与佣金查询
@@ -694,7 +690,7 @@
       },
       beforeUpload() {
         // this.alone = process.env.VUE_APP_API_ALONE_URL
-        this.updocuurl = process.env.VUE_APP_API_BASE_URL2 + `/Clerk/card/v1/cards/excel`
+        this.updocuurl = process.env.VUE_APP_API_BASE_URL + `Clerk/card/v1/cards/excel`
       },
       selecthandleChange(data){
         console.log(data)
