@@ -325,6 +325,7 @@
       table_delete,
       innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask
     } from "../../../services/statisticscardinformation";
+    import Cookie from "js-cookie";
 
     const columns = [
         {title: '卡号', dataIndex: 'card_number', key: 'card_number'},
@@ -394,6 +395,11 @@
           consume: '',
           user: '',
         },
+        headers: {
+          accept: 'application/json',
+          authorization: 'authorization-text',
+          token: Cookie.get('Authorization')
+        },
         uuidSelect: {},
         updocuurl: "",
         advanced: true,
@@ -417,9 +423,6 @@
         editrules: {
           filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
           department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
-        },
-        headers: {
-          authorization: 'authorization-text',
         },
         timer : {},
         total: 0,
@@ -690,7 +693,7 @@
       },
       beforeUpload() {
         // this.alone = process.env.VUE_APP_API_ALONE_URL
-        this.updocuurl = process.env.VUE_APP_API_BASE_URL + `Clerk/card/v1/cards/excel`
+        this.updocuurl = process.env.VUE_APP_API_BASE_URL + `/Clerk/card/v1/cards/excel`
       },
       selecthandleChange(data){
         console.log(data)
