@@ -135,6 +135,8 @@ export default {
     },
     // 查询
     queryevents() {
+      this.query.page = 1
+      this.query.page_size = 10
       this.gettabledata()
     },
     // 重置查询表单

@@ -266,6 +266,8 @@ export default {
     },
     // 查询
     queryevents() {
+      this.query.page = 1
+      this.query.page_size = 10
       this.gettabledata()
     },
     // 删除对话框

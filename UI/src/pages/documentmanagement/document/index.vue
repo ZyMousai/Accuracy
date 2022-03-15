@@ -285,6 +285,8 @@ export default {
     },
     // 查询
     queryevents() {
+      this.query.page = 1
+      this.query.page_size = 10
       this.query.start_time = this.start_time ? this.start_time.format('YYYY-MM-DD') : null
       this.query.end_time = this.end_time ? this.end_time.format('YYYY-MM-DD') : null
       this.gettabledata()

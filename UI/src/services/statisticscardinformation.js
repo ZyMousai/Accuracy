@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -39,6 +39,16 @@ export async function CreditTaskListData(query) {
  */
 export async function AddCreditTask(query) {
     return request(GetTaskListData, METHOD.POST, query)
+}
+
+/**
+ * 统计卡页面
+ * 新增卡号
+ * @param form  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddOneCard(form) {
+    return request(addcards, METHOD.POST, form)
 }
 
 /**
