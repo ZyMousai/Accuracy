@@ -16,7 +16,7 @@ class AddAccount(BaseModel):
     account: str
     platform: str
     password: str
-    remark: str
+    remark: Optional[str] = Query("")
 
 
 class UpdateAccount(BaseModel):
@@ -25,4 +25,3 @@ class UpdateAccount(BaseModel):
     platform: Optional[str] = Query(None)
     password: Optional[str] = Query(None)
     remark: Optional[str] = Query(None)
-
