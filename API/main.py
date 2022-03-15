@@ -1,10 +1,10 @@
 import uvicorn
 # import aioredis
 from starlette.responses import JSONResponse
-from fastapi import FastAPI, Request,HTTPException
+from fastapi import FastAPI, Request, status
 
 from app.Clerk.VoluumSiteId.VoluumSpider import VoluumData
-from initialize import init_app
+from initialize import init_app, init_middleware
 from app.PersonnelManagement.Users.permissions import Permissions
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -51,6 +51,8 @@ async def add_process_time_header(request: Request, call_next):
         return JSONResponse(status_code=401, content={"detail": str(e)})
     return response
 
+
+init_middleware(app)
 
 # # 在FastAPI创建前创建Redis连接
 # @app.on_event("startup")
