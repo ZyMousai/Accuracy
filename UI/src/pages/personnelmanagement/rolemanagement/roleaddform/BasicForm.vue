@@ -31,7 +31,7 @@
       >
         <a-tree-select-node v-for="item in menuoptions" :key="item.name" :title="item.name" :value="item.name">
           <a-tree-select-node v-for="sonitem in item.children" :key="sonitem.name" :title="sonitem.name" :value="sonitem.name">
-            <a-tree-select-node v-for="operateitem in sonitem.permission" :value="operateitem.id" :key="operateitem.id" :title="operateitem.operate">
+            <a-tree-select-node v-for="operateitem in sonitem.permission" :value="operateitem.id" :key="operateitem.id" :title="operateitem.operate + '(' + operateitem.remark + ')'">
             </a-tree-select-node>
           </a-tree-select-node>
         </a-tree-select-node>
