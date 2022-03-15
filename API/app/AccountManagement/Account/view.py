@@ -48,8 +48,8 @@ async def get_account(info: SearchAccount = Depends(SearchAccount),
     return response_json
 
 
-@account_router.get("/{account_id}")
-async def get_account_one(account_id: int,
+@account_router.get("/detail")
+async def get_account_one(account_id: int = Query(""),
                           dbs: AsyncSession = Depends(db_session)):
     """
         获取单条账号，传递的account_id参数为条件

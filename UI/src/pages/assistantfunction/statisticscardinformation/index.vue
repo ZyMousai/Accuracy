@@ -41,9 +41,10 @@
                 <a-upload
                         name="file"
                         :multiple="true"
-                        action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                        :action="updocuurl"
                         :headers="headers"
                         :showUploadList="false"
+                        :before-upload="beforeUpload"
                         @change="handleChange"
                 >
                     <a-button type="primary">
@@ -503,6 +504,7 @@
           card_name: ''
         },
         uuidSelect: {},
+        updocuurl: "",
         advanced: true,
         componentKey: 0,
         selectedRows: [],
@@ -531,6 +533,7 @@
         },
         headers: {
           authorization: 'authorization-text',
+          token: Cookie.get('Authorization')
         },
         timer : {},
         total: 0,
@@ -785,13 +788,26 @@
       // 上传文件
       handleChange(info) {
         if (info.file.status !== 'uploading') {
+          console.log("uploading")
           console.log(info.file, info.fileList);
         }
         if (info.file.status === 'done') {
+          console.log("done")
+          // AddCardsExcel(info.file.name).then(res => {
+          //   // console.log("成功")
+          //   console.log(res)
+          //   this.gettabledata()
+          //
+          // })
           this.$message.success(`${info.file.name} file uploaded successfully`);
         } else if (info.file.status === 'error') {
+          console.log("error")
           this.$message.error(`${info.file.name} file upload failed.`);
         }
+      },
+      beforeUpload() {
+        // this.alone = process.env.VUE_APP_API_ALONE_URL
+        this.updocuurl = process.env.VUE_APP_API_BASE_URL2 + `/Clerk/card/v1/cards/excel`
       },
       selecthandleChange(data){
         console.log(data)

@@ -18,7 +18,7 @@ voluum_router = APIRouter(
     tags=["Voluum"])
 
 
-@voluum_router.get('/campaign_site_url/{m_id}/{s_id}')
+@voluum_router.get('/campaign_site_url')
 async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depends(db_session)):
     """生成携带site-id的campaign_url"""
 

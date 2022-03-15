@@ -1,10 +1,10 @@
 import uvicorn
 # import aioredis
 from starlette.responses import JSONResponse
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 
 from app.Clerk.VoluumSiteId.VoluumSpider import VoluumData
-from initialize import init_app
+from initialize import init_app, init_middleware
 from app.PersonnelManagement.Users.permissions import Permissions
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -52,6 +52,8 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
+init_middleware(app)
+
 # # 在FastAPI创建前创建Redis连接
 # @app.on_event("startup")
 # async def startup_event():
@@ -80,4 +82,4 @@ async def add_process_time_header(request: Request, call_next):
 # master_scheduler.start()
 
 if __name__ == '__main__':
-    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)

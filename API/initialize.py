@@ -7,9 +7,11 @@ from sql_models.db_config import create_eng
 
 
 def init_app(app):
-    init_middleware(app)
     init_db()
     init_routers(app)
+
+
+
 
 
 def init_middleware(app):

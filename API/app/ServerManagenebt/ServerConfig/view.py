@@ -38,7 +38,7 @@ async def server_search(search_info: ServerSearch = Depends(ServerSearch), dbs=D
     return response_json
 
 
-@server_router.get('/{server_id}')
+@server_router.get('/')
 async def get_server_one(server_id: int, dbs=Depends(db_session)):
     result = await Server.get_one_detail(dbs, server_id)
     if not result:

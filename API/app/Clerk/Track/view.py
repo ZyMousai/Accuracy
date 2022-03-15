@@ -10,6 +10,8 @@ from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import globals_config
+
 track_router = APIRouter(
     prefix="/track/v1",
     responses={404: {"description": "Not found"}},
@@ -23,13 +25,8 @@ MOBRAND_TRACK_URL = "https://api.offertest.net/offertest/console"
 # token
 TOKEN = dict()
 
-USER_INFO = {
-    "user_id": "4NgG9ZnvQKq3NiSQ7WtvAQ",
-    "login_info": {
-        "email": "wuhanyouyu@gmail.com",
-        "password": "4242587fF"
-    }
-}
+USER_INFO = globals_config.USER_INFO
+
 HEADERS = {
     "Accept": "application/json",
     "ContentType": "application/json",

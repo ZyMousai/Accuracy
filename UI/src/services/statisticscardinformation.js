@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, addcards } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -129,4 +129,14 @@ export async function CommissionConsumetion(uid) {
     return request(CommissionConsume, METHOD.GET, {
         uid: uid
     })
+}
+
+/**
+ * 统计卡页面
+ * 上传文件
+ * @param query  查询请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function AddCardsExcel(query) {
+    return request(CardsExcel, METHOD.POST, query)
 }

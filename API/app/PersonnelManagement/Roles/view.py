@@ -75,6 +75,7 @@ async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends
                             "p_method": menu_permission_item.p_method,
                             "operate": operate_dict[menu_permission_item.operate],
                             "menu_id": menu_permission_item.menu_id,
+                            "remark":menu_permission_item.remark
                         }
                         s_menu.get('permission').append(permission)
                 p_menu.get("children").append(s_menu)
@@ -162,7 +163,7 @@ async def get_roles(info: SearchRole = Depends(SearchRole),
     return response_json
 
 
-@roles_router.get('/{role_id}')
+@roles_router.get('/detail')
 async def get_role_one(role_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
     获取某个角色的信息

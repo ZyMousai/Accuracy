@@ -122,8 +122,8 @@ async def get_card(info: SearchCard = Depends(SearchCard), dbs: AsyncSession = D
     return response_json
 
 
-@clerk_card_router.get('/card/{card_id}')
-async def get_card_one(card_id: int = Path(..., title='卡号id', description="卡号id", ge=1),
+@clerk_card_router.get('/card/detail')
+async def get_card_one(card_id: int = Query(..., title='卡号id', description="卡号id", ge=1),
                        dbs: AsyncSession = Depends(db_session)):
     """
         单独一张卡的信息，不包含绑定的任务
@@ -450,8 +450,8 @@ async def get_account(info: SearchAccount = Depends(SearchAccount), dbs: AsyncSe
     return response_json
 
 
-@clerk_card_router.get('/account/{account_id}')
-async def get_account_one(account_id: int = Path(..., title='账号id', description="账号id", ge=1),
+@clerk_card_router.get('/account/detail')
+async def get_account_one(account_id: int = Query(..., title='账号id', description="账号id", ge=1),
                           dbs: AsyncSession = Depends(db_session)):
     """
         获取某个账号信息
@@ -741,8 +741,8 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
 #     return response_json
 
 
-@clerk_card_router.get('/task/{task_id}')
-async def get_task_one(task_id: int = Path(..., title='任务id', description="任务id", ge=1),
+@clerk_card_router.get('/task/detail')
+async def get_task_one(task_id: int = Query(..., title='任务id', description="任务id", ge=1),
                        dbs: AsyncSession = Depends(db_session)):
     """
         获取某个任务信息
@@ -850,8 +850,8 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
     return response_json
 
 
-@clerk_card_router.get('/statistics/{uid}')
-async def get_statistics(uid: str = Path(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
+@clerk_card_router.get('/statistics')
+async def get_statistics(uid: str = Query(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
                          dbs: AsyncSession = Depends(db_session)):
     """
         统计对应的uid的消耗金额数量，收益总量
