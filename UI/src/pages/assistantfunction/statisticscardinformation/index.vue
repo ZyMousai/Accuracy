@@ -326,7 +326,7 @@
       PatchCardListData,
       PatchTaskListData,
       table_delete,
-      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask
+      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask, AddCardsExcel
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -673,11 +673,20 @@
       // 上传文件
       handleChange(info) {
         if (info.file.status !== 'uploading') {
+          console.log("uploading")
           console.log(info.file, info.fileList);
         }
         if (info.file.status === 'done') {
+          console.log("done")
+          AddCardsExcel(info.file.name).then(res => {
+            // console.log("成功")
+            console.log(res)
+            this.gettabledata()
+
+          })
           this.$message.success(`${info.file.name} file uploaded successfully`);
         } else if (info.file.status === 'error') {
+          console.log("error")
           this.$message.error(`${info.file.name} file upload failed.`);
         }
       },
