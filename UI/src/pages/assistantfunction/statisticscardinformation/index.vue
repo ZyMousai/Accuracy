@@ -27,7 +27,7 @@
                     </a-row>
                 </div>
                 <span style="float: right; margin-top: 3px;">
-          <a-button type="primary" @click="gettabledata">查询</a-button>
+          <a-button type="primary" @click="queryevents">查询</a-button>
           <a-button style="margin-left: 8px" @click="resettingqueryform">重置</a-button>
           <a @click="toggleAdvanced" style="margin-left: 8px">
             {{advanced ? '收起' : '展开'}}
@@ -58,6 +58,10 @@
                 <a-button type="primary" @click="showModaluid">
                     <a-icon type="plus-circle" />
                     uid消耗与佣金查询
+                </a-button>
+                <a-button type="primary" @click="showaddcadrModaluid">
+                    <a-icon type="plus-circle" />
+                    新增单个卡号
                 </a-button>
                 <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
             </a-space>
@@ -252,6 +256,96 @@
                     </a-form-model>
                 </template>
             </a-modal>
+            <!-- 新增单个卡号表单 -->
+            <a-modal v-model="addcadrvisible" title="新增号" on-ok="addcadrhandleOk" :maskClosable="false" @afterClose="addcadrhandleCancel()" :width='850'>
+            <template slot="footer">
+              <a-button key="back" @click="addcadrhandleCancel">
+                取消
+              </a-button>
+              <a-button key="submit" type="primary" :loading="loading" @click="addcadrhandleOk">
+                提交
+              </a-button>
+            </template>
+            <template>
+              <a-form-model
+                ref="addcadrruleForm"
+                :model="addcadrform"
+                :rules="addcadrrules"
+                :label-col="{ span: 6 }"
+                :wrapper-col="{ span: 14 }"
+                layout="vertical"
+              >
+              <a-row :gutter="16">
+                <a-col :span="10">
+                  <a-form-model-item ref="card_number" label="卡号" prop="card_number">
+                    <a-input v-model="addcadrform.card_number" />
+                  </a-form-model-item>
+                </a-col>
+                <a-col :span="10">
+                  <a-form-model-item ref="name" label="持卡人姓名" prop="name">
+                    <a-input v-model="addcadrform.name" />
+                  </a-form-model-item>
+                </a-col>
+              </a-row>
+              <a-row :gutter="16">
+                <a-col :span="10">
+                  <a-form-model-item ref="face_value" label="面值" prop="face_value">
+                    <a-input v-model="addcadrform.face_value" />
+                  </a-form-model-item>
+                </a-col>
+                <a-col :span="10">
+                  <a-form-model-item ref="cvv" label="cvv" prop="cvv">
+                    <a-input v-model="addcadrform.cvv" />
+                  </a-form-model-item>
+                </a-col>
+              </a-row>
+              <a-row :gutter="16">
+                <a-col :span="10">
+                  <a-form-model-item ref="valid_period" label="有效期" prop="valid_period">
+                    <a-input v-model="addcadrform.valid_period" />
+                  </a-form-model-item>
+                </a-col>
+                <a-col :span="10">
+                  <a-form-model-item label="卡状态" prop="card_status">
+                  <a-select v-model="addcadrform.card_status" placeholder="请选择卡状态">
+                    <a-select-option v-for="item in card_statuslist" :key="item.vlaue" :value="item.vlaue">
+                      {{item.name}}
+                    </a-select-option>
+                  </a-select>
+                </a-form-model-item>
+                </a-col>
+              </a-row>
+              <a-row :gutter="16">
+                <a-col :span="10">
+                  <a-form-model-item ref="platform" label="平台" prop="platform">
+                    <a-input v-model="addcadrform.platform" />
+                  </a-form-model-item>
+                </a-col>
+                <a-col :span="10">
+                  <a-form-model-item ref="note" label="备注" prop="note">
+                    <a-input v-model="addcadrform.note" />
+                  </a-form-model-item>
+                </a-col>
+              </a-row>
+              <a-row :gutter="16">
+                <a-col :span="10">
+                  <a-form-model-item ref="card_name" label="卡姓名地址" prop="card_name">
+                    <a-input v-model="addcadrform.card_name" />
+                  </a-form-model-item>
+                </a-col>
+                <a-col :span="10">
+                  <a-form-model-item label="是否保留" prop="retain">
+                  <a-select v-model="addcadrform.retain" placeholder="请选择是否保留">
+                    <a-select-option v-for="item in card_statuslist" :key="item.vlaue" :value="item.vlaue">
+                      {{item.name}}
+                    </a-select-option>
+                  </a-select>
+                </a-form-model-item>
+                </a-col>
+              </a-row>
+              </a-form-model>
+            </template>
+            </a-modal>
             <!-- 删除确认对话框 -->
             <a-modal
                     title="是否删除所选项？"
@@ -262,7 +356,6 @@
                     @cancel="onno">
                 <p>删除后将无法恢复！</p>
             </a-modal>
-
             <!-- 删除子表任务确认对话框 -->
             <a-modal
                     title="是否删除所选项？"
@@ -326,7 +419,7 @@
       PatchCardListData,
       PatchTaskListData,
       table_delete,
-      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask
+      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask, AddOneCard
     } from "../../../services/statisticscardinformation";
 
     const columns = [
@@ -397,6 +490,18 @@
           consume: '',
           user: '',
         },
+        addcadrform: {
+          card_number: '',
+          face_value: '',
+          valid_period: '',
+          cvv: '',
+          card_status: '',
+          name: '',
+          platform: '',
+          note: '',
+          retain: '',
+          card_name: ''
+        },
         uuidSelect: {},
         advanced: true,
         componentKey: 0,
@@ -414,11 +519,15 @@
         consume: '',
         uid: '',
         ids: [],
+        addcadrvisible: false,
+        card_statuslist: [{vlaue: 1, name: '是'}, {vlaue: 0, name: '否'}],
         expandedRowKeys: [],
-        departmentoptions: ['商务部', '技术部'],
         editrules: {
           filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
           department: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
+        },
+        addcadrrules: {
+          card_number: [{ required: true, message: '请输入卡号', trigger: 'blur' }]
         },
         headers: {
           authorization: 'authorization-text',
@@ -488,8 +597,12 @@
           console.log(id);
           this.visibleuid = true;
       },
-
-
+      // 查询
+      queryevents() {
+        this.query.page = 1
+        this.query.page_size = 10
+        this.gettabledata()
+      },
       // uid提交编辑表单
       uidhandleOk() {
           console.log(this.uid)
@@ -518,7 +631,6 @@
       handleCancel() {
         this.visible = false;
         this.$refs.ruleForm.resetFields();
-        console.log('ok');
       },
       // 关闭uid编辑表单
       handleCanceluid() {
@@ -862,8 +974,32 @@
           this.query.page = pageNumber
           this.gettabledata()
       },
-
-
+      showaddcadrModaluid() {
+        this.addcadrvisible = true
+      },
+      addcadrhandleOk() {
+        console.log(this.addcadrform);
+        this.$refs.addcadrruleForm.validate(valid => {
+          if (valid) {
+            this.loading = true
+            AddOneCard(this.addcadrform).then(res => {
+              if (res.status === 200) {
+                this.$message.success('添加成功！')
+                this.addcadrhandleCancel()
+                this.gettabledata()
+                this.loading = false
+              } else {
+                this.$message.success('添加失败！')
+                this.loading = false
+              }
+            })
+          }
+        })
+      },
+      addcadrhandleCancel() {
+        this.addcadrvisible = false
+        this.$refs.addcadrruleForm.resetFields();
+      }
         }
     }
 </script>
