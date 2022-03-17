@@ -1,5 +1,5 @@
 //跨域代理前缀
-const API_PROXY_PREFIX = 'http://192.168.50.49:8000/api'
+const API_PROXY_PREFIX = 'http://45.76.15.187:8000/api'
     // const API_PROXY_PREFIX = 'http://127.0.0.1:8000/api'
 const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API_BASE_URL : API_PROXY_PREFIX
     // const BASE_URL = process.env.VUE_APP_API_BASE_URL
@@ -37,7 +37,7 @@ module.exports = {
     RoleMenu: `${BASE_URL}/PersonnelManagement/roles/v1/RoleMenu`,
     RolePermission: `${BASE_URL}/PersonnelManagement/roles/v1/RolePermission`,
     RoleUser: `${BASE_URL}/PersonnelManagement/roles/v1/RoleUser`,
-    CommissionConsume: `${BASE_URL}/Clerk/card/v1/statistics/`,
+    CommissionConsume: `${BASE_URL}/Clerk/card/v1/statistics`,
     RoleAccount: `${BASE_URL}/PersonnelManagement/roles/v1/RoleAccount`,
     DocumentDownloadURL: `${BASE_URL}/DocumentManagement/documents/v1/download`
 }
