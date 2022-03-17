@@ -8,7 +8,7 @@
         :wrapper-col="{ span: 10 }"
       >
     <a-form-model-item ref="role" label="角色名" prop="role">
-      <a-input v-model="form.role" />
+      <a-input v-model="form.role" @change="inputchange" />
     </a-form-model-item>
     <!-- <a-form-model-item label="菜单选择" prop="menu">
       <a-select v-model="form.menu" placeholder="请选择菜单" mode="multiple">
@@ -73,7 +73,7 @@ export default {
         permissionarr: []
       },
       roleid: '',
-      isdisabled: false,
+      isdisabled: true,
       menuoptions: [],
       useroptions: [],
       checkList: [],
@@ -100,9 +100,11 @@ export default {
         GetOneRolesDate(this.roleid).then(res => {
           this.form.role = res.data.data.role
           this.preselectionmenu.push(...res.data.permission_id_list)
+          this.form.permissionarr.push(...res.data.permission_id_list)
           this.reform.permissionarr.push(...res.data.permission_id_list)
           this.form.menu.push(...res.data.menu_id_list)
           this.reform.menu.push(...res.data.menu_id_list)
+          console.log();
         })
       }
     },
@@ -222,10 +224,12 @@ export default {
       })
     },
     resetForm() {
+      this.isdisabled = false
       this.$refs.ruleForm.resetFields();
       this.preselectionmenu = []
     },
     onchange(value, node, extra) {
+      this.isdisabled = false
       this.form.menu = []
       const halfCheckedKeys = extra.triggerNode.vcTree._data._halfCheckedKeys
       this.form.permissionarr = value.toString().match(/\d+/g)
@@ -247,6 +251,9 @@ export default {
           })
         })
       })
+    },
+    inputchange() {
+      this.isdisabled = false
     }
   }
 }
