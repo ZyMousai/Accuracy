@@ -1,4 +1,4 @@
-import { LOGIN, ROUTES, USERS, UpdatePassword } from '@/services/api'
+import { LOGIN, ROUTES, USERS, UpdatePassword, GetOneUSERS } from '@/services/api'
 import { request, METHOD, removeAuthorization } from '@/utils/request'
 
 /**
@@ -25,7 +25,7 @@ export async function getRoutesConfig() {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function UserData(id) {
-    return request(USERS, METHOD.GET, {
+    return request(GetOneUSERS, METHOD.GET, {
         user_id: id
     })
 }
