@@ -21,18 +21,31 @@ def get_role_id(request: Request):
     # return 4
 
 
-operate_dict ={
-    1:"新增",
-    2:"修改",
-    3:"查看",
-    4:"删除",
+operate_dict = {
+    1: "新增",
+    2: "修改",
+    3: "查看",
+    4: "删除",
 }
 
 
 @roles_router.get("/RoleMenu")
 async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends(get_role_id)):
-    """获取菜单 根据role"""
+    """
+        获取菜单 根据role
 
+    :param dbs:
+
+        数据库依赖
+
+    :param role_id:
+
+        登录用户的角色id
+
+    :return:
+
+         对应的角色菜单
+    """
     # 通过role_menu_mapping去查询menu_id，给对应的menu_id赋值
 
     # 根据role获取菜单
@@ -75,7 +88,7 @@ async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends
                             "p_method": menu_permission_item.p_method,
                             "operate": operate_dict[menu_permission_item.operate],
                             "menu_id": menu_permission_item.menu_id,
-                            "remark":menu_permission_item.remark
+                            "remark": menu_permission_item.remark
                         }
                         s_menu.get('permission').append(permission)
                 p_menu.get("children").append(s_menu)
@@ -111,7 +124,21 @@ async def get_role_menu(dbs: AsyncSession = Depends(db_session), role_id=Depends
 @roles_router.delete("/RoleMenu")
 async def delete_role_menu(info: RoleAbout,
                            dbs: AsyncSession = Depends(db_session)):
-    """删除菜单关联 根据role"""
+    """
+        删除菜单关联 根据role
+
+    :param info:
+
+        角色id，菜单id
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+
+    """
     filter_condition = [
         ("role_id", f"=='{info.role_id}'", info.role_id),
         ("menu_id", f".in_({info.ids})", info.ids)
