@@ -28,7 +28,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.department_id" placeholder="请选择" :allowClear="true">
+              <a-select v-model="query.department_id" placeholder="请选择" :allowClear="true" :disabled="OperationVerification()">
                 <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
                   {{item.department}}
                 </a-select-option>
@@ -226,6 +226,7 @@ export default {
       loading: false,
       start_time: '',
       end_time: '',
+      role_id: '',
       dialogvisible: false,
       departmentoptions: [],
       editrules: {
@@ -250,6 +251,7 @@ export default {
     getdepartmentoptions(){
       DepartmentDate().then(res => {
         if (res.status === 200) {
+          console.log(this.roles);
           this.departmentoptions = res.data.data
           this.gettabledata()
           this.query.department_id = localStorage.getItem('department_id') - ''
