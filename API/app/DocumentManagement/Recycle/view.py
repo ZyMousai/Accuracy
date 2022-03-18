@@ -40,7 +40,19 @@ async def query_parm(filename: Optional[str] = None, start_time: Optional[str] =
 async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocumentManagement),
                            dbs: AsyncSession = Depends(db_session)):
     """
-    默认获取回收站第一页内容，默认显示10条
+        默认获取回收站第一页内容，默认显示10条
+
+    :param query:
+
+        查询参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        包含分页信息的回收站列表
     """
     user_id = None
     if query.user_name:
@@ -96,7 +108,19 @@ async def get_recycle_page(query: SearchDocumentManagement = Depends(SearchDocum
 @recycle_router.get('/recover')
 async def get_recycle_page(file_id: int, dbs: AsyncSession = Depends(db_session)):
     """
-    恢复功能
+        恢复功能
+
+    :param file_id:
+
+        要被恢复的文件id
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        被恢复的文件的id
     """
     file = await DocumentManagement.get_one_detail(dbs, file_id)
     file.is_delete = 0
@@ -108,7 +132,19 @@ async def get_recycle_page(file_id: int, dbs: AsyncSession = Depends(db_session)
 async def delete_doc(ids: List[int] = Query(...),
                      dbs: AsyncSession = Depends(db_session)):
     """
-    真实删除
+        真实删除回收站文件
+
+    :param ids:
+
+        需要被删除的文件id列表
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        被删除的文件的id
     """
     for doc_id in ids:
         doc_info = await DocumentManagement.get_one_detail(dbs, doc_id)

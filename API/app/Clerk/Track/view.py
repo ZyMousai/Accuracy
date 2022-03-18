@@ -46,14 +46,17 @@ def get_token():
 @track_router.get("/execute")
 async def execute_track(query: SearchTrackLink = Depends(SearchTrackLink)):
     """
-    执行追踪
+        执行追踪:
+        1 获取token并判断token的有效期  token自定义有效期为2个小时
+        2 根据用户输入的参数 抓取第三方接口响应数据
+        3 添加异常处理
+    :param query:
+
+        执行所需参数
+
     :return:
-    """
-    """
-    1 获取token并判断token的有效期  token自定义有效期为2个小时
-    2 根据用户输入的参数 抓取第三方接口响应数据
-    3 添加异常处理
-    :return:
+
+        执行完成后返回的数据
     """
     # 1 校验token时间
     if "login_time" in TOKEN:
@@ -80,11 +83,41 @@ async def execute_track(query: SearchTrackLink = Depends(SearchTrackLink)):
 
 @track_router.post("/alliance")
 async def create_alliance(info: AddTrackAlliance, dbs: AsyncSession = Depends(db_session)):
+    """
+        新建联盟
+
+    :param info:
+
+        添加的参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        添加到表后的id
+    """
     return {"data": await TrackAlliance.add_data(dbs, info)}
 
 
 @track_router.delete("/alliance")
 async def delete_alliance(ids: Optional[List[int]], dbs: AsyncSession = Depends(db_session)):
+    """
+        真实删除联盟
+
+    :param ids:
+
+        需要删除的联盟id
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        被删除的联盟的id
+    """
     await TrackAlliance.delete_data(dbs, ids, auto_commit=False)
 
     filter_c = [
@@ -96,6 +129,21 @@ async def delete_alliance(ids: Optional[List[int]], dbs: AsyncSession = Depends(
 
 @track_router.patch("/alliance")
 async def update_alliance(info: UpdateTrackAlliance, dbs: AsyncSession = Depends(db_session)):
+    """
+        更新联盟信息
+
+    :param info:
+
+        需要被更新的信息
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        更新的信息参数
+    """
     update_data_dict = info.dict(exclude_unset=True)
     if len(update_data_dict) > 1:
         result = await TrackAlliance.update_data(dbs, update_data_dict, is_delete=0)
@@ -108,6 +156,21 @@ async def update_alliance(info: UpdateTrackAlliance, dbs: AsyncSession = Depends
 @track_router.get("/alliance")
 async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
                        dbs: AsyncSession = Depends(db_session)):
+    """
+        获取联盟信息
+
+    :param info:
+
+        需要查询的参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        包含分页分页信息的联盟列表
+    """
     #  需要联表查询
     filter_condition = {
         "name_or_url": info.name_or_url,
@@ -143,6 +206,21 @@ async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
 
 @track_router.post("/TrackUrl")
 async def add_track_url(info: AddTrackUrl, dbs: AsyncSession = Depends(db_session)):
+    """
+        添加追踪链接
+
+    :param info:
+
+        需要被追踪的链接
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        添加到表里的链接的id
+    """
     result = await TrackAlliance.get_one_detail(dbs, info.alliance_id)
     if not result:
         raise HTTPException(status_code=404, detail="alliance_id does not exist.")
@@ -151,6 +229,21 @@ async def add_track_url(info: AddTrackUrl, dbs: AsyncSession = Depends(db_sessio
 
 @track_router.delete("/TrackUrl")
 async def delete_track_url(ids: Optional[List[int]], dbs: AsyncSession = Depends(db_session)):
+    """
+        真实删除追踪链接
+
+    :param ids:
+
+        需要删除的链接的id
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        被删除的id
+    """
     filter_c = [
         ("id", f".in_({ids})", ids)
     ]

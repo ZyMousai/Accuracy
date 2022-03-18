@@ -20,7 +20,24 @@ voluum_router = APIRouter(
 
 @voluum_router.get('/campaign_site_url')
 async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depends(db_session)):
-    """生成携带site-id的campaign_url"""
+    """
+        生成携带site-id的campaign_url
+    param m_id:
+
+        m_id
+
+    param s_id:
+
+        s_id
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        site-id的campaign_url
+    """
 
     # 1. 拿到数据 可以获取到此campaign_id最近的site-id
     ax = VoluumSpider()
@@ -66,10 +83,19 @@ async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depend
 async def get_campaign_mapping(info: SearchCampaignMapping = Depends(SearchCampaignMapping),
                                dbs: AsyncSession = Depends(db_session)):
     """
-    获取角色列表
+        获取角色列表
+
     :param info:
+
+        SearchCampaign携带的查询参数
+
     :param dbs:
+
+        数据依赖
+
     :return:
+
+        对应的映射信息，包含分页
     """
     filter_condition = [
         ('m_name', f'.like(f"%{info.m_name}%")', info.m_name),
@@ -89,9 +115,39 @@ async def get_campaign_mapping(info: SearchCampaignMapping = Depends(SearchCampa
 
 @voluum_router.post('/campaign_mapping')
 async def add_campaign_mapping(info: AddCampaignMapping, dbs: AsyncSession = Depends(db_session)):
+    """
+        添加映射关系
+
+    :param info:
+
+        添加映射关系携带的参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        数据添加后在表里的id
+    """
     return {"data": await DBCampaignMapping.add_data(dbs, info)}
 
 
 @voluum_router.delete("/campaign_mapping")
 async def delete_campaign_mapping(ids: Optional[List] = Query(...), dbs: AsyncSession = Depends(db_session)):
+    """
+        真实删除映射关系
+
+    :param ids:
+
+        需要被删除的id列表
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        被删除的数据的id
+    """
     return {"data": await DBCampaignMapping.delete_data(dbs, ids)}
