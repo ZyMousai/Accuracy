@@ -252,6 +252,10 @@ async def create_role(role: AddRole, dbs: AsyncSession = Depends(db_session)):
     # 添加角色
     role_uid = await Roles.add_data(dbs, role_add)
     response_json = role.dict()
+    # 添加默认拥有权限permission_id：查看用户详情61 ，角色菜单查看11，查看部门62，用户密码修改28，头像新增29, 角色查看15， 角色其他账户新增22
+    permission_ids = [61, 11, 62, 28, 29, 15, 22]
+    await RolePermissionMapping.filter_add_data_many(dbs, "role_id", role_uid,
+                                                     "permission_id", permission_ids)
     response_json["id"] = role_uid
     return response_json
 

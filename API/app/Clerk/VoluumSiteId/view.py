@@ -7,7 +7,7 @@ from app.Clerk.VoluumSiteId.VoluumSpider import VoluumSpider
 from config import globals_config
 from sql_models.Clerk.OrmVoluumSiteId import DBCampaignMapping
 from sql_models.db_config import db_session
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from util.mongo_c.MongoClient import MongoClient
@@ -61,8 +61,9 @@ async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depend
     if len(site_id_list) > 4:
         site_id = random.choice(site_id_list[4:10])
     else:
+        if not site_id_list:
+            return HTTPException(status_code=401, detail='爬虫失效')
         site_id = random.choice(site_id_list[:-3:-1])
-
     # 3. 根据campaigns-id获取url
     # 通过主id拿到从id，查询主id最近的site，但是更换的链接是从id
     # filter_c = [
