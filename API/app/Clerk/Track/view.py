@@ -1,6 +1,7 @@
 # Track 视图
 import datetime
 import requests
+import uuid
 
 from typing import Optional, List
 from app.Clerk.Track.DataValidation import SearchTrackLink, AddTrackAlliance, UpdateTrackAlliance, AddTrackUrl, \
@@ -98,7 +99,13 @@ async def create_alliance(info: AddTrackAlliance, dbs: AsyncSession = Depends(db
 
         添加到表后的id
     """
-    return {"data": await TrackAlliance.add_data(dbs, info)}
+    uuid_ins = str(uuid.uuid1())
+    filter_condition = {
+        'name': info.name,
+        'url': info.url,
+        'alliance_uuid': uuid_ins,
+    }
+    return {"data": await TrackAlliance.add_data(dbs, filter_condition)}
 
 
 @track_router.delete("/alliance")
@@ -119,12 +126,16 @@ async def delete_alliance(ids: Optional[List[int]], dbs: AsyncSession = Depends(
         被删除的联盟的id
     """
     await TrackAlliance.delete_data(dbs, ids, auto_commit=False)
-
+    # 获取到每个track_alliance表的alliance_id,通过alliance_id去删除track_url里的数据
+    filter_condition = [
+        ("id", f".in_{tuple(ids)}", ids)
+    ]
+    alliance_uuid_list = [i.alliance_uuid for i in (await TrackAlliance.get_all(dbs, *filter_condition))]
     filter_c = [
-        ("alliance_id", f".in_({ids})", ids)
+        ("alliance_id", f".in_{tuple(alliance_uuid_list)}", ids)
     ]
     await TrackUrl.filter_delete_data(dbs, *filter_c, auto_commit=True)
-    return {"data": ids}
+    return {"data": ids, "alliance_ids": alliance_uuid_list}
 
 
 @track_router.patch("/alliance")

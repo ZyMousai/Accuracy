@@ -1,7 +1,7 @@
 import datetime
+import uuid
 
 from sqlalchemy import select, func
-
 from sql_models import create_table
 from sql_models.db_config import BaseType, PBaseModel
 from sqlalchemy import or_
@@ -12,6 +12,7 @@ class TrackAlliance(PBaseModel):
 
     name = BaseType.BaseColumn(BaseType.BaseString(588), nullable=False)
     url = BaseType.BaseColumn(BaseType.BaseString(588), nullable=False)
+    alliance_uuid = BaseType.BaseColumn(BaseType.BaseString(588), nullable=False, default=uuid.uuid1)
     created_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now)
 
     @classmethod
@@ -48,7 +49,7 @@ class TrackUrl(PBaseModel):
     __tablename__ = 'track_url'
 
     track_url = BaseType.BaseColumn(BaseType.BaseString(588), nullable=False)
-    alliance_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)
+    alliance_id = BaseType.BaseColumn(BaseType.BaseString(588), nullable=False)  # 链接的是alliance_uuid
     created_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now)
 
 
