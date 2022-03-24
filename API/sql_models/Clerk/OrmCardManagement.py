@@ -34,7 +34,7 @@ class TbCard(PBaseModel):
     platform = BaseType.BaseColumn(BaseType.BaseString(255))  # 开卡平台
     note = BaseType.BaseColumn(BaseType.BaseString(255))  # 备注
     card_name = BaseType.BaseColumn(BaseType.BaseString(255))  # 卡名称
-    create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
+    create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now)  # 创建时间
     retain = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=False)  # 是否保留 0-否,1-是
 
     @classmethod
@@ -51,7 +51,7 @@ class TbTask(PBaseModel):
     card_id = BaseType.BaseColumn(ForeignKey('tb_Card.id'), nullable=False, index=True)  # 卡id
     account_id = BaseType.BaseColumn(ForeignKey('tb_Account.id'), nullable=False, index=True)  # uid => id
     # alliance_id = BaseType.BaseColumn(ForeignKey('tb_Alliance.id'), nullable=False, index=True)  # 账号id
-    creation_date = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建日期
+    creation_date = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now)  # 创建日期
     task = BaseType.BaseColumn(BaseType.BaseString(255))  # 任务
     commission = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True))  # 佣金
     consume = BaseType.BaseColumn(BaseType.BaseFloat(asdecimal=True), nullable=False)  # 消耗

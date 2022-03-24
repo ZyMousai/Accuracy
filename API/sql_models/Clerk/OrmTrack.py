@@ -31,7 +31,7 @@ class TrackAlliance(PBaseModel):
 
         # 查询数据
         _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
-                                                                                            TrackUrl.alliance_id == cls.id).where(
+                                                                                            TrackUrl.alliance_id == cls.alliance_uuid).where(
             or_(*filter_condition)).order_by().limit(page_size).offset((page - 1) * page_size)
         result = (await dbs.execute(_orm)).all()
 
