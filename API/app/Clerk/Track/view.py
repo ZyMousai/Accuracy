@@ -1,6 +1,7 @@
 # Track 视图
 import datetime
 import requests
+import uuid
 
 from typing import Optional, List
 from app.Clerk.Track.DataValidation import SearchTrackLink, AddTrackAlliance, UpdateTrackAlliance, AddTrackUrl, \
@@ -98,7 +99,14 @@ async def create_alliance(info: AddTrackAlliance, dbs: AsyncSession = Depends(db
 
         添加到表后的id
     """
-    return {"data": await TrackAlliance.add_data(dbs, info)}
+    # 生成特殊的uuid作为唯一标识
+    uuid_ins = str(uuid.uuid1())
+    filter_condition = {
+        'name': info.name,
+        'url': info.url,
+        'alliance_uuid': uuid_ins,
+    }
+    return {"data": await TrackAlliance.add_data(dbs, filter_condition)}
 
 
 @track_router.delete("/alliance")
@@ -118,13 +126,17 @@ async def delete_alliance(ids: Optional[List[int]], dbs: AsyncSession = Depends(
 
         被删除的联盟的id
     """
+    # 获取到每个track_alliance表的alliance_id,通过alliance_id去删除track_url里的数据
+    filter_condition = [
+        ("id", f".in_({ids})", ids)
+    ]
+    alliance_uuid_list = [i.alliance_uuid for i in (await TrackAlliance.get_all(dbs, *filter_condition))]
     await TrackAlliance.delete_data(dbs, ids, auto_commit=False)
-
     filter_c = [
-        ("alliance_id", f".in_({ids})", ids)
+        ("alliance_id", f".in_({alliance_uuid_list})", alliance_uuid_list)
     ]
     await TrackUrl.filter_delete_data(dbs, *filter_c, auto_commit=True)
-    return {"data": ids}
+    return {"data": ids, "alliance_ids": alliance_uuid_list}
 
 
 @track_router.patch("/alliance")
@@ -193,7 +205,12 @@ async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
             }
             for y in result:
                 if x.id == y.id and y.track_url:
-                    dd.get("track_url").append({"id": y.id_1, "track_url": y.track_url})
+                    dd.get("track_url").append(
+                        {
+                            "id": y.id_1,
+                            "track_url": y.track_url
+                        }
+                    )  # 这里的id_1是联表查询的副表的id
             result_new.append(dd)
 
     response_json = {"total": count,
@@ -224,7 +241,12 @@ async def add_track_url(info: AddTrackUrl, dbs: AsyncSession = Depends(db_sessio
     result = await TrackAlliance.get_one_detail(dbs, info.alliance_id)
     if not result:
         raise HTTPException(status_code=404, detail="alliance_id does not exist.")
-    return {"data": await TrackUrl.add_data(dbs, info)}
+    # 获得track_alliance的alliance_uuid,添加到track_url的alliance_id
+    add_track_url_dict = {
+        "track_url": info.track_url,
+        "alliance_id": result.alliance_uuid
+    }
+    return {"data": await TrackUrl.add_data(dbs, add_track_url_dict)}
 
 
 @track_router.delete("/TrackUrl")
