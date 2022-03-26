@@ -4,6 +4,7 @@ from app.AccountManagement.Account.view import account_router
 from app.Clerk.Track.view import track_router
 from app.Clerk.VoluumSiteId.view import voluum_router
 from app.Clerk.Card.view import clerk_card_router
+from app.Clerk.Scheduler.view import clerk_scheduler_router
 from app.DocumentManagement.Documents.view import documents_router
 from app.DocumentManagement.Recycle.view import recycle_router
 from app.PersonnelManagement.Departments.view import departments_router
@@ -22,6 +23,7 @@ clerk_router = APIRouter(prefix="/api/Clerk")
 clerk_router.include_router(voluum_router)
 clerk_router.include_router(clerk_card_router)
 clerk_router.include_router(track_router)
+clerk_router.include_router(clerk_scheduler_router)
 
 # ### DocumentManagement
 doc_man_router = APIRouter(prefix="/api/DocumentManagement")

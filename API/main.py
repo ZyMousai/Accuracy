@@ -26,7 +26,10 @@ async def add_process_time_header(request: Request, call_next):
     # # 判断不是登录接口的链接就验证token
     path = str(request.url.path)
     if path == '/api/PersonnelManagement/users/v1/login' \
-            or path == '/docs' or path == '/redocs' or path == '/openapi.json' or 'avatar' in path or 'download' in path:
+            or path == '/docs' or path == '/redocs' or path == '/openapi.json' \
+            or 'heartbeat' in path \
+            or 'avatar' in path \
+            or 'download' in path:
         return await call_next(request)
     if request.method == "OPTIONS":
         return await call_next(request)
@@ -52,6 +55,7 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
+
 init_middleware(app)
 
 # # 在FastAPI创建前创建Redis连接
@@ -71,15 +75,13 @@ init_middleware(app)
 # ==================分割线==================
 # 定时任务
 ax = VoluumData()
-
 master_scheduler = BackgroundScheduler(timezone='Pacific/Pitcairn',
                                        job_defaults={'coalesce': True, 'misfire_grace_time': 60 * 60 * 2},
                                        SCHEDULER_API_ENABLED=True)
-
 # 定时刷新库里的campaign信息
 master_scheduler.add_job(ax.add_campaign, "interval", seconds=600)
-
 master_scheduler.start()
+
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)
