@@ -677,9 +677,11 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
 
     """
     args = [
+        ('account_id', f'=="{info.account_id}"', info.account_id),
         ('task', f'.like("%{info.task}%")', info.task),
         ('is_delete', '==0', 0),
     ]
+    print(info.account_id)
     filter_condition = list()
     for x in args:
         if x[2] is not None:
@@ -717,6 +719,34 @@ async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = D
                      "page_size": info.page_size,
                      "total_page": total_page,
                      "data": result}
+    return response_json
+
+
+@clerk_card_router.get('/account_task_name')
+async def get_task(info: SearchTask = Depends(SearchTask), dbs: AsyncSession = Depends(db_session)):
+    """
+        获取匹配的uuid的任务名
+    param info:
+
+        对应的任务信息，参数不是必传
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        获取任务信息，包含了分页
+
+    """
+    args = [
+        ('account_id', f'=="{info.account_id}"', info.account_id),
+        ('is_delete', '==0', 0),
+    ]
+    print(info.account_id)
+    result = await TbTask.get_one(dbs, *args)
+    print(result)
+    response_json = {"data": result}
     return response_json
 
 
@@ -851,7 +881,10 @@ async def update_task(info: UpdateTask, dbs: AsyncSession = Depends(db_session))
 
 
 @clerk_card_router.get('/statistics')
-async def get_statistics(uid: str = Query(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
+async def get_statistics(info: Statistics = Depends(Statistics),
+        # uid: str = Query(..., title="uid值", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
+        # start_time: str = Query(..., title="开始时间", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
+        # end_time: str = Query(..., title="结束时间", description="需要通过uid来查询account和task关联数据的消耗额和收益"),
                          dbs: AsyncSession = Depends(db_session)):
     """
         统计对应的uid的消耗金额数量，收益总量
@@ -868,8 +901,9 @@ async def get_statistics(uid: str = Query(..., title="uid值", description="需�
         uid对应的所有消耗额和收益
 
     """
+    # print(info.uid)
     filter_condition = [
-        ('uid', f'=="{uid}"', uid),
+        ('uid', f'=="{info.uid}"', info.uid),
         ('is_delete', '==0', 0)
     ]
     single_account = await TbAccount.get_one(dbs, *filter_condition)
@@ -878,7 +912,11 @@ async def get_statistics(uid: str = Query(..., title="uid值", description="需�
         account_id = single_account.id
     else:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
-    consume_commission_list = await TbTask.get_task_account_consume_commission(dbs, account_id)
+    filter_condition = [
+        ("creation_date", f'>="{info.start_time}"', info.start_time),
+        ("creation_date", f'<="{info.end_time}"', info.end_time)
+    ]
+    consume_commission_list = await TbTask.get_task_account_consume_commission(dbs, account_id, filter_condition)
     total_consume = 0
     total_commission = 0
     for consume_commission in consume_commission_list:

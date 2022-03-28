@@ -224,6 +224,9 @@
                                   </a-select-option>
                                 </a-select>
                               </a-form-model-item>
+<!--                              <a-button type="primary" :loading="innerloading" @click="searchTask">-->
+<!--                                  搜索任务名-->
+<!--                              </a-button>-->
                             </a-col>
                             <a-col :span="15">
                                 <a-form-model-item ref="task" label="任务名" prop="creator">
@@ -390,21 +393,52 @@
                                 </a-form-model-item>
                             </a-col>
                         </a-row>
+                      <a-col :md="8" :sm="24" >
+                        <a-form-item
+                          label="开始日期"
+                          :labelCol="{span: 5}"
+                          :wrapperCol="{span: 18, offset: 1}"
+                        >
+                          <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
+                        </a-form-item>
+                      </a-col>
+                      <a-col :md="8" :sm="24" >
+                        <a-form-item
+                          label="结束日期"
+                          :labelCol="{span: 5}"
+                          :wrapperCol="{span: 18, offset: 1}"
+                        >
+                          <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
+                        </a-form-item>
+                      </a-col>
 
-                        <div>消耗：{{ this.consume }} <br> 佣金：{{ this.commission}}</div>
+                        <div>消耗：{{ this.consume }} <br> 佣金：{{ this.commission }}</div>
                     </a-form-model>
                 </template>
             </a-modal>
 
             <!-- 分页组件 -->
+<!--            <a-pagination-->
+<!--                style="margin-top: 15px;"-->
+<!--                v-model="query.page"-->
+<!--                :total="total"-->
+<!--                show-size-changer-->
+<!--                @showSizeChange="onShowSizeChange"-->
+<!--                :show-total="total => `一共 ${total} 条`"-->
+<!--                @change="pageonChange" />-->
             <a-pagination
-                style="margin-top: 15px;"
-                v-model="query.page"
-                :total="total"
-                show-size-changer
-                @showSizeChange="onShowSizeChange"
-                :show-total="total => `一共 ${total} 条`"
-                @change="pageonChange" />
+              v-model="current"
+              :page-size-options="pageSizeOptions"
+              :total="total"
+              show-size-changer
+              :page-size="pageSize"
+              @showSizeChange="onShowSizeChange"
+            >
+              <template slot="buildOptionText" slot-scope="props">
+                <span v-if="props.value !== '60'">{{ props.value }}条/页</span>
+                <span v-if="props.value === '60'">全部</span>
+              </template>
+            </a-pagination>
 
         </div>
     </a-card>
@@ -416,7 +450,13 @@
       PatchCardListData,
       PatchTaskListData,
       table_delete,
-      innerdelete, CardAccountListData, CommissionConsumetion, AddCardAccount, AddCreditTask, AddOneCard
+      innerdelete,
+      CardAccountListData,
+      CommissionConsumetion,
+      AddCardAccount,
+      AddCreditTask,
+      AddOneCard,
+      GetAccountTaskNameData
     } from "../../../services/statisticscardinformation";
     import Cookie from "js-cookie";
 
@@ -463,6 +503,11 @@
       }
       this.cacheData = innerData.map(item => ({ ...item }));
       return {
+        pageSizeOptions: ['50'],
+        current: 1,
+        pageSize: 50,
+        total: 60,
+
         isRouterAlive: true,
         data,
         columns,
@@ -470,7 +515,7 @@
         innerData,
         query: {
           page: 1,
-          page_size: 10,
+          page_size: 50,
           card_number: '',
           platform: '',
         },
@@ -512,6 +557,8 @@
           retain: 1,
           card_name: ''
         },
+        start_time: '',
+        end_time: '',
         uuidSelect: {},
         updocuurl: "",
         advanced: true,
@@ -542,7 +589,6 @@
           face_value: [{ required: true, validator: checkMobile, trigger: 'blur' }]
         },
         timer : {},
-        total: 0,
         editingKey: ''
       }
     },
@@ -614,11 +660,18 @@
       },
       // uid提交编辑表单
       uidhandleOk() {
-          console.log(this.uid)
-          CommissionConsumetion(this.uid).then(res =>{
-              this.consume = res.data.total_consume;
-              this.commission = res.data.total_commission;
-          })
+        console.log(this.uid)
+        console.log(this.start_time)
+        console.log(this.end_time)
+        var data = {
+          "uid":this.uid,
+          "start_time":this.start_time ? this.start_time.format('YYYY-MM-DD') : null,
+          "end_time":this.end_time ? this.end_time.format('YYYY-MM-DD') : null
+        }
+        CommissionConsumetion(data).then(res =>{
+            this.consume = res.data.total_consume;
+            this.commission = res.data.total_commission;
+        })
       },
       // 提交编辑表单
       handleOk() {
@@ -816,8 +869,40 @@
         this.updocuurl = process.env.VUE_APP_API_BASE_URL + `/Clerk/card/v1/cards/excel`
       },
       selecthandleChange(data){
-        console.log(data)
-        this.innerform.uid = data[0]
+        console.log(data[0])
+        if (data[0] != undefined){
+          this.innerform.uid = data[0]
+          console.log(this.innerform.uid)
+          if (this.innerform.uid.indexOf("uuid") != -1){
+            console.log("uuid")
+            console.log(this.innerform.uid)
+            this.innerform.account_id = this.innerform.uid.split("uuid")[1]
+            GetAccountTaskNameData({"account_id": this.innerform.account_id}).then(res => {
+              try {
+                this.innerform.task = res.data.data.task
+              }catch{
+                this.innerform.task = ""
+              }
+            })
+          }else{
+            console.log("uuid+++++")
+            console.log(this.innerform.uid)
+            AddCardAccount({uid: this.innerform.uid}).then(res => {
+              console.log("创建成功")
+              console.log(res)
+              var id = res.data.data
+              console.log(id)
+              this.innerform.account_id = id
+              GetAccountTaskNameData({"account_id": this.innerform.account_id}).then(res => {
+                try {
+                this.innerform.task = res.data.data.task
+              }catch{
+                this.innerform.task = ""
+              }
+              })
+            })
+          }
+        }
 
       },
       edit (data){
@@ -988,7 +1073,7 @@
 
       // 分页配置
       onShowSizeChange(current, pageSize) {
-          this.query.page = 1
+          // this.query.page = 1
           this.query.page_size = pageSize
           this.gettabledata()
       },
@@ -1021,9 +1106,9 @@
       addcadrhandleCancel() {
         this.addcadrvisible = false
         this.$refs.addcadrruleForm.resetFields();
-      }
-        }
+      },
     }
+  }
 </script>
 
 <style lang="less" scoped>

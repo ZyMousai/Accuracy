@@ -72,14 +72,18 @@ class TbTask(PBaseModel):
         return result
 
     @classmethod
-    async def get_task_account_consume_commission(cls, dbs, account_id):
+    async def get_task_account_consume_commission(cls, dbs, account_id, args):
         """
         获取对应account_id的任务的消耗和收益
         :param dbs: 数据库依赖
         :param account_id:  对应的account_id
         :return:
         """
-        _orm = select(cls.consume, cls.commission).where(cls.is_delete == 0, cls.account_id == account_id)
+        filter_condition = list()
+        for x in args:
+            if x[2] is not None:
+                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+        _orm = select(cls.consume, cls.commission).where(cls.is_delete == 0, cls.account_id == account_id, *filter_condition)
         # 注意这里没有加scalars()，才能得到所有的查询数据
         result = (await dbs.execute(_orm)).all()
         return result

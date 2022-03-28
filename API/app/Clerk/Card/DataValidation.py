@@ -96,6 +96,12 @@ class UpdateTask(BaseModel):
     secondary_consumption: Optional[int] = Query(None)
 
 
+class Statistics(BaseModel):
+    uid: Optional[str] = Query(None)
+    start_time: Optional[str] = Query(None)
+    end_time: Optional[str] = Query(None)
+
+
 class SearchTask(BaseModel):
     card_id: Optional[int] = Query(None)
     account_id: Optional[int] = Query(None)

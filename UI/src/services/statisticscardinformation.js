@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards, GetAccountTaskName } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -29,6 +29,16 @@ export async function PatchCardListData(query) {
  */
 export async function CreditTaskListData(query) {
     return request(GetTaskListData, METHOD.GET, query)
+}
+
+/**
+ * 统计卡页面
+ * 获取uuid对应的任务名
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function GetAccountTaskNameData(query) {
+    return request(GetAccountTaskName, METHOD.GET, query)
 }
 
 /**
@@ -122,13 +132,11 @@ export async function CardAccountdelete(id) {
 /**
  * 统计卡页面
  * 根据uid来计算收益和消耗
- * @param uid  查询请求参数
+ * @param query  查询请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
-export async function CommissionConsumetion(uid) {
-    return request(CommissionConsume, METHOD.GET, {
-        uid: uid
-    })
+export async function CommissionConsumetion(query) {
+    return request(CommissionConsume, METHOD.GET, query)
 }
 
 /**
