@@ -654,8 +654,8 @@
       },
       // 查询
       queryevents() {
-        this.query.page = 1
-        this.query.page_size = 10
+        // this.query.page = 1
+        // this.query.page_size = 10
         this.gettabledata()
       },
       // uid提交编辑表单
