@@ -427,13 +427,16 @@
 <!--                :show-total="total => `一共 ${total} 条`"-->
 <!--                @change="pageonChange" />-->
             <a-pagination
-              v-model="current"
+              v-model="query.page"
               :page-size-options="pageSizeOptions"
-              :total="total"
               show-size-changer
               :page-size="pageSize"
               @showSizeChange="onShowSizeChange"
+              :total="total"
+              @change="pageonChange"
+
             >
+
               <template slot="buildOptionText" slot-scope="props">
                 <span v-if="props.value !== '60'">{{ props.value }}条/页</span>
                 <span v-if="props.value === '60'">全部</span>
@@ -504,10 +507,9 @@
       this.cacheData = innerData.map(item => ({ ...item }));
       return {
         pageSizeOptions: ['50'],
-        current: 1,
+        // current: 1,
         pageSize: 50,
         total: 60,
-
         isRouterAlive: true,
         data,
         columns,
@@ -1073,9 +1075,12 @@
 
       // 分页配置
       onShowSizeChange(current, pageSize) {
-          // this.query.page = 1
-          this.query.page_size = pageSize
-          this.gettabledata()
+        // console.log("current")
+        // console.log(current)
+        // console.log("current")
+        // this.query.page = 1
+        this.query.page_size = pageSize
+        this.gettabledata()
       },
       pageonChange(pageNumber) {
           this.query.page = pageNumber
