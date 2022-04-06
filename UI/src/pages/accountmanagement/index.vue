@@ -112,7 +112,7 @@
           </a-col>
           <a-col :span="10">
             <a-form-model-item label="权限角色" prop="role_id">
-            <a-select v-model="form.role_id" placeholder="请选择角色">
+            <a-select v-model="form.role_id" placeholder="请选择角色" mode="multiple">
               <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
                 {{item.role}}
               </a-select-option>
@@ -198,7 +198,7 @@ export default {
         account: '',
         platform: '',
         remark: '',
-        role_id: '',
+        role_id: [],
         password: ''
       },
       reform: {
