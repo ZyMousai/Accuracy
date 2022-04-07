@@ -162,7 +162,7 @@ async def del_job(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_se
         删除告警计划任务
     param info:
 
-        job_id: 要删除的任务名
+        job_id: 要删除的id
     """
     # 获取对应卡id的所有任务
     filter_condition = [
@@ -221,11 +221,15 @@ async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = 
 async def get_campaign_mapping(info: DisplaySearchJob = Depends(DisplaySearchJob),
                                dbs: AsyncSession = Depends(db_session)):
     """
-        获取角色列表
+        获取心跳功能注册列表
 
     :param info:
 
-        SearchCampaign携带的查询参数
+        job_name: 名称
+        start_create_time: 创建时间 开始范围
+        end_create_time: 创建时间 结束范围
+        alarm: 是否启用:0-否；1-是
+        state: 状态:0-正常；1-异常；2-离线
 
     :param dbs:
 
@@ -242,8 +246,7 @@ async def get_campaign_mapping(info: DisplaySearchJob = Depends(DisplaySearchJob
         ('alarm', f'=="{info.alarm}"', info.alarm),
         ('state', f'=="{info.state}"', info.state),
     ]
-    result, count, total_page = await Heartbeat.get_all_detail_page(dbs, info.page, info.page_size,
-                                                                            *filter_condition)
+    result, count, total_page = await Heartbeat.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
