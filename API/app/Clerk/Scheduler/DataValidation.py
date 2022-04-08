@@ -27,3 +27,16 @@ class DisplaySearchJob(BaseModel):
     page: Optional[int] = 1
     page_size: Optional[int] = 10
 
+
+class DisplayAddJob(BaseModel):
+    job_name: str
+    interval: int
+    alarm: int
+
+
+class DisplayUpdateJob(BaseModel):
+    id: int
+    job_name: Optional[str] = Query(None)
+    interval: Optional[int] = Query(None)
+    alarm: Optional[int] = Query(None)
+

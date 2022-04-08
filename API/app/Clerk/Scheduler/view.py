@@ -7,7 +7,8 @@ import base64
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from dingtalkchatbot.chatbot import DingtalkChatbot
-from app.Clerk.Scheduler.DataValidation import Alarm, DelAlarm, SearchJob, DisplaySearchJob
+from app.Clerk.Scheduler.DataValidation import Alarm, DelAlarm, SearchJob, DisplaySearchJob, DisplayAddJob, \
+    DisplayUpdateJob
 from config import MysqlConfig, globals_config
 from sql_models.Clerk.OrmSchedulerHeartbeat import Heartbeat
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -156,35 +157,6 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     return response_json
 
 
-@clerk_scheduler_router.delete('/display')
-async def del_job(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
-    """
-        删除告警计划任务
-    param info:
-
-        job_id: 要删除的id
-    """
-    # 获取对应卡id的所有任务
-    filter_condition = [
-        ('id', f'.in_(' + str(ids) + ')', ids),
-        ('is_delete', '==0', 0)
-    ]
-    task_result = await Heartbeat.get_all(dbs, *filter_condition)
-
-    result = await Heartbeat.delete_data(dbs, tuple(ids))
-    if not result:
-        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
-    for task in task_result:
-        # 删除对应任务
-        try:
-            heartbeat_scheduler.remove_job(task.job_name)
-        except Exception as e:
-            print(e)
-            print("ignore delete " + task.job_name)
-    response_json = {"data": str(ids) + " successfully deleted"}
-    return response_json
-
-
 async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
     try:
         if job_id == -1:
@@ -218,8 +190,8 @@ async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = 
 
 
 @clerk_scheduler_router.get('/display')
-async def get_campaign_mapping(info: DisplaySearchJob = Depends(DisplaySearchJob),
-                               dbs: AsyncSession = Depends(db_session)):
+async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJob),
+                                     dbs: AsyncSession = Depends(db_session)):
     """
         获取心跳功能注册列表
 
@@ -252,4 +224,85 @@ async def get_campaign_mapping(info: DisplaySearchJob = Depends(DisplaySearchJob
                      "page_size": info.page_size,
                      "total_page": total_page,
                      "data": result}
+    return response_json
+
+
+@clerk_scheduler_router.post('/display')
+async def add_heartbeat_display(info: DisplayAddJob, dbs: AsyncSession = Depends(db_session)):
+    """
+        添加心跳功能注册列表
+
+    :param info:
+
+        添加心跳功能注册列表携带的参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        数据添加后在表里的id
+    """
+    return {"data": await Heartbeat.add_data(dbs, info)}
+
+
+@clerk_scheduler_router.delete('/display')
+async def del_heartbeat_display(ids: List[int] = Query(...), dbs: AsyncSession = Depends(db_session)):
+    """
+        删除告警计划任务
+    param info:
+
+        job_id: 要删除的id
+    """
+    # 获取对应卡id的所有任务
+    filter_condition = [
+        ('id', f'.in_(' + str(ids) + ')', ids),
+        ('is_delete', '==0', 0)
+    ]
+    task_result = await Heartbeat.get_all(dbs, *filter_condition)
+
+    result = await Heartbeat.delete_data(dbs, tuple(ids))
+    if not result:
+        raise HTTPException(status_code=404, detail="Delete non-existent resources.")
+    for task in task_result:
+        # 删除对应任务
+        try:
+            heartbeat_scheduler.remove_job(task.job_name)
+        except Exception as e:
+            print(e)
+            print("ignore delete " + task.job_name)
+    response_json = {"data": str(ids) + " successfully deleted"}
+    return response_json
+
+
+@clerk_scheduler_router.patch('/display')
+async def update_task(info: DisplayUpdateJob, dbs: AsyncSession = Depends(db_session)):
+    """
+        修改任务信息
+    param info:
+
+        对应的需要修改的任务字段
+
+    param dbs:
+
+        数据库依赖
+
+    return:
+
+        更新后的任务的任务信息
+
+    """
+    update_data_dict = info.dict(exclude_unset=True)
+    # filter_condition = [
+    #     ('task', f'=="{info.task}"', info.task)
+    # ]
+    # result = await TbTask.get_one(dbs, *filter_condition)
+    # if result:
+    #     raise HTTPException(status_code=403, detail="Duplicate Task.")
+    if len(update_data_dict) > 1:
+        result = await Heartbeat.update_data(dbs, update_data_dict, is_delete=0)
+        if not result:
+            raise HTTPException(status_code=403, detail="Task does not exist.")
+    response_json = {"data": update_data_dict}
     return response_json
