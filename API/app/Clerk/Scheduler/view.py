@@ -7,8 +7,7 @@ import base64
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from dingtalkchatbot.chatbot import DingtalkChatbot
-from app.Clerk.Scheduler.DataValidation import Alarm, DelAlarm, SearchJob, DisplaySearchJob, DisplayAddJob, \
-    DisplayUpdateJob
+from app.Clerk.Scheduler.DataValidation import Alarm, SearchJob, DisplaySearchJob, DisplayAddJob, DisplayUpdateJob
 from config import MysqlConfig, globals_config
 from sql_models.Clerk.OrmSchedulerHeartbeat import Heartbeat
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,17 +67,17 @@ async def get_job(info: SearchJob = Depends(SearchJob)):
         获取想传入计划任务的id是否存在
     param info:
 
-        job_id: 想查找的任务名
+        job_name: 想查找的任务名
 
     return:
 
         data: 任务存不存在的信息
 
     """
-    if heartbeat_scheduler.get_job(info.job_id):
-        return {"exist": True, "data": info.job_id + ", current id exists"}
+    if heartbeat_scheduler.get_job(info.job_name):
+        return {"exist": True, "data": info.job_name + ", current id exists"}
     else:
-        return {"exist": False, "data": info.job_id + ", current id does not exist"}
+        return {"exist": False, "data": info.job_name + ", current id does not exist"}
 
 
 @clerk_scheduler_router.post('/')
@@ -149,8 +148,8 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
         # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
         alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
     alarm_content = "心跳故障: " + job_name + " 在设置时间 " + str(interval) + " 分钟内，未发出心跳"  # 告警内容
-    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[alarm_content, job_name, job_id], trigger='date',
-                                run_date=alarm_time,  # 执行时间
+    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[alarm_content, job_name, job_id],
+                                trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
                                 coalesce=True,)  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
     response_json = {"data": job_name + " timed task created successfully"}
@@ -191,7 +190,7 @@ async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = 
 
 @clerk_scheduler_router.get('/display')
 async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJob),
-                                     dbs: AsyncSession = Depends(db_session)):
+                                dbs: AsyncSession = Depends(db_session)):
     """
         获取心跳功能注册列表
 

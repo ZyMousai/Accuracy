@@ -11,11 +11,11 @@ class Alarm(BaseModel):
 
 
 class DelAlarm(BaseModel):
-    job_id: Optional[str] = None
+    job_name: Optional[str] = None
 
 
 class SearchJob(BaseModel):
-    job_id: Optional[str] = Query(None)
+    job_name: Optional[str] = Query(None)
 
 
 class DisplaySearchJob(BaseModel):
