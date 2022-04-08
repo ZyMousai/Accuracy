@@ -277,7 +277,7 @@ async def del_heartbeat_display(ids: List[int] = Query(...), dbs: AsyncSession =
 
 
 @clerk_scheduler_router.patch('/display')
-async def update_task(info: DisplayUpdateJob, dbs: AsyncSession = Depends(db_session)):
+async def update_heartbeat_display(info: DisplayUpdateJob, dbs: AsyncSession = Depends(db_session)):
     """
         修改心跳功能注册列表
     param info:
