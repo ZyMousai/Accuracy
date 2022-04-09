@@ -42,5 +42,7 @@ module.exports = {
     RoleUser: `${BASE_URL}/PersonnelManagement/roles/v1/RoleUser`,
     CommissionConsume: `${BASE_URL}/Clerk/card/v1/statistics`,
     RoleAccount: `${BASE_URL}/PersonnelManagement/roles/v1/RoleAccount`,
-    DocumentDownloadURL: `${BASE_URL}/DocumentManagement/documents/v1/download`
+    DocumentDownloadURL: `${BASE_URL}/DocumentManagement/documents/v1/download`,
+    HeartbeatGetServiceName:`${BASE_URL}/Clerk/heartbeat/v1/display`,
+    HeartbeatGetServiceNameOne:`${BASE_URL}/Clerk/heartbeat/v1/display/detail`,
 }

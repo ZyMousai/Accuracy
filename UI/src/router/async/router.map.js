@@ -156,6 +156,18 @@ const routerMap = {
         component: () =>
             import ('@/pages/domainnamemanagement/affiliatelist')
     },
+    systemmanagement:{
+        path:'systemmanagement',
+        name:'系统管理',
+        icon: 'link',
+        component: view.BlankView,
+    },
+    heartbeatfunction: {
+        path: 'heartbeatfunction',
+        name: '心跳功能',
+        component: () =>
+            import ('@/pages/systemmanagement')
+    },
     exp403: {
         authority: '*',
         name: 'exp403',

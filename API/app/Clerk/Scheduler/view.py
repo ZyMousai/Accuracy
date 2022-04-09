@@ -18,6 +18,7 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 import binascii
 from pyDes import des, CBC, PAD_PKCS5
 from typing import List
+from typing import Optional
 
 
 # 系统管理 - 心跳功能
@@ -216,13 +217,40 @@ async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJo
         ("create_time", f'<="{info.end_create_time}"', info.end_create_time),
         ('alarm', f'=="{info.alarm}"', info.alarm),
         ('state', f'=="{info.state}"', info.state),
+        ('is_delete', '==0', 0)
     ]
+    print(info.page, info.page_size)
     result, count, total_page = await Heartbeat.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
+    print(count)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
                      "total_page": total_page,
                      "data": result}
+    return response_json
+
+
+@clerk_scheduler_router.get('/display/detail')
+async def get_heartbeat_display_one(id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
+    """
+        获取某个心跳功能注册列表的信息
+
+    :param id:
+
+        列表id
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        单个列表的信息
+    """
+    result = await Heartbeat.get_one_detail(dbs, id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Get non-existent resources.")
+    response_json = {"data": result}
     return response_json
 
 
