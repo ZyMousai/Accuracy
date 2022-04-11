@@ -102,16 +102,16 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     now_time = datetime.datetime.now()
 
     # 获取当前任务是否存在
-    # if heartbeat_scheduler.get_job(job_id):
+    # if heartbeat_scheduler.get_job(job_name):
     #     # 修改当前任务告警时间
-    #     heartbeat_scheduler.reschedule_job(job_id, trigger='date', run_date=alarm_time)
+    #     heartbeat_scheduler.reschedule_job(job_name, trigger='date', run_date=alarm_time)
     # else:
     #     # 创建告警任务
-    #     heartbeat_scheduler.add_job(id=job_id, func=dingding, args=[alarm_content], trigger='date',
+    #     heartbeat_scheduler.add_job(id=job_name, func=dingding, args=[alarm_content], trigger='date',
     #                                 run_date=alarm_time)
     try:
         filter_condition = [
-            ('job_id', f'=="{job_name}"', job_name)
+            ('job_name', f'=="{job_name}"', job_name)
         ]
         data_result = await Heartbeat.get_one(dbs, *filter_condition)
         if not data_result:
@@ -164,9 +164,9 @@ async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = 
                 ('job_id', f'=="{job_name}"', job_name)
             ]
             data_result = await Heartbeat.get_one(dbs, *filter_condition)
-            job_id = data_result.id
+            job_name = data_result.job_name
         data = {
-            "id": job_id,
+            "id": job_name,
             "state": 1,
             "heartbeat_alarm": datetime.datetime.now(),
         }
@@ -280,7 +280,7 @@ async def del_heartbeat_display(ids: List[int] = Query(...), dbs: AsyncSession =
         删除告警计划任务
     param info:
 
-        job_id: 要删除的id
+        ids: 要删除的id
     """
     # 获取对应卡id的所有任务
     filter_condition = [
