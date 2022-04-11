@@ -95,8 +95,12 @@
     </div>
     <div>
       <a-space class="operator">
-        <a-button type="primary" @click="showModal"><a-icon type="plus-circle" />新增</a-button>
-        <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
+        <a-button type="primary" @click="showModal"
+          ><a-icon type="plus-circle" />新增</a-button
+        >
+        <a-button type="primary" @click="Batchdelete()"
+          ><a-icon type="delete" />批量删除</a-button
+        >
       </a-space>
       <standard-table
         :columns="columns"
@@ -108,21 +112,25 @@
         :loading="tableloading"
         :pagination="false"
       >
-<!--        <span slot="alarm" slot-scope="{record}">-->
-<!--          <a-switch @change="handelChange(record)"/>-->
-<!--        </span>-->
-        <div slot="alarm" slot-scope="{record}">
-          <div v-if="record.alarm===0">否</div>
+        <span slot="alarm" slot-scope="{ record }">
+          <a-switch
+            disabled="disabled"
+            v-model="record.alarm"
+            :checked="record.alarm === 0 ? true : false"
+          />
+        </span>
+        <!-- <div slot="alarm" slot-scope="{ record }">
+          <div v-if="record.alarm === 0">否</div>
           <div v-else>是</div>
-        </div>
-        <div slot="state" slot-scope="{record}">
+        </div> -->
+        <div slot="state" slot-scope="{ record }">
           <!-- 这里可以替换成指示灯 -->
-          <div v-if="record.state===0">正常</div>
-          <div v-else-if="record.state===1">异常</div>
-          <div v-else>离线</div>
+          <div v-if="record.state === 0" class="normal light_frame"></div>
+          <div v-else-if="record.state === 1" class="abnormal light_frame"></div>
+          <div v-else class="offline light_frame"></div>
         </div>
-        <div slot="interval" slot-scope="{record}">
-          {{record.interval}} 分钟
+        <div slot="interval" slot-scope="{ record }">
+          {{ record.interval }} 分钟
         </div>
 
         <div slot="action" slot-scope="{ record }">
@@ -140,8 +148,9 @@
         :total="total"
         show-size-changer
         @showSizeChange="onShowSizeChange"
-        :show-total="total => `一共 ${total} 条`"
-        @change="pageonChange" />
+        :show-total="(total) => `一共 ${total} 条`"
+        @change="pageonChange"
+      />
       <!-- 表单 -->
       <a-modal
         v-model="visible"
@@ -181,33 +190,23 @@
             <a-row :gutter="16">
               <a-col :span="10">
                 <a-form-model-item label="是否启用">
-                    <a-switch v-model="form.alarm" :checked="form.alarm ? true : false" />
+                  <a-switch
+                    v-model="form.alarm"
+                    :checked="form.alarm ? true : false"
+                  />
                 </a-form-model-item>
               </a-col>
             </a-row>
             <a-row :gutter="16">
               <a-col :span="10">
                 <a-form-model-item label="心跳间隔">
-                  <a-input-number v-model="form.interval" :value="form.interval"/>分钟
+                  <a-input-number
+                    v-model="form.interval"
+                    :value="form.interval"
+                  />分钟
                 </a-form-model-item>
               </a-col>
             </a-row>
-            <!-- <a-row :gutter="16">
-              <a-col :span="10">
-                <a-form-model-item ref="phone" label="联系电话" prop="phone">
-                  <a-input v-model="form.phone" />
-                </a-form-model-item>
-              </a-col>
-              <a-col :span="10">
-                <a-form-model-item
-                  ref="address"
-                  label="联系地址"
-                  prop="address"
-                >
-                  <a-input v-model="form.address" />
-                </a-form-model-item>
-              </a-col>
-            </a-row> -->
           </a-form-model>
         </template>
       </a-modal>
@@ -242,7 +241,6 @@
             :wrapper-col="{ span: 14 }"
             layout="vertical"
           >
-
           </a-form-model>
         </template>
       </a-modal>
@@ -268,17 +266,25 @@ import {
   AddHeartbeatDisplay,
   DeleteHeartbeatDisplay,
   // GetServiceNameDateOne,
-  PatchHeartbeatDisplay
+  PatchHeartbeatDisplay,
 } from "../../services/systemmanagement";
 const columns = [
-  { title: "id", dataIndex: "id", },
-  { title: "服务名", dataIndex: "job_name", },
-  { title: "断开时报警时间", dataIndex: "heartbeat_alarm", },
-  { title: "创建时间", dataIndex: "create_time", },
-  { title: "是否启用", dataIndex: "alarm", scopedSlots: { customRender: 'alarm' } },
-  { title: "状态", dataIndex: "state", scopedSlots: { customRender: 'state' } },
-  { title: "心跳间隔", dataIndex: "interval", scopedSlots: { customRender: 'interval' } },
-  { title: "操作", scopedSlots: { customRender: "action" }, },
+  { title: "id", dataIndex: "id" },
+  { title: "服务名", dataIndex: "job_name" },
+  { title: "断开时报警时间", dataIndex: "heartbeat_alarm" },
+  { title: "创建时间", dataIndex: "create_time" },
+  {
+    title: "是否启用",
+    dataIndex: "alarm",
+    scopedSlots: { customRender: "alarm" },
+  },
+  { title: "状态", dataIndex: "state", scopedSlots: { customRender: "state" } },
+  {
+    title: "心跳间隔",
+    dataIndex: "interval",
+    scopedSlots: { customRender: "interval" },
+  },
+  { title: "操作", scopedSlots: { customRender: "action" } },
 ];
 
 const dataSource = [];
@@ -298,6 +304,8 @@ export default {
       cb(new Error("手机号码格式不正确"));
     };
     return {
+      checked:true,
+      disabled:false,
       dateFormat: "YYYY-MM-DD HH:mm:ss",
       query: {
         page: 1,
@@ -388,7 +396,6 @@ export default {
     };
   },
   created() {
-    // this.gettabledata();
     // this.getdepartmentoptions();
     this.gethearttabledata();
   },
@@ -402,15 +409,16 @@ export default {
           var re_da = res.data.data;
           this.dataSource = res.data.data;
           this.total = res.data.total;
-          console.log(this.total)
+          console.log(this.total);
           this.tableloading = false;
           for (var i = 0; i < re_da.length; i++) {
             // 时间格式转换
-            var heartbeat_alarm = re_da[i]["heartbeat_alarm"]
+            var heartbeat_alarm = re_da[i]["heartbeat_alarm"];
             if (heartbeat_alarm != null) {
-              re_da[i]["heartbeat_alarm"] = heartbeat_alarm.replace('T', ' ')
+              re_da[i]["heartbeat_alarm"] = heartbeat_alarm.replace("T", " ");
             }
-            re_da[i]["create_time"] = re_da[i]["create_time"].replace('T', ' ');
+            re_da[i]["create_time"] = re_da[i]["create_time"].replace("T", " ");
+            // 时间格式转换（使用插件moment）
             // re_da[i]["heartbeat_alarm"] = this.$moment(re_da[i]["heartbeat_alarm"]
             // ).format("YYYY-MM-DD HH:mm:ss");
             // re_da[i]["create_time"] = this.$moment(re_da[i]["create_time"]
@@ -422,30 +430,13 @@ export default {
             //   this.alarmswitch=false;
             // }
           }
-          this.dataSource = re_da
+          this.dataSource = re_da;
         } else {
           this.tableloading = false;
           this.$message.error(`获取数据失败！`);
         }
       });
     },
-    // 获取表格数据
-    // gettabledata() {
-    //   this.tableloading = true;
-    //   UsersDate(this.query).then((res) => {
-    //     if (res.status === 200) {
-    //       this.dataSource = res.data.data;
-    //       this.total = res.data.total;
-    //       this.tableloading = false;
-    //       for (var i = 0; i < this.dataSource.length; i++) {
-    //         this.dataSource[i]["index"] = i + 1;
-    //       }
-    //     } else {
-    //       this.tableloading = false;
-    //       this.$message.error(`获取数据失败！`);
-    //     }
-    //   });
-    // },
     async user_onok() {
       for (let i = 0; i < this.ids.length; i++) {
         await DeleteHeartbeatDisplay(this.ids[i]).then((res) => {
@@ -460,7 +451,6 @@ export default {
       this.query.page =
         this.query.page > totalPage ? totalPage : this.query.page;
       this.query.page = this.query.page < 1 ? 1 : this.query.page;
-      // this.gettabledata();
       this.gethearttabledata();
       this.ids = [];
       this.dialogvisible = false;
@@ -476,23 +466,22 @@ export default {
     queryevents() {
       this.query.page = 1;
       this.query.page_size = 10;
-      // this.gettabledata();
       this.gethearttabledata();
     },
     // 批量删除
     Batchdelete() {
-      this.ids = []
+      this.ids = [];
       for (let i = 0; i < this.selectedRows.length; i++) {
-        this.ids.push(this.selectedRows[i].id)
+        this.ids.push(this.selectedRows[i].id);
       }
-      this.dialogvisible = true
+      this.dialogvisible = true;
     },
 
     // 打开编辑表单
     showModal(data) {
       this.form = {};
       if (data.id) {
-        console.log(data)
+        console.log(data);
         this.tablename = "编辑";
         this.isdisabled = true;
 
@@ -512,9 +501,8 @@ export default {
         //   console.log(this.form)
         // });
         // 替代方案
-        this.form = data
+        this.form = data;
         this.visible = true;
-
       } else {
         this.tablename = "新增";
         this.isdisabled = false;
@@ -549,7 +537,6 @@ export default {
       PatchHeartbeatDisplay(this.form).then((res) => {
         if (res.status === 200) {
           this.$message.success(`${this.tablename}成功！`);
-          // this.gettabledata();
           this.gethearttabledata();
           this.loading = false;
           this.visible = false;
@@ -588,36 +575,34 @@ export default {
     onShowSizeChange(current, pageSize) {
       this.query.page = 1;
       this.query.page_size = pageSize;
-      // this.gettabledata();
       this.gethearttabledata();
     },
     pageonChange(pageNumber) {
       this.query.page = pageNumber;
-      // this.gettabledata();
       this.gethearttabledata();
     },
     // 重置查询表单
     resettingqueryform() {
-      for(var key in this.query) {
-        this.query[key] = null
+      for (var key in this.query) {
+        this.query[key] = null;
       }
-      this.query.page = 1
-      this.query.page_size = 10
-      this.gethearttabledata()
+      this.query.page = 1;
+      this.query.page_size = 10;
+      this.gethearttabledata();
     },
     expandinnerlist(expanded, record) {
       if (this.expandedRowKeys.length > 0) {
         let index = this.expandedRowKeys.indexOf(record.id);
         if (index > -1) {
-            this.expandedRowKeys.splice(index, 1);
+          this.expandedRowKeys.splice(index, 1);
         } else {
-            this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
-            this.expandedRowKeys.push(record.id);
+          this.expandedRowKeys.splice(0, this.expandedRowKeys.length);
+          this.expandedRowKeys.push(record.id);
         }
       } else {
         this.expandedRowKeys.push(record.id);
       }
-      this.innerData = record.task_set
+      this.innerData = record.task_set;
     },
   },
 };
@@ -641,5 +626,55 @@ export default {
 }
 /deep/.ant-modal-footer {
   text-align: center;
+}
+.normal {
+  background: #00cc00;
+  -webkit-animation-name: breathe_normal;
+
+}
+.abnormal {
+  background: yellow;
+  -webkit-animation-name: breathe_abnormal;
+}
+.offline {
+  background: gray;
+  -webkit-animation-name: breathe_offline;
+}
+.light_frame{
+  width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  border: 1px solid #2b92d4;
+  border-radius: 50%;
+  text-align: center;
+  cursor: pointer;
+  //margin:auto;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  -webkit-animation-timing-function: ease-in-out;
+  -webkit-animation-duration: 1500ms;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-direction: alternate;
+}
+@-webkit-keyframes breathe_normal {
+    0% { opacity: .4; box-shadow: 0 1px 2px rgba(22, 223, 0, 0.4), 0 1px 1px rgba(41, 223, 0, 0.1) inset; }
+    100% {
+        opacity: .8; border: 1px solid rgba(59, 235, 68, 0.7);
+        box-shadow: 0 1px 10px #71ff3c, 0 1px 10px #30ff00 inset;
+    }
+}
+@-webkit-keyframes breathe_abnormal {
+    0% { opacity: .4; box-shadow: 0 1px 2px rgba(223, 193, 0, 0.4), 0 1px 1px rgba(223, 175, 0, 0.1) inset; }
+    100% {
+        opacity: .8; border: 1px solid rgba(235, 197, 59, 0.7);
+        box-shadow: 0 1px 10px #fff64a, 0 1px 10px #f5ff00 inset;
+    }
+}
+@-webkit-keyframes breathe_offline {
+    0% { opacity: .4; box-shadow: 0 1px 2px rgba(139, 139, 139, 0.4), 0 1px 1px rgba(229, 248, 255, 0.1) inset; }
+    100% {
+        opacity: .8; border: 1px solid rgba(182, 182, 182, 0.7);
+        box-shadow: 0 1px 10px #d5d5d5, 0 1px 10px #bfbfbf inset;
+    }
 }
 </style>

@@ -159,7 +159,7 @@ const routerMap = {
     systemmanagement:{
         path:'systemmanagement',
         name:'系统管理',
-        icon: 'link',
+        icon: 'setting',
         component: view.BlankView,
     },
     heartbeatfunction: {
