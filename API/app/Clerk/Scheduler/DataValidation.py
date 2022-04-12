@@ -7,7 +7,7 @@ from fastapi import Query
 class Alarm(BaseModel):
     # job_name: Optional[str] = None
     # alarm_time: Optional[int] = None
-    key: Optional[int] = None
+    key: Optional[str] = None
 
 
 class DelAlarm(BaseModel):
