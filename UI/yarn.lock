@@ -1216,7 +1216,7 @@
   "resolved" "https://registry.npm.taobao.org/@vue/cli-overlay/download/@vue/cli-overlay-4.4.4.tgz?cache=0&sync_timestamp=1591967008734&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40vue%2Fcli-overlay%2Fdownload%2F%40vue%2Fcli-overlay-4.4.4.tgz"
   "version" "4.4.4"
 
-"@vue/cli-plugin-babel@^4.4.4":
+"@vue/cli-plugin-babel@^4.4.0":
   "integrity" "sha1-GJBLXjgXMpGzcFTC8Dk/uMdI83s="
   "resolved" "https://registry.npm.taobao.org/@vue/cli-plugin-babel/download/@vue/cli-plugin-babel-4.4.4.tgz?cache=0&sync_timestamp=1591967013308&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40vue%2Fcli-plugin-babel%2Fdownload%2F%40vue%2Fcli-plugin-babel-4.4.4.tgz"
   "version" "4.4.4"
@@ -3267,6 +3267,11 @@
     "public-encrypt" "^4.0.0"
     "randombytes" "^2.0.0"
     "randomfill" "^1.0.3"
+
+"crypto-js@^4.1.1":
+  "integrity" "sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw=="
+  "resolved" "https://registry.npmmirror.com/crypto-js/-/crypto-js-4.1.1.tgz"
+  "version" "4.1.1"
 
 "crypto-random-string@^2.0.0":
   "integrity" "sha1-7yp6lm7BEIM4g2m6oC6+rSKbMNU= sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA=="
