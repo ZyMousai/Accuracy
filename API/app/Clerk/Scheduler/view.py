@@ -32,7 +32,7 @@ clerk_scheduler_router = APIRouter(
 )
 MYSQL_URL = f"mysql+pymysql://{MysqlConfig.username}:{MysqlConfig.password}@{MysqlConfig.host}:" \
             f"{MysqlConfig.port}/{MysqlConfig.db}?charset=utf8"
-# MYSQL_URL = f"mysql+pymysql://root:root@127.0.0.1:3306/{MysqlConfig.db}?charset=utf8" \
+# MYSQL_URL = f"mysql+pymysql://root:root@127.0.0.1:3306/{MysqlConfig.db}?charset=utf8"
 # 执行器
 job_stores = {'default': SQLAlchemyJobStore(url=MYSQL_URL)}
 executors = {'default': ThreadPoolExecutor(20), 'processpool': ProcessPoolExecutor(5)}
@@ -108,7 +108,8 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
 
     """
     try:
-        data = json.loads(des_descrypt(info.key))
+        data = info.key.encode('utf8')
+        data = json.loads(des_descrypt(data))
     except ValueError:
         return {"data": "illegal data"}
     if "job_name" not in data or "interval" not in data:
@@ -163,23 +164,20 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
         print(ex)
         job_id = -1
         # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
-        # alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
-    alarm_time = now_time + datetime.timedelta(seconds=10)
+    alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
+    # alarm_time = now_time + datetime.timedelta(seconds=10)
     alarm_content = "心跳故障: " + job_name + " 在设置时间 " + str(interval) + " 分钟内，未发出心跳"  # 告警内容
     print(alarm_time)
-    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm,
-                                args=[alarm_content, job_name, job_id],
-                                # args=[alarm_content],
+    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[alarm_content, job_name, job_id],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
-                                # coalesce=True,  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                coalesce=True,  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
                                 )
     response_json = {"data": job_name + " timed task created successfully"}
     return response_json
 
 
 def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
-# def trigger_an_alarm(alarm_content):
     print("准备发送消息："+ job_name + "心跳异常")
 
     # 钉钉发消息
@@ -208,38 +206,6 @@ def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depend
             print({"code": "0001", "message": job_name + "参数错误"})
     except ArithmeticError:
         print({"code": "0002", "message": job_name + "数据库错误"})
-    # try:
-        # if job_id == -1:
-        #     args = [
-        #         ('job_id', f'=="{job_name}"', job_name)
-        #     ]
-        #     # data_result = await Heartbeat.get_one(dbs, *filter_condition)
-        #     filter_condition = list()
-        #     for x in args:
-        #         if isinstance(x, str):
-        #             filter_condition.append(eval(x))
-        #         else:
-        #             if x[2] is not None:
-        #                 filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
-        #     from sqlalchemy import select
-        #     _orm = select(
-        #         Heartbeat.job_name
-        #     ).where(*filter_condition)
-        #     print(_orm)
-        #     data_result = (await dbs.execute(_orm)).scalars().first()
-        #
-        #     job_name = data_result.job_name
-        # data = {
-        #     "id": job_id,
-        #     "state": 1,
-        #     "heartbeat_alarm": datetime.datetime.now(),
-        # }
-        # await Heartbeat.update_data(dbs, data, is_delete=0)
-    # except Exception as ex:
-    #     print(ex)
-
-
-
 
 
 @clerk_scheduler_router.get('/display')
