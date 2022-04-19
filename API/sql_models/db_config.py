@@ -140,6 +140,13 @@ class PBaseModel(Base):
         return total
 
     @classmethod
+    async def get_data_count_or(cls, dbs, *args):
+        """获取数据量"""
+        _orm = select(func.count()).where(or_(*args))
+        total = (await dbs.execute(_orm)).scalar()
+        return total
+
+    @classmethod
     async def delete_data_logic(cls, dbs, ids, auto_commit=True):
         """逻辑删除"""
         _orm = select(cls).where(cls.id.in_(ids))
