@@ -42,7 +42,7 @@
         </a-row>
         </div>
         <span style="float: right; margin-top: 3px;">
-          <a-button type="primary" @click="queryevents">查询</a-button>
+          <a-button type="primary" :loading="queryloading"  @click="queryevents">查询</a-button>
           <a-button style="margin-left: 8px" @click="resettingqueryform">重置</a-button>
           <a @click="toggleAdvanced" style="margin-left: 8px">
             {{advanced ? '收起' : '展开'}}
@@ -106,6 +106,7 @@ export default {
         country: '',
       },
       advanced: true,
+      queryloading: false,
       columns: columns,
       dataSource: dataSource,
       selectedRows: [],
@@ -122,6 +123,7 @@ export default {
           res.data.urls[i]['index'] = i + 1
         }
         this.dataSource = res.data.urls
+        this.queryloading = false
       })
     },
     toggleAdvanced () {
@@ -135,6 +137,7 @@ export default {
     },
     // 查询
     queryevents() {
+      this.queryloading = true
       this.query.page = 1
       this.query.page_size = 10
       this.gettabledata()

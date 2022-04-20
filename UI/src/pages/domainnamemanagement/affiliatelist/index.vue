@@ -109,38 +109,36 @@
         </a-form-model>
       </template>
     </a-modal>
-    <!-- 子表表单 -->
-    <a-modal v-model="subvisible" title="添加跟踪域" on-ok="subhandleOk" :maskClosable="false" @afterClose="subhandleCancel()" :width='850'>
-      <template slot="footer">
-        <a-button key="back" @click="subhandleCancel">
-          取消
-        </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="subhandleOk">
-          提交
-        </a-button>
-      </template>
-      <template>
-        <a-form-model
-          ref="subruleForm"
-          :model="subforms"
-          :rules="subrules"
-          :label-col="{ span: 3 }"
-          :wrapper-col="{ span: 18 }"
-          :layout="layout"
-        >
-        <a-row>
-          <a-col>
-            <a-form-model-item label="跟踪域链接" prop="track_url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
-            <a-input v-model="subforms.track_url" type="textarea" />
-          </a-form-model-item>
-          </a-col>
-        </a-row>
-        </a-form-model>
-      </template>
-    </a-modal>
-    </div>
-
-    <a-pagination
+      <!-- 子表表单 -->
+      <a-modal v-model="subvisible" title="添加跟踪域" on-ok="subhandleOk" :maskClosable="false" @afterClose="subhandleCancel()" :width='850'>
+        <template slot="footer">
+          <a-button key="back" @click="subhandleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="subhandleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+            ref="subruleForm"
+            :model="subforms"
+            :rules="subrules"
+            :label-col="{ span: 3 }"
+            :wrapper-col="{ span: 18 }"
+            :layout="layout"
+          >
+          <a-row>
+            <a-col>
+              <a-form-model-item label="跟踪域链接" prop="track_url" :labelCol="{span: 3}" :wrapperCol="{span: 18}">
+              <a-input v-model="subforms.track_url" type="textarea" />
+            </a-form-model-item>
+            </a-col>
+          </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <a-pagination
       style="margin-top: 15px;"
       v-model="query.page"
       :total="total"
@@ -148,6 +146,7 @@
       @showSizeChange="onShowSizeChange"
       :show-total="total => `一共 ${total} 条`"
       @change="pageonChange" />
+    </div>
   </a-card>
 </template>
 

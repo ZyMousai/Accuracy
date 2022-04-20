@@ -41,7 +41,7 @@ class TrackAlliance(PBaseModel):
         # count = await TrackAlliance.get_data_count_or(dbs, *filter_condition)
 
         _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
-                                                                                            TrackUrl.alliance_id == cls.alliance_uuid).where(
+                                                                                             TrackUrl.alliance_id == cls.alliance_uuid).where(
             or_(*filter_condition))
         count = (await dbs.execute(_orm)).scalar()
         # return total
