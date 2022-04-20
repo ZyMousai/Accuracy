@@ -34,6 +34,7 @@
         </span>
       </a-form>
     </div>
+
     <div>
       <a-space class="operator">
         <a-button type="primary" @click="showModal"><a-icon type="plus-circle" />新增</a-button>
@@ -138,6 +139,15 @@
       </template>
     </a-modal>
     </div>
+
+    <a-pagination
+      style="margin-top: 15px;"
+      v-model="query.page"
+      :total="total"
+      show-size-changer
+      @showSizeChange="onShowSizeChange"
+      :show-total="total => `一共 ${total} 条`"
+      @change="pageonChange" />
   </a-card>
 </template>
 
@@ -201,6 +211,7 @@ export default {
         track_url: '',
         alliance_id: ''
       },
+      total: 0,
       layout: 'vertical',
       advanced: true,
       columns: columns,
@@ -233,6 +244,8 @@ export default {
         });
         console.log(res.data.data);
         this.dataSource = res.data.data
+        this.total = res.data.total
+        console.log(this.total);
       })
     },
     toggleAdvanced () {
@@ -330,6 +343,16 @@ export default {
         this.$message.success('删除成功！');
         this.gettabledata()
       })
+    },
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
     },
     cancel(e) {
       console.log(e);

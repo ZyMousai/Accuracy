@@ -1,10 +1,12 @@
 import datetime
+import json
 import time
 import hmac
 import urllib
 import hashlib
 import base64
 from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from dingtalkchatbot.chatbot import DingtalkChatbot
 from app.Clerk.Scheduler.DataValidation import Alarm, SearchJob, DisplaySearchJob, DisplayAddJob, DisplayUpdateJob
@@ -19,7 +21,8 @@ import binascii
 from pyDes import des, CBC, PAD_PKCS5
 from typing import List
 from typing import Optional
-
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # 系统管理 - 心跳功能
 clerk_scheduler_router = APIRouter(
@@ -29,12 +32,25 @@ clerk_scheduler_router = APIRouter(
 )
 MYSQL_URL = f"mysql+pymysql://{MysqlConfig.username}:{MysqlConfig.password}@{MysqlConfig.host}:" \
             f"{MysqlConfig.port}/{MysqlConfig.db}?charset=utf8"
+# MYSQL_URL = f"mysql+pymysql://root:root@127.0.0.1:3306/{MysqlConfig.db}?charset=utf8"
 # 执行器
 job_stores = {'default': SQLAlchemyJobStore(url=MYSQL_URL)}
 executors = {'default': ThreadPoolExecutor(20), 'processpool': ProcessPoolExecutor(5)}
-job_defaults = {'coalesce': False, 'max_instances': 20}
-heartbeat_scheduler = BackgroundScheduler(jobstores=job_stores, job_defaults=job_defaults, executors=executors)
+job_defaults = {'coalesce': True, 'max_instances': 20}
+# heartbeat_scheduler = AsyncIOScheduler(
+heartbeat_scheduler = BackgroundScheduler(
+    # timezone=get_localzone(),
+    timezone="Asia/Shanghai",
+    jobstores=job_stores,
+    job_defaults=job_defaults,
+    executors=executors
+)
 heartbeat_scheduler.start()
+engine = create_engine(MYSQL_URL, encoding='utf-8')
+# autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
+Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# 实例化
+session = Session()
 
 
 def des_encrypt(s):
@@ -43,7 +59,6 @@ def des_encrypt(s):
     :param s: 原始字符串
     :return: 加密后字符串，16进制
     """
-
     iv = globals_config.heartbeat_secret_key
     k = des(globals_config.heartbeat_secret_key, CBC, iv, pad=None, padmode=PAD_PKCS5)
     en = k.encrypt(s, padmode=PAD_PKCS5)
@@ -93,12 +108,14 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
 
     """
     try:
-        data = dict(des_descrypt(info.key))
+        data = info.key.encode('utf8')
+        data = json.loads(des_descrypt(data))
     except ValueError:
         return {"data": "illegal data"}
-    if "job_name" not in data or "alarm_time" not in data:
+    if "job_name" not in data or "interval" not in data:
         return {"data": "data field error"}
     job_name = data["job_name"]
+    interval = data["interval"]
     now_time = datetime.datetime.now()
 
     # 获取当前任务是否存在
@@ -129,11 +146,11 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
         else:
             # 当数据库中有这条数据时
             # 检查是否需要检测（alarm）
-            if data_result["alarm"] == 0:
+            if data_result.alarm == 0:
                 return {"data": "This task does not need to be run"}
             interval = data_result.interval
             # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
-            alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
+            # alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
             job_id = data_result.id
             data = {
                 "id": job_id,
@@ -142,37 +159,26 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
                 # "heartbeat_alarm": alarm_time,
             }
             await Heartbeat.update_data(dbs, data, is_delete=0)
+
     except Exception as ex:
         print(ex)
-        interval = 5.1
         job_id = -1
         # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
-        alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
+    alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
+    # alarm_time = now_time + datetime.timedelta(seconds=10)
     alarm_content = "心跳故障: " + job_name + " 在设置时间 " + str(interval) + " 分钟内，未发出心跳"  # 告警内容
+    print(alarm_time)
     heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[alarm_content, job_name, job_id],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
-                                coalesce=True,)  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                coalesce=True,  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                )
     response_json = {"data": job_name + " timed task created successfully"}
     return response_json
 
 
-async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
-    try:
-        if job_id == -1:
-            filter_condition = [
-                ('job_id', f'=="{job_name}"', job_name)
-            ]
-            data_result = await Heartbeat.get_one(dbs, *filter_condition)
-            job_name = data_result.job_name
-        data = {
-            "id": job_name,
-            "state": 1,
-            "heartbeat_alarm": datetime.datetime.now(),
-        }
-        await Heartbeat.update_data(dbs, data, is_delete=0)
-    except Exception as ex:
-        print(ex)
+def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
+    print("准备发送消息："+ job_name + "心跳异常")
 
     # 钉钉发消息
     timestamp = str(round(time.time() * 1000))
@@ -187,6 +193,19 @@ async def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = 
     sign_me = url_token + "&timestamp=" + timestamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hmac_code))
     xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
     xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
+
+    try:
+        hear = session.query(Heartbeat).filter(Heartbeat.id == job_id).first()
+        if hear:
+            hear.state = 1
+            hear.heartbeat_alarm = datetime.datetime.now()
+            session.commit()
+            session.close()
+            print({"code": "0000", "message": job_name + "修改成功"})
+        else:
+            print({"code": "0001", "message": job_name + "参数错误"})
+    except ArithmeticError:
+        print({"code": "0002", "message": job_name + "数据库错误"})
 
 
 @clerk_scheduler_router.get('/display')

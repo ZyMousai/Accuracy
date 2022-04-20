@@ -33,10 +33,20 @@ class TrackAlliance(PBaseModel):
         _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
                                                                                             TrackUrl.alliance_id == cls.alliance_uuid).where(
             or_(*filter_condition)).order_by().limit(page_size).offset((page - 1) * page_size)
+        print(_orm)
         result = (await dbs.execute(_orm)).all()
 
         # 处理分页
-        count = len(result)
+        # count = len(result)
+        # count = await TrackAlliance.get_data_count_or(dbs, *filter_condition)
+
+        _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
+                                                                                            TrackUrl.alliance_id == cls.alliance_uuid).where(
+            or_(*filter_condition))
+        count = (await dbs.execute(_orm)).scalar()
+        # return total
+
+        print(count)
         remainder = count % page_size
         if remainder == 0:
             total_page = int(count // page_size)
