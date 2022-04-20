@@ -184,12 +184,18 @@ async def get_alliance(info: SearchTrackAlliance = Depends(SearchTrackAlliance),
         包含分页分页信息的联盟列表
     """
     #  需要联表查询
-    filter_condition = {
-        "name_or_url": info.name_or_url,
-        "track_url": info.track_url
-    }
-    result, count, total_page = await TrackAlliance.get_all_detail_page_track(dbs, info.page, info.page_size,
-                                                                              **filter_condition)
+
+    # filter_condition = {
+    #     "name_or_url": info.name_or_url,
+    #     "track_url": info.track_url
+    # }
+    # result, count, total_page = await TrackAlliance.get_all_detail_page_track(dbs, info.page, info.page_size,
+    #                                                                           **filter_condition)
+    filter_condition = [
+        ('name_or_url', f'.like(f"%{info.name_or_url}%")', info.name_or_url),
+        ('track_url', f'.like(f"%{info.track_url}%")', info.track_url)
+    ]
+    result, count, total_page = await TrackAlliance.get_all_detail_page(dbs, info.page, info.page_size, *filter_condition)
 
     # 整理查询出来的数据
     result_new = []
