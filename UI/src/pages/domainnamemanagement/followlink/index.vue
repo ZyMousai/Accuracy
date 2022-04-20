@@ -112,7 +112,7 @@ export default {
       selectedRows: [],
       departmentoptions: ['iphone', "android", "ipad", "desktop"],
       devicetypelist: ['iphone', "android", "ipad", "desktop"],
-      countrylist: ['jp', "us", "tw", "gb", "de"],
+      countrylist: ['jp', "us", "tw", "gb", "de", "fr"],
     }
   },
   methods: {
