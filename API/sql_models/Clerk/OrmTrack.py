@@ -29,23 +29,19 @@ class TrackAlliance(PBaseModel):
         if track_url:
             filter_condition.append(TrackUrl.track_url.like(f"%{track_url}%"))
 
-        # 查询数据
-        _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
-                                                                                            TrackUrl.alliance_id == cls.alliance_uuid).where(
-            or_(*filter_condition)).order_by().limit(page_size).offset((page - 1) * page_size)
-        print(_orm)
+        # 查询全部数据的orm
+        all_orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url)\
+            .outerjoin(TrackUrl, TrackUrl.alliance_id == cls.alliance_uuid).where(or_(*filter_condition))
+
+        # 查询数据(对查全部的orm进行分页)
+        _orm = all_orm.order_by().limit(page_size).offset((page - 1) * page_size)
         result = (await dbs.execute(_orm)).all()
 
-        # 处理分页
-        # count = len(result)
-        # count = await TrackAlliance.get_data_count_or(dbs, *filter_condition)
-
-        _orm = select(cls.id, cls.name, cls.url, TrackUrl.id, TrackUrl.track_url).outerjoin(TrackUrl,
-                                                                                             TrackUrl.alliance_id == cls.alliance_uuid).where(
-            or_(*filter_condition))
-        count = (await dbs.execute(_orm)).scalar()
-        # return total
-
+        # 处理分页(对查全部的orm统计数量)
+        count_orm = select([func.count()]).select_from(all_orm)
+        count = (await dbs.execute(count_orm)).scalar()
+        if not count:
+            count = 0
         print(count)
         remainder = count % page_size
         if remainder == 0:
