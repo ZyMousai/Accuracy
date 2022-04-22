@@ -146,6 +146,28 @@ docker logs 容器id : 查看容器的所有日志信息
 
 
 ```
+**心跳功能调用方法示例**
+```
+import json
+import requests
+import binascii
+from pyDes import des, CBC, PAD_PKCS5
+# pip install pyDes==2.0.1
+heartbeat_secret_key = 'Haian1!_'
+def des_encrypt(s):
+    """
+    DES 加密
+    :param s: 原始字符串
+    :return: 加密后字符串，16进制
+    """
+    iv = heartbeat_secret_key
+    k = des(heartbeat_secret_key, CBC, iv, pad=None, padmode=PAD_PKCS5)
+    en = k.encrypt(s, padmode=PAD_PKCS5)
+    return binascii.b2a_hex(en)
+data = json.dumps({"job_name": "绿色状态测试", "interval": 1})
+encrypted_data = {"key": des_encrypt(data).decode('utf8')}
+print(requests.post("http://127.0.0.1:8000/api/Clerk/heartbeat/v1/", json=encrypted_data).json())
+```
 
 **requirements.txt**
 
