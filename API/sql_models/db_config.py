@@ -169,18 +169,8 @@ class PBaseModel(Base):
     async def get_data_count(cls, dbs, *args):
         """获取数据量"""
         try:
-            _orm = select(func.count()).where(*args)
-            total = (await dbs.execute(_orm)).scalar()
-        except Exception as e:
-            return JSONResponse(status_code=400, content={"detail": str(e)})
-        return total
-
-    @classmethod
-    async def get_data_count_or(cls, dbs, *args):
-        """获取数据量"""
-        try:
-            _orm = select(func.count()).where(or_(*args))
-            total = (await dbs.execute(_orm)).scalar()
+            count_orm = select([func.count()]).select_from(select(cls).where(*args))
+            total = (await dbs.execute(count_orm)).scalar()
         except Exception as e:
             return JSONResponse(status_code=400, content={"detail": str(e)})
         return total

@@ -103,6 +103,14 @@
      @cancel="onno">
       <p>是否删除所选项，删除后将无法恢复！</p>
     </a-modal>
+    <a-pagination
+      style="margin-top: 15px;"
+      v-model="query.page"
+      :total="total"
+      show-size-changer
+      @showSizeChange="onShowSizeChange"
+      :show-total="total => `一共 ${total} 条`"
+      @change="pageonChange" />
     </div>
   </a-card>
 </template>
@@ -152,6 +160,8 @@ export default {
   data () {
     return {
       query: {
+        page: 1,
+        page_size: 10,
         platform: '',
         account: '',
       },
@@ -169,6 +179,7 @@ export default {
       departmentoptions: [],
       tablename: '',
       visible: false,
+      total: 0,
       loading: false,
       teakURL: '',
       rules: {
@@ -189,6 +200,7 @@ export default {
   methods: {
     gettabledata() {
       GetVoluumsiteIdData(this.query).then(res => {
+        this.total = res.data.total
         console.log(res);
         res.data.data.forEach((i, y) => {
           i['index'] = y + 1
@@ -237,6 +249,16 @@ export default {
     },
     onError () {
       this.$message.error('复制失败！')
+    },
+    // 分页配置
+    onShowSizeChange(current, pageSize) {
+      this.query.page = 1
+      this.query.page_size = pageSize
+      this.gettabledata()
+    },
+    pageonChange(pageNumber) {
+      this.query.page = pageNumber
+      this.gettabledata()
     },
     // 删除对话框
     DeleteDate(id) {
