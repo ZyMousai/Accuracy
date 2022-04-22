@@ -10,7 +10,7 @@
                 :labelCol="{ span: 5 }"
                 :wrapperCol="{ span: 18, offset: 1 }"
               >
-                <a-input v-model="query.name" placeholder="输入框" />
+                <a-input v-model="query.job_name" placeholder="服务名" />
               </a-form-item>
             </a-col>
             <a-col :md="8" :sm="24">
