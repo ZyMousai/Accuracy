@@ -49,10 +49,6 @@ heartbeat_scheduler = BackgroundScheduler(
 heartbeat_scheduler.start()
 loop_detection_scheduler = BackgroundScheduler(timezone="Asia/Shanghai", job_defaults=job_defaults,
                                        SCHEDULER_API_ENABLED=True)
-# 定时刷新库里的campaign信息
-loop_detection_scheduler.add_job(loop_detection, "interval", seconds=5)
-loop_detection_scheduler.start()
-
 engine = create_engine(MYSQL_URL, encoding='utf-8')
 # autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -227,6 +223,11 @@ def loop_detection():
                 print({"code": "0001", "message": str(ids) + "参数错误"})
         except ArithmeticError:
             print({"code": "0002", "message": str(ids) + "数据库错误"})
+
+
+# 定时刷新库里的campaign信息
+loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5)
+loop_detection_scheduler.start()
 
 
 def trigger_an_alarm(**args):
