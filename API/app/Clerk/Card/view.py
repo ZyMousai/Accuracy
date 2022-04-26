@@ -283,8 +283,6 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
                 'name': name,
                 'card_status': 1
             })
-        result = await TbCard.add_data_many(dbs, sql_list)
-        response_json = {"data": result}
     elif {'卡号', '状态', "总余额", '拒付率', "有效期", "安全码", "开卡时间", "备注"} <= set_header:
         card_number_ind = header.index("卡号")
         face_value_ind = header.index("总余额")  # 面值
@@ -345,8 +343,6 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
                 'platform': i[platform_ind],
                 'card_status': 1
             })
-        result = await TbCard.add_data_many(dbs, sql_list)
-        response_json = {"data": result}
     elif {'卡ID', '任务ID', "唯一标识", '信用卡卡号', "安全码", "信用卡到期日", "信用卡开卡额度($)", "信用卡余额", "卡段类型",
           "添加时间", "状态", "卡备注"} <= set_header:
         if "卡姓名地址" not in set_header:
@@ -380,10 +376,11 @@ async def create_cards_excel(file: UploadFile = File(...), dbs: AsyncSession = D
                 'name': name,
                 'card_status': 1
             })
-        result = await TbCard.add_data_many(dbs, sql_list)
-        response_json = {"data": result}
+
     else:
         return HTTPException(status_code=501, detail="数据表中没有面值、总余额、信用卡开卡额度($)中的一个")
+    result = await TbCard.add_data_many(dbs, sql_list)
+    response_json = {"data": result}
     return response_json
 
 

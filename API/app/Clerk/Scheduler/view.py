@@ -23,6 +23,7 @@ from typing import List
 from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from queue import Queue
 
 # 系统管理 - 心跳功能
 clerk_scheduler_router = APIRouter(
@@ -46,12 +47,19 @@ heartbeat_scheduler = BackgroundScheduler(
     executors=executors
 )
 heartbeat_scheduler.start()
+loop_detection_scheduler = BackgroundScheduler(timezone="Asia/Shanghai", job_defaults=job_defaults,
+                                       SCHEDULER_API_ENABLED=True)
+# 定时刷新库里的campaign信息
+loop_detection_scheduler.add_job(loop_detection, "interval", seconds=5)
+loop_detection_scheduler.start()
+
 engine = create_engine(MYSQL_URL, encoding='utf-8')
 # autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 实例化
 session = Session()
-
+# 报警队列
+heartbeat_q = Queue()
 
 def des_encrypt(s):
     """
@@ -159,53 +167,99 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
                 # "heartbeat_alarm": alarm_time,
             }
             await Heartbeat.update_data(dbs, data, is_delete=0)
-
     except Exception as ex:
         print(ex)
         job_id = -1
         # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
     # alarm_time = now_time + datetime.timedelta(seconds=10)
-    alarm_content = "心跳故障: " + job_name + " 在设置时间 " + str(interval) + " 分钟内，未发出心跳"  # 告警内容
     print(alarm_time)
-    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[alarm_content, job_name, job_id],
+    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, job_id],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
-                                coalesce=True,  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
-                                )
+                                coalesce=True)  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
     response_json = {"data": job_name + " timed task created successfully"}
     return response_json
 
 
-def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
-    print("准备发送消息："+ job_name + "心跳异常")
+def loop_detection():
+    loop_li = []
+    ids = []
+    # 获取队列里所有要报警的任务数据
+    while not heartbeat_q.empty():
+        loop_li.append(heartbeat_q.get())
+    if loop_li:
+        loop_di = {}  # 要发送钉钉数据的name和限制的时长
+        # 对数据摘取
+        for loop in loop_li:
+            if loop[1] in loop_di:
+                loop_di[loop[1]].append(loop[0])
+            else:
+                loop_di[loop[1]] = [loop[0]]
+            ids.append(loop[2])
 
-    # 钉钉发消息
-    timestamp = str(round(time.time() * 1000))
-    try:
-        url_token = globals_config.urlToken  # 钉钉群机器人Webhook
-        secret = globals_config.secret  # 钉钉群机器人secret
-    except Exception as ex:
-        print(ex)
-        raise Exception("config.py folder has no url_token or secret fields")
-    string_to_sign_enc = '{}\n{}'.format(timestamp, secret).encode('utf-8')
-    hmac_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
-    sign_me = url_token + "&timestamp=" + timestamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hmac_code))
-    xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
-    xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
+        # 发送钉钉
+        for k, v in loop_di.items():
+            alarm_content = "心跳故障: " + str(v) + " 在设置时间 " + str(k) + " 分钟内，未发出心跳"  # 告警内容
+            stamp = str(round(time.time() * 1000))
+            try:
+                url_token = globals_config.urlToken  # 钉钉群机器人Webhook
+                secret = globals_config.secret  # 钉钉群机器人secret
+            except Exception as ex:
+                print(ex)
+                raise Exception("config.py folder has no url_token or secret fields")
+            string_to_sign_enc = '{}\n{}'.format(stamp, secret).encode('utf-8')
+            hm_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
+            sign_me = url_token + "&timestamp=" + stamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hm_code))
+            xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
+            xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
 
-    try:
-        hear = session.query(Heartbeat).filter(Heartbeat.id == job_id).first()
-        if hear:
-            hear.state = 1
-            hear.heartbeat_alarm = datetime.datetime.now()
-            session.commit()
-            session.close()
-            print({"code": "0000", "message": job_name + "修改成功"})
-        else:
-            print({"code": "0001", "message": job_name + "参数错误"})
-    except ArithmeticError:
-        print({"code": "0002", "message": job_name + "数据库错误"})
+        try:
+            hears = session.query(Heartbeat).filter(Heartbeat.id.in_(ids)).all()
+            if hears:
+                for he in hears:
+                    he.state = 1
+                    he.heartbeat_alarm = datetime.datetime.now()
+                session.commit()
+                session.close()
+                print({"code": "0000", "message": str(ids) + "修改成功"})
+            else:
+                print({"code": "0001", "message": str(ids) + "参数错误"})
+        except ArithmeticError:
+            print({"code": "0002", "message": str(ids) + "数据库错误"})
+
+
+def trigger_an_alarm(**args):
+    heartbeat_q.put([args])
+# def trigger_an_alarm(alarm_content, job_name, job_id, dbs: AsyncSession = Depends(db_session)):
+#     print("准备发送消息：" + job_name + "心跳异常")
+#
+#     # 钉钉发消息
+#     timestamp = str(round(time.time() * 1000))
+#     try:
+#         url_token = globals_config.urlToken  # 钉钉群机器人Webhook
+#         secret = globals_config.secret  # 钉钉群机器人secret
+#     except Exception as ex:
+#         print(ex)
+#         raise Exception("config.py folder has no url_token or secret fields")
+#     string_to_sign_enc = '{}\n{}'.format(timestamp, secret).encode('utf-8')
+#     hmac_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
+#     sign_me = url_token + "&timestamp=" + timestamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hmac_code))
+#     xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
+#     xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
+#
+#     try:
+#         hear = session.query(Heartbeat).filter(Heartbeat.id == job_id).first()
+#         if hear:
+#             hear.state = 1
+#             hear.heartbeat_alarm = datetime.datetime.now()
+#             session.commit()
+#             session.close()
+#             print({"code": "0000", "message": job_name + "修改成功"})
+#         else:
+#             print({"code": "0001", "message": job_name + "参数错误"})
+#     except ArithmeticError:
+#         print({"code": "0002", "message": job_name + "数据库错误"})
 
 
 @clerk_scheduler_router.get('/display')
