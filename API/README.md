@@ -150,7 +150,30 @@ docker logs 容器id : 查看容器的所有日志信息
 ```
 import json
 import requests
-from util.crypto import encrypt
+from binascii import b2a_hex
+from Crypto.Cipher import AES
+
+PASSWORD_KEY_BYTE = "".encode()
+IV_BYTE = "".encode()
+
+
+def add_to_16(text):
+    if len(text.encode('utf-8')) % 16:
+        add = 16 - (len(text.encode('utf-8')) % 16)
+    else:
+        add = 0
+    text = text + ('\0' * add)
+    return text.encode('utf-8')
+
+
+# 加密函数
+def encrypt(text):
+    mode = AES.MODE_CBC
+    text = add_to_16(text)
+    cryptos = AES.new(PASSWORD_KEY_BYTE, mode, IV_BYTE)
+    cipher_text = cryptos.encrypt(text)
+    return b2a_hex(cipher_text).decode()
+
 
 data = json.dumps({"job_name": "绿色状态测试", "interval": 1})
 encrypted_data = {"key": encrypt(data)}
