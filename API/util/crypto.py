@@ -1,13 +1,11 @@
 from binascii import b2a_hex, a2b_hex
-
+from config import MysqlConfig, globals_config
 from Crypto.Cipher import AES
 import hashlib
 
 # 如果text不足16位的倍数就用空格补足为16位
-PASSWORD_KEY = ''
-IV = ''
-PASSWORD_KEY_BYTE = PASSWORD_KEY.encode()
-IV_BYTE = IV.encode()
+PASSWORD_KEY_BYTE = globals_config.PASSWORD_KEY.encode()
+IV_BYTE = globals_config.IV.encode()
 
 
 def add_to_16(text):
