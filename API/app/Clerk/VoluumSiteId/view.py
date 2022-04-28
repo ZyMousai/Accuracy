@@ -62,7 +62,7 @@ async def get_campaign_site_url(m_id: str, s_id: str, dbs: AsyncSession = Depend
         site_id = random.choice(site_id_list[4:10])
     else:
         if not site_id_list:
-            return HTTPException(status_code=401, detail='爬虫失效')
+            return HTTPException(status_code=401, detail='近期没有siteid')
         site_id = random.choice(site_id_list[:-3:-1])
     # 3. 根据campaigns-id获取url
     # 通过主id拿到从id，查询主id最近的site，但是更换的链接是从id

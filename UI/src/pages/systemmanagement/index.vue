@@ -273,6 +273,7 @@ const columns = [
   { title: "服务名", dataIndex: "job_name" },
   { title: "断开时报警时间", dataIndex: "heartbeat_alarm" },
   { title: "创建时间", dataIndex: "create_time" },
+  { title: "上次心跳", dataIndex: "last_heartbeat" },
   {
     title: "是否启用",
     dataIndex: "alarm",
@@ -410,12 +411,36 @@ export default {
           this.dataSource = res.data.data;
           this.total = res.data.total;
           console.log(this.total);
+          console.log("ti");
+          //年
+          let year = new Date().getFullYear();
+          console.log(year)
+          //月份是从0月开始获取的，所以要+1;
+          let month = (new Date().getMonth() +1).toString().padStart(2,0);
+          console.log(month)
+          //日
+          let day = (new Date().getDate()).toString().padStart(2,0);
+          console.log(day)
+          console.log("ti");
           this.tableloading = false;
           for (var i = 0; i < re_da.length; i++) {
             // 时间格式转换
             var heartbeat_alarm = re_da[i]["heartbeat_alarm"];
             if (heartbeat_alarm != null) {
               re_da[i]["heartbeat_alarm"] = heartbeat_alarm.replace("T", " ");
+            }
+            var last_heartbeat = re_da[i]["last_heartbeat"];
+            if (last_heartbeat != null) {
+              if (last_heartbeat.includes(year + '-' + month + '-' + day)){
+                re_da[i]["last_heartbeat"] = last_heartbeat.replace(year + '-' + month + '-' + day + "T", "");
+              // }else if(last_heartbeat.includes(year + '-' + month)){
+              //   re_da[i]["last_heartbeat"] = last_heartbeat.replace(year + '-' + month + '-', "").replace("T", " ");
+              }else if(last_heartbeat.includes(year)){
+                re_da[i]["last_heartbeat"] = last_heartbeat.replace(year + '-', "").replace("T", " ");
+              }else {
+                re_da[i]["last_heartbeat"] = last_heartbeat.replace("T", " ");
+              }
+
             }
             re_da[i]["create_time"] = re_da[i]["create_time"].replace("T", " ");
             // 时间格式转换（使用插件moment）
