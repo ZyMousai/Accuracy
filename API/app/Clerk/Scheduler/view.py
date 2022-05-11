@@ -146,7 +146,8 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, job_id],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
-                                coalesce=True)  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                # coalesce=True  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                )
     response_json = {"data": job_name + " timed task created successfully"}
     return response_json
 

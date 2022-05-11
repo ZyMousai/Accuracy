@@ -1,498 +1,504 @@
 <template>
-    <a-card>
-        <div :class="advanced ? 'search' : null">
-            <a-form layout="horizontal" :model="query">
-                <div :class="advanced ? null: 'fold'">
-                    <a-row>
-                        <a-col :md="8" :sm="24">
-                            <a-form-item
-                                    label="卡号查询"
-                                    :labelCol="{span: 5}"
-                                    :wrapperCol="{span: 18, offset: 1}"
-                            >
-                                <a-input v-model="query.card_number" placeholder="请输入卡号"/>
-                            </a-form-item>
-                        </a-col>
+  <a-card>
+    <div :class="advanced ? 'search' : null">
+      <a-form layout="horizontal" :model="query">
+        <div :class="advanced ? null: 'fold'">
+          <a-row>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="卡号查询"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.card_number" placeholder="请输入卡号"/>
+              </a-form-item>
+            </a-col>
 
-                        <a-col :md="8" :sm="24">
-                            <a-form-item
-                                    label="平台查询"
-                                    :labelCol="{span: 5}"
-                                    :wrapperCol="{span: 18, offset: 1}"
-                            >
-                                <a-input v-model="query.platform" placeholder="请输入平台"/>
-                            </a-form-item>
-                        </a-col>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="平台查询"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.platform" placeholder="请输入平台"/>
+              </a-form-item>
+            </a-col>
 
-                    </a-row>
-                </div>
-                <span style="float: right; margin-top: 3px;">
+          </a-row>
+        </div>
+        <span style="float: right; margin-top: 3px;">
           <a-button type="primary" @click="queryevents">查询</a-button>
           <a-button style="margin-left: 8px" @click="resettingqueryform">重置</a-button>
           <a @click="toggleAdvanced" style="margin-left: 8px">
-            {{advanced ? '收起' : '展开'}}
+            {{ advanced ? '收起' : '展开' }}
             <a-icon :type="advanced ? 'up' : 'down'"/>
           </a>
         </span>
-            </a-form>
+      </a-form>
+    </div>
+    <div>
+      <a-space class="operator">
+        <a-upload
+            name="file"
+            :multiple="true"
+            :action="updocuurl"
+            :headers="headers"
+            :showUploadList="false"
+            :before-upload="beforeUpload"
+            @change="handleChange"
+        >
+          <a-button type="primary">
+            <a-icon type="cloud-upload"/>
+            上传excel
+          </a-button>
+        </a-upload>
+        <a-button type="primary" @click="showModaluid">
+          <a-icon type="plus-circle"/>
+          uid消耗与佣金查询
+        </a-button>
+        <a-button type="primary" @click="showaddcadrModaluid">
+          <a-icon type="plus-circle"/>
+          新增单个卡号
+        </a-button>
+        <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
+      </a-space>
+      <a-table
+          :columns="columns"
+          :data-source="data"
+          class="components-table-demo-nested"
+          :rowKey='record=>record.id'
+          :expandedRowKeys="expandedRowKeys"
+          @expand="expandinnerlist"
+          :pagination="false"
+          :key="componentKey"
+      >
+        <!--              :expandIconAsCell="false"-->
+        <!--        note-->
+
+        <div slot="note" slot-scope="record">
+          <a-input
+              slot="note"
+              v-if="record.note_editable"
+              style="margin: -5px 0"
+              :value="text"
+              @change="e => handleChange(e.target.value, record.key, col)"
+          />
+          <template v-else>
+            {{ text }}
+          </template>
         </div>
-        <div>
-            <a-space class="operator">
-                <a-upload
-                        name="file"
-                        :multiple="true"
-                        :action="updocuurl"
-                        :headers="headers"
-                        :showUploadList="false"
-                        :before-upload="beforeUpload"
-                        @change="handleChange"
-                >
-                    <a-button type="primary">
-                        <a-icon type="cloud-upload"/>
-                        上传excel
-                    </a-button>
-                </a-upload>
-                <a-button type="primary" @click="showModaluid">
-                    <a-icon type="plus-circle" />
-                    uid消耗与佣金查询
-                </a-button>
-                <a-button type="primary" @click="showaddcadrModaluid">
-                    <a-icon type="plus-circle" />
-                    新增单个卡号
-                </a-button>
-                <!-- <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button> -->
-            </a-space>
-            <a-table
-              :columns="columns"
-              :data-source="data"
-              class="components-table-demo-nested"
-              :rowKey='record=>record.id'
-              :expandedRowKeys="expandedRowKeys"
-              @expand="expandinnerlist"
-              :pagination="false"
-              :key="componentKey"
-            >
-                <!--        note-->
-
-                <div slot="note" slot-scope="record">
-                    <a-input
-                            slot="note"
-                            v-if="record.note_editable"
-                            style="margin: -5px 0"
-                            :value="text"
-                            @change="e => handleChange(e.target.value, record.key, col)"
-                    />
-                    <template v-else>
-                        {{ text }}
-                    </template>
-                </div>
 
 
-                <div slot="cardstatus" slot-scope="record">
-                    <a-switch slot="cardstatus" :loading="record.card_status_loading" default-checked
-                              :checked="record.card_status ? true : false"
-                              @change="record.card_status_loading=true;card_status_change(record.card_status, record.id)"/>
-                </div>
-                <div slot="retain_" slot-scope="record">
-                    <a-switch slot="retain_" :loading="record.retain_loading" default-checked
-                              :checked="record.retain ? true : false"
-                              @change="record.retain_loading=true;retain_change(record.retain, record.id)"/>
-                </div>
-                <div slot="operation" slot-scope="record">
-                    <a slot="operation" @click="edit(record)">编辑</a>
-                    <a slot="operation" style="margin-left: 5px;" @click="table_delete(record.id)">删除</a>
-                    <a slot="operation" style="margin-left: 5px;" @click="table_add(record.id)">新增子表</a>
-                </div>
-                <a-table
-                        slot="expandedRowRender"
-                        :columns="innerColumns"
-                        :data-source="innerData"
-                        :pagination="false"
-                        :title="onHeaderCell"
-                        :rowKey='record=>record.id'
-                >
-                    <div slot="secondary_consumption" slot-scope="record">
-                        <a-switch slot="secondary_consumption" :loading="record.secondary_consumption_loading"
-                                  default-checked
-                                  :checked="record.secondary_consumption ? true : false"
-                                  @change="
+        <div slot="cardstatus" slot-scope="record">
+          <a-switch slot="cardstatus" :loading="record.card_status_loading" default-checked
+                    :checked="record.card_status ? true : false"
+                    @change="record.card_status_loading=true;card_status_change(record.card_status, record.id)"/>
+        </div>
+        <div slot="retain_" slot-scope="record">
+          <a-switch slot="retain_" :loading="record.retain_loading" default-checked
+                    :checked="record.retain ? true : false"
+                    @change="record.retain_loading=true;retain_change(record.retain, record.id)"/>
+        </div>
+        <div slot="operation" slot-scope="record">
+          <a slot="operation" @click="edit(record)">编辑</a>
+          <a slot="operation" style="margin-left: 5px;" @click="table_delete(record.id)">删除</a>
+          <a slot="operation" style="margin-left: 5px;" @click="table_add(record.id)">新增子表</a>
+        </div>
+        <a-table
+            slot="expandedRowRender"
+            :columns="innerColumns"
+            :data-source="innerData"
+            :pagination="false"
+            :title="onHeaderCell"
+            :rowKey='record=>record.id'
+        >
+          <div slot="secondary_consumption" slot-scope="record">
+            <a-switch slot="secondary_consumption" :loading="record.secondary_consumption_loading"
+                      default-checked
+                      :checked="record.secondary_consumption ? true : false"
+                      @change="
                         record.secondary_consumption_loading=true;
                         secondary_consumption_change(record.secondary_consumption, record.id);
                       "
-                        />
-                    </div>
-                    <div slot="inneroperation" class="table-operation" slot-scope="record">
-                        <a slot="inneroperation" @click="inneredit(record)">编辑</a>
-                        <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record.id)">删除</a>
-                    </div>
-                </a-table>
-            </a-table>
-            <!-- 编辑表单 -->
-            <a-modal v-model="visible" title="卡编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
-                <template slot="footer">
-                    <a-button key="back" @click="handleCancel">
-                        取消
-                    </a-button>
-                    <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
-                        提交
-                    </a-button>
-                </template>
-                <template>
-                    <a-form-model
-                            ref="ruleForm"
-                            :model="form"
-                            :rules="editrules"
-                            :label-col="{ span: 4 }"
-                            :wrapper-col="{ span: 14 }"
-                    >
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="card_number" label="卡号" prop="creator">
-                                    <a-input v-model="form.card_number" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="valid_period" label="有效期" prop="creator">
-                                    <a-input v-model="form.valid_period" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="cvv" label="cvv" prop="creator">
-                                    <a-input v-model="form.cvv" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="face_value" label="面值" prop="creator">
-                                    <a-input v-model="form.face_value" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
-                                    <a-input v-model="form.name" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="10">
-                                <a-form-model-item ref="note" label="备注" prop="creator">
-                                    <a-input v-model="form.note" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="platform" label="平台" prop="creator">
-                                    <a-input v-model="form.platform" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                    </a-form-model>
-                </template>
-            </a-modal>
-            <!-- 编辑表单 -->
-            <a-modal v-model="innervisible" :title="taskname" on-ok="innerhandleOk" :maskClosable="false" @afterClose="innerhandleCancel()">
-                <template slot="footer">
-                    <a-button key="back" @click="innerhandleCancel">
-                        取消
-                    </a-button>
-                    <a-button key="submit" type="primary" :loading="innerloading" @click="innerhandleOk">
-                        提交
-                    </a-button>
-                </template>
-                <template>
-                    <a-form-model
-                            ref="innerruleForm"
-                            :model="innerform"
-                            :rules="editrules"
-                            :label-col="{ span: 4 }"
-                            :wrapper-col="{ span: 14 }"
-                    >
-                        <a-row :gutter="32">
-                            <!--              <a-col :span="10">-->
-                            <!--                <a-form-model-item ref="uid" label="uuid" prop="creator">-->
-                            <!--                  <a-input v-model="innerform.uid" />-->
-                            <!--                </a-form-model-item>-->
-                            <!--              </a-col>-->
-                            <a-col :span="15">
-                              <a-form-model-item ref="uid" label="UUID" prop="creator">
-                                <a-select mode="tags" v-model="innerform.uid" placeholder="uuid" @click.native="uuidclick" @change="selecthandleChange">
-                                  <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
-                                  <a-select-option v-for="item in uuidSelect" :key="item.id.toString()" :value="'uuid'+item.id.toString()">
-                                      {{ item.uid }}
-                                  </a-select-option>
-                                </a-select>
-                              </a-form-model-item>
-<!--                              <a-button type="primary" :loading="innerloading" @click="searchTask">-->
-<!--                                  搜索任务名-->
-<!--                              </a-button>-->
-                            </a-col>
-                            <a-col :span="15">
-                                <a-form-model-item ref="task" label="任务名" prop="creator">
-                                    <a-input v-model="innerform.task" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="15">
-                                <a-form-model-item ref="commission" label="佣金" prop="creator">
-                                    <a-input v-model="innerform.commission" />
-                                </a-form-model-item>
-                            </a-col>
-                            <a-col :span="15">
-                                <a-form-model-item ref="consume" label="消耗" prop="creator">
-                                    <a-input v-model="innerform.consume" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="16">
-                            <a-col :span="15">
-                                <a-form-model-item ref="user" label="使用人" prop="creator">
-                                    <a-input v-model="innerform.user" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                    </a-form-model>
-                </template>
-            </a-modal>
-            <!-- 新增单个卡号表单 -->
-            <a-modal v-model="addcadrvisible" title="新增号" on-ok="addcadrhandleOk" :maskClosable="false" @afterClose="addcadrhandleCancel()" :width='850'>
-            <template slot="footer">
-              <a-button key="back" @click="addcadrhandleCancel">
-                取消
-              </a-button>
-              <a-button key="submit" type="primary" :loading="loading" @click="addcadrhandleOk">
-                提交
-              </a-button>
-            </template>
-            <template>
-              <a-form-model
-                ref="addcadrruleForm"
-                :model="addcadrform"
-                :rules="addcadrrules"
-                :label-col="{ span: 6 }"
-                :wrapper-col="{ span: 14 }"
-                layout="vertical"
-              >
-              <a-row :gutter="16">
-                <a-col :span="10">
-                  <a-form-model-item ref="card_number" label="卡号" prop="card_number">
-                    <a-input v-model="addcadrform.card_number" />
-                  </a-form-model-item>
-                </a-col>
-                <a-col :span="10">
-                  <a-form-model-item ref="name" label="持卡人姓名" prop="name">
-                    <a-input v-model="addcadrform.name" />
-                  </a-form-model-item>
-                </a-col>
-              </a-row>
-              <a-row :gutter="16">
-                <a-col :span="10">
-                  <a-form-model-item ref="face_value" label="面值" prop="face_value">
-                    <a-input v-model="addcadrform.face_value" />
-                  </a-form-model-item>
-                </a-col>
-                <a-col :span="10">
-                  <a-form-model-item ref="cvv" label="cvv" prop="cvv">
-                    <a-input v-model="addcadrform.cvv" />
-                  </a-form-model-item>
-                </a-col>
-              </a-row>
-              <a-row :gutter="16">
-                <a-col :span="10">
-                  <a-form-model-item ref="valid_period" label="有效期" prop="valid_period">
-                    <a-input v-model="addcadrform.valid_period" />
-                  </a-form-model-item>
-                </a-col>
-                <a-col :span="10">
-                  <a-form-model-item label="卡状态" prop="card_status">
+            />
+          </div>
+          <div slot="inneroperation" class="table-operation" slot-scope="record">
+            <a slot="inneroperation" @click="inneredit(record)">编辑</a>
+            <a slot="inneroperation" style="margin-left: 5px;" @click="innerdelete(record.id)">删除</a>
+          </div>
+        </a-table>
+      </a-table>
+      <!-- 编辑表单 -->
+      <a-modal v-model="visible" title="卡编辑" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel()">
+        <template slot="footer">
+          <a-button key="back" @click="handleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="handleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+              ref="ruleForm"
+              :model="form"
+              :rules="editrules"
+              :label-col="{ span: 4 }"
+              :wrapper-col="{ span: 14 }"
+          >
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="card_number" label="卡号" prop="creator">
+                  <a-input v-model="form.card_number"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="valid_period" label="有效期" prop="creator">
+                  <a-input v-model="form.valid_period"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="cvv" label="cvv" prop="creator">
+                  <a-input v-model="form.cvv"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="face_value" label="面值" prop="creator">
+                  <a-input v-model="form.face_value"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="name" label="卡姓名地址" prop="creator">
+                  <a-input v-model="form.name"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="note" label="备注" prop="creator">
+                  <a-input v-model="form.note"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="platform" label="平台" prop="creator">
+                  <a-input v-model="form.platform"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <!-- 编辑表单 -->
+      <a-modal v-model="innervisible" :title="taskname" on-ok="innerhandleOk" :maskClosable="false"
+               @afterClose="innerhandleCancel()">
+        <template slot="footer">
+          <a-button key="back" @click="innerhandleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="innerloading" @click="innerhandleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+              ref="innerruleForm"
+              :model="innerform"
+              :rules="editrules"
+              :label-col="{ span: 4 }"
+              :wrapper-col="{ span: 14 }"
+          >
+            <a-row :gutter="32">
+              <!--              <a-col :span="10">-->
+              <!--                <a-form-model-item ref="uid" label="uuid" prop="creator">-->
+              <!--                  <a-input v-model="innerform.uid" />-->
+              <!--                </a-form-model-item>-->
+              <!--              </a-col>-->
+              <a-col :span="15">
+                <a-form-model-item ref="uid" label="UUID" prop="creator">
+                  <a-select mode="tags" v-model="innerform.uid" placeholder="uuid" @click.native="uuidclick"
+                            @change="selecthandleChange">
+                    <!--                <a-select mode="tags" label="uuid" placeholder="uuid"  @change="selecthandleChange">-->
+                    <a-select-option v-for="item in uuidSelect" :key="item.id.toString()"
+                                     :value="'uuid'+item.id.toString()">
+                      {{ item.uid }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-model-item>
+                <!--                              <a-button type="primary" :loading="innerloading" @click="searchTask">-->
+                <!--                                  搜索任务名-->
+                <!--                              </a-button>-->
+              </a-col>
+              <a-col :span="15">
+                <a-form-model-item ref="task" label="任务名" prop="creator">
+                  <a-input v-model="innerform.task"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="15">
+                <a-form-model-item ref="commission" label="佣金" prop="creator">
+                  <a-input v-model="innerform.commission"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="15">
+                <a-form-model-item ref="consume" label="消耗" prop="creator">
+                  <a-input v-model="innerform.consume"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="15">
+                <a-form-model-item ref="user" label="使用人" prop="creator">
+                  <a-input v-model="innerform.user"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <!-- 新增单个卡号表单 -->
+      <a-modal v-model="addcadrvisible" title="新增号" on-ok="addcadrhandleOk" :maskClosable="false"
+               @afterClose="addcadrhandleCancel()" :width='850'>
+        <template slot="footer">
+          <a-button key="back" @click="addcadrhandleCancel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="addcadrhandleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+              ref="addcadrruleForm"
+              :model="addcadrform"
+              :rules="addcadrrules"
+              :label-col="{ span: 6 }"
+              :wrapper-col="{ span: 14 }"
+              layout="vertical"
+          >
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="card_number" label="卡号" prop="card_number">
+                  <a-input v-model="addcadrform.card_number"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="name" label="持卡人姓名" prop="name">
+                  <a-input v-model="addcadrform.name"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="face_value" label="面值" prop="face_value">
+                  <a-input v-model="addcadrform.face_value"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="cvv" label="cvv" prop="cvv">
+                  <a-input v-model="addcadrform.cvv"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="valid_period" label="有效期" prop="valid_period">
+                  <a-input v-model="addcadrform.valid_period"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item label="卡状态" prop="card_status">
                   <a-select v-model="addcadrform.card_status" placeholder="请选择卡状态">
                     <a-select-option v-for="item in card_statuslist" :key="item.vlaue" :value="item.vlaue">
-                      {{item.name}}
+                      {{ item.name }}
                     </a-select-option>
                   </a-select>
                 </a-form-model-item>
-                </a-col>
-              </a-row>
-              <a-row :gutter="16">
-                <a-col :span="10">
-                  <a-form-model-item ref="platform" label="平台" prop="platform">
-                    <a-input v-model="addcadrform.platform" />
-                  </a-form-model-item>
-                </a-col>
-                <a-col :span="10">
-                  <a-form-model-item ref="note" label="备注" prop="note">
-                    <a-input v-model="addcadrform.note" />
-                  </a-form-model-item>
-                </a-col>
-              </a-row>
-              <a-row :gutter="16">
-                <a-col :span="10">
-                  <a-form-model-item ref="card_name" label="卡姓名地址" prop="card_name">
-                    <a-input v-model="addcadrform.card_name" />
-                  </a-form-model-item>
-                </a-col>
-                <a-col :span="10">
-                  <a-form-model-item label="是否保留" prop="retain">
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="platform" label="平台" prop="platform">
+                  <a-input v-model="addcadrform.platform"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item ref="note" label="备注" prop="note">
+                  <a-input v-model="addcadrform.note"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="card_name" label="卡姓名地址" prop="card_name">
+                  <a-input v-model="addcadrform.card_name"/>
+                </a-form-model-item>
+              </a-col>
+              <a-col :span="10">
+                <a-form-model-item label="是否保留" prop="retain">
                   <a-select v-model="addcadrform.retain" placeholder="请选择是否保留">
                     <a-select-option v-for="item in card_statuslist" :key="item.vlaue" :value="item.vlaue">
-                      {{item.name}}
+                      {{ item.name }}
                     </a-select-option>
                   </a-select>
                 </a-form-model-item>
-                </a-col>
-              </a-row>
-              </a-form-model>
-            </template>
-            </a-modal>
-            <!-- 删除确认对话框 -->
-            <a-modal
-                    title="是否删除所选项？"
-                    :visible="dialogvisible"
-                    ok-text="是"
-                    cancel-text="否"
-                    @ok="onok"
-                    @cancel="onno">
-                <p>删除后将无法恢复！</p>
-            </a-modal>
-            <!-- 删除子表任务确认对话框 -->
-            <a-modal
-                    title="是否删除所选项？"
-                    :visible="dialogvisibleson"
-                    ok-text="是"
-                    cancel-text="否"
-                    @ok="onokson"
-                    @cancel="onnoson">
-                <p>删除后将无法恢复！</p>
-            </a-modal>
+              </a-col>
+            </a-row>
+          </a-form-model>
+        </template>
+      </a-modal>
+      <!-- 删除确认对话框 -->
+      <a-modal
+          title="是否删除所选项？"
+          :visible="dialogvisible"
+          ok-text="是"
+          cancel-text="否"
+          @ok="onok"
+          @cancel="onno">
+        <p>删除后将无法恢复！</p>
+      </a-modal>
+      <!-- 删除子表任务确认对话框 -->
+      <a-modal
+          title="是否删除所选项？"
+          :visible="dialogvisibleson"
+          ok-text="是"
+          cancel-text="否"
+          @ok="onokson"
+          @cancel="onnoson">
+        <p>删除后将无法恢复！</p>
+      </a-modal>
 
-            <!-- uid对应的消耗和佣金 -->
-            <a-modal v-model="visibleuid" title="消耗和佣金" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceluid()" :width='850'>
-                <template slot="footer">
-                    <a-button key="back" @click="handleCanceluid">
-                        取消
-                    </a-button>
-                    <a-button key="submit" type="primary" :loading="loading" @click="uidhandleOk">
-                        提交
-                    </a-button>
-                </template>
-                <template>
-                    <a-form-model
-                    :label-col="{ span: 6 }"
-                    :wrapper-col="{ span: 14 }"
-                    layout="vertical"
-                    >
-                            <!--ref="ruleForm"-->
-                            <!--:model="form"-->
-                            <!--:rules="rules"-->
-                        <a-row :gutter="16">
-                            <a-col :span="10">
-                                <a-form-model-item ref="uid" label="uid" prop="uid">
-                                    <a-input v-model="uid" />
-                                </a-form-model-item>
-                            </a-col>
-                        </a-row>
-                      <a-col :md="8" :sm="24" >
-                        <a-form-item
-                          label="开始日期"
-                          :labelCol="{span: 5}"
-                          :wrapperCol="{span: 18, offset: 1}"
-                        >
-                          <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
-                        </a-form-item>
-                      </a-col>
-                      <a-col :md="8" :sm="24" >
-                        <a-form-item
-                          label="结束日期"
-                          :labelCol="{span: 5}"
-                          :wrapperCol="{span: 18, offset: 1}"
-                        >
-                          <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
-                        </a-form-item>
-                      </a-col>
+      <!-- uid对应的消耗和佣金 -->
+      <a-modal v-model="visibleuid" title="消耗和佣金" on-ok="handleOk" :maskClosable="false" @afterClose="handleCanceluid()"
+               :width='850'>
+        <template slot="footer">
+          <a-button key="back" @click="handleCanceluid">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="uidhandleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+              :label-col="{ span: 6 }"
+              :wrapper-col="{ span: 14 }"
+              layout="vertical"
+          >
+            <!--ref="ruleForm"-->
+            <!--:model="form"-->
+            <!--:rules="rules"-->
+            <a-row :gutter="16">
+              <a-col :span="10">
+                <a-form-model-item ref="uid" label="uid" prop="uid">
+                  <a-input v-model="uid"/>
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="开始日期"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="结束日期"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD"/>
+              </a-form-item>
+            </a-col>
 
-                        <div>消耗：{{ this.consume }} <br> 佣金：{{ this.commission }}</div>
-                    </a-form-model>
-                </template>
-            </a-modal>
+            <div>消耗：{{ this.consume }} <br> 佣金：{{ this.commission }}</div>
+          </a-form-model>
+        </template>
+      </a-modal>
 
-            <!-- 分页组件 -->
-<!--            <a-pagination-->
-<!--                style="margin-top: 15px;"-->
-<!--                v-model="query.page"-->
-<!--                :total="total"-->
-<!--                show-size-changer-->
-<!--                @showSizeChange="onShowSizeChange"-->
-<!--                :show-total="total => `一共 ${total} 条`"-->
-<!--                @change="pageonChange" />-->
-            <a-pagination
-              v-model="query.page"
-              :page-size-options="pageSizeOptions"
-              show-size-changer
-              :page-size="pageSize"
-              @showSizeChange="onShowSizeChange"
-              :total="total"
-              @change="pageonChange"
+      <!-- 分页组件 -->
+      <!--            <a-pagination-->
+      <!--                style="margin-top: 15px;"-->
+      <!--                v-model="query.page"-->
+      <!--                :total="total"-->
+      <!--                show-size-changer-->
+      <!--                @showSizeChange="onShowSizeChange"-->
+      <!--                :show-total="total => `一共 ${total} 条`"-->
+      <!--                @change="pageonChange" />-->
+      <a-pagination
+          v-model="query.page"
+          :page-size-options="pageSizeOptions"
+          show-size-changer
+          :page-size="pageSize"
+          @showSizeChange="onShowSizeChange"
+          :total="total"
+          @change="pageonChange"
 
-            >
+      >
 
-              <template slot="buildOptionText" slot-scope="props">
-                <span v-if="props.value !== '60'">{{ props.value }}条/页</span>
-                <span v-if="props.value === '60'">全部</span>
-              </template>
-            </a-pagination>
+        <template slot="buildOptionText" slot-scope="props">
+          <span v-if="props.value !== '60'">{{ props.value }}条/页</span>
+          <span v-if="props.value === '60'">全部</span>
+        </template>
+      </a-pagination>
 
-        </div>
-    </a-card>
+    </div>
+  </a-card>
 </template>
 
 <script>
-    import {CreditCardListData} from '@/services/statisticscardinformation'
-    import {
-      PatchCardListData,
-      PatchTaskListData,
-      table_delete,
-      innerdelete,
-      CardAccountListData,
-      CommissionConsumetion,
-      AddCardAccount,
-      AddCreditTask,
-      AddOneCard,
-      GetAccountTaskNameData
-    } from "../../../services/statisticscardinformation";
-    import Cookie from "js-cookie";
+  import {CreditCardListData} from '@/services/statisticscardinformation'
+  import {
+    PatchCardListData,
+    PatchTaskListData,
+    table_delete,
+    innerdelete,
+    CardAccountListData,
+    CommissionConsumetion,
+    AddCardAccount,
+    AddCreditTask,
+    AddOneCard,
+    GetAccountTaskNameData
+  } from "../../../services/statisticscardinformation";
+  import Cookie from "js-cookie";
 
-    const columns = [
-        {title: '卡号', dataIndex: 'card_number', key: 'card_number'},
-        {title: '有效期', dataIndex: 'valid_period', key: 'valid_period'},
-        {title: 'cvv', dataIndex: 'cvv', key: 'cvv'},
-        {title: '面值', dataIndex: 'face_value', key: 'face_value'},
-        {title: '余额', dataIndex: 'balance', key: 'balance'},
-        {title: '卡姓名地址', dataIndex: 'name', key: 'name'},
-        {title: '备注', dataIndex: 'note', key: 'note'},
-        // { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
-        {title: '平台', dataIndex: 'platform', key: 'platform'},
-        {title: '卡状态', key: 'cardstatus', scopedSlots: {customRender: 'cardstatus'}},
-        {title: '保留', key: 'retain_', scopedSlots: {customRender: 'retain_'}},
-        {title: '创建时间', dataIndex: 'create_time', key: 'create_time'},
-        {title: '操作', key: 'operation', scopedSlots: {customRender: 'operation'}},
-    ];
+  const columns = [
+    {title: '卡号', dataIndex: 'card_number', key: 'card_number'},
+    {title: '有效期', dataIndex: 'valid_period', key: 'valid_period'},
+    {title: 'cvv', dataIndex: 'cvv', key: 'cvv'},
+    {title: '面值', dataIndex: 'face_value', key: 'face_value'},
+    {title: '余额', dataIndex: 'balance', key: 'balance'},
+    {title: '卡姓名地址', dataIndex: 'name', key: 'name'},
+    {title: '备注', dataIndex: 'note', key: 'note'},
+    // { title: '备注', dataIndex: 'note', scopedSlots: { customRender: 'note' },},
+    {title: '平台', dataIndex: 'platform', key: 'platform'},
+    {title: '卡状态', key: 'cardstatus', scopedSlots: {customRender: 'cardstatus'}},
+    {title: '保留', key: 'retain_', scopedSlots: {customRender: 'retain_'}},
+    {title: '创建时间', dataIndex: 'create_time', key: 'create_time'},
+    {title: '操作', key: 'operation', scopedSlots: {customRender: 'operation'}},
+  ];
 
-    const data = [];
+  const data = [];
 
-    const innerColumns = [
-        { title: 'uuid', dataIndex: 'uid', key: 'uid' },
-        { title: '任务', dataIndex: 'task', key: 'task', scopedSlots: { customRender: 'task' } },
-        { title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: { customRender: 'commission' } },
-        { title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: { customRender: 'consume' } },
-        { title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: { customRender: 'user' } },
-        { title: '二次消费', key: 'secondary_consumption', scopedSlots: { customRender: 'secondary_consumption' } },
-        { title: '使用日期', dataIndex: 'creation_date', key: 'creation_date' },
-        { title: '操作', key: 'inneroperation', scopedSlots: { customRender: 'inneroperation' }},
-    ];
+  const innerColumns = [
+    {title: 'uuid', dataIndex: 'uid', key: 'uid'},
+    {title: '任务', dataIndex: 'task', key: 'task', scopedSlots: {customRender: 'task'}},
+    {title: '佣金', dataIndex: 'commission', key: 'commission', scopedSlots: {customRender: 'commission'}},
+    {title: '消耗', dataIndex: 'consume', key: 'consume', scopedSlots: {customRender: 'consume'}},
+    {title: '使用人', dataIndex: 'user', key: 'user', scopedSlots: {customRender: 'user'}},
+    {title: '二次消费', key: 'secondary_consumption', scopedSlots: {customRender: 'secondary_consumption'}},
+    {title: '使用日期', dataIndex: 'creation_date', key: 'creation_date'},
+    {title: '操作', key: 'inneroperation', scopedSlots: {customRender: 'inneroperation'}},
+  ];
 
-    const innerData = [];
+  const innerData = [];
 
   export default {
     name: 'QueryList',
@@ -596,8 +602,9 @@
     },
     created () {
       this.gettabledata()
+
     },
-    // 监听路由变化开启自动更新
+    // // 监听路由变化开启自动更新
     // watch: {
     //   $route: {
     //     handler: function(val){
@@ -624,11 +631,13 @@
             re_da[i]["secondary_consumption_loading"] = false
             re_da[i]["retain_loading"] = false
             re_da[i]["note_editable"] = false
+            if (re_da[i]["id"] == this.expandedRowKeys[0]){
+              this.innerData = re_da[i]["task_set"]
+            }
           }
           this.data = re_da
           this.total = res.data.total
           console.log(res);
-          // this.componentKey = this.componentKey === 0 ? 1 : 0;
         })
       },
       toggleAdvanced () {
@@ -651,8 +660,8 @@
       },
       // 打开uid的消耗表单
       showModaluid(id) {
-          console.log(id);
-          this.visibleuid = true;
+        console.log(id);
+        this.visibleuid = true;
       },
       // 查询
       queryevents() {
@@ -671,8 +680,8 @@
           "end_time":this.end_time ? this.end_time.format('YYYY-MM-DD') : null
         }
         CommissionConsumetion(data).then(res =>{
-            this.consume = res.data.total_consume;
-            this.commission = res.data.total_commission;
+          this.consume = res.data.total_consume;
+          this.commission = res.data.total_commission;
         })
       },
       // 提交编辑表单
@@ -684,8 +693,8 @@
               console.log("成功")
               console.log(res)
               this.loading = false;
-              this.gettabledata()
               this.visible = false;
+              this.gettabledata()
             })
             console.log('ok');
           }
@@ -733,21 +742,17 @@
                 PatchTaskListData(this.innerform).then(res => {
                   console.log("修改成功")
                   console.log(res)
-                  // this.innerloading = false;
-                  // this.gettabledata()
-                  // this.innervisible = false;
-                  location.reload()
-                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                  this.innerloading = false;
+                  this.innervisible = false;
+                  this.gettabledata()
                 })
               } else {
                 AddCreditTask(addinnerform).then(res => {
                   console.log("创建成功")
                   console.log(res)
-                  // this.innerloading = false;
-                  // this.gettabledata()
-                  // this.innervisible = false;
-                  location.reload()
-                  // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                  this.innerloading = false;
+                  this.innervisible = false;
+                  this.gettabledata()
                 })
               }
             }else{
@@ -764,21 +769,17 @@
                   PatchTaskListData(this.innerform).then(res => {
                     console.log("成功")
                     console.log(res)
-                    // this.innerloading = false;
-                    // this.gettabledata()
-                    // this.innervisible = false;
-                    location.reload()
-                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                    this.innerloading = false;
+                    this.innervisible = false;
+                    this.gettabledata()
                   })
                 } else {
                   AddCreditTask(addinnerform).then(res => {
                     console.log("创建成功")
                     console.log(res)
-                    // this.innerloading = false;
-                    // this.gettabledata()
-                    // this.innervisible = false;
-                    location.reload()
-                    // this.componentKey = this.componentKey === 0 ? 1 : 0;
+                    this.innerloading = false;
+                    this.innervisible = false;
+                    this.gettabledata()
                   })
                 }
               })
@@ -819,8 +820,7 @@
       uuidclick(){
         // uuidSelect
         CardAccountListData().then(res => {
-          var re_da = res.data.data;
-          this.uuidSelect = re_da
+          this.uuidSelect = res.data.data;
           console.log(res)
         })
       },
@@ -830,10 +830,7 @@
         PatchTaskListData({secondary_consumption: secondary_consumption ? 0 : 1, id: id}).then(res => {
           console.log("成功")
           console.log(res)
-          // this.gettabledata()
-          //此处未完成，需要刷新子表，或重新展开，暂定刷新页面
-          location.reload()
-          // this.componentKey = this.componentKey === 0 ? 1 : 0;
+          this.gettabledata()
         })
       },
       // 修改主表是否保留
@@ -1027,40 +1024,40 @@
           this.dialogvisible = true;
       },
       async onok() {
-          for (let i = 0; i < this.ids.length; i++) {
-              await table_delete(this.ids[i]).then(res => {
-                  if (res.status === 200) {
-                      this.$message.success(`删除成功！`);
-                  } else {
-                      this.$message.error(`删除失败！`);
-                  }
-              })
-          }
-          const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-          this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-          this.query.page = this.query.page < 1 ? 1 : this.query.page
-          this.gettabledata()
-          this.ids = []
-          this.dialogvisible = false
+        for (let i = 0; i < this.ids.length; i++) {
+            await table_delete(this.ids[i]).then(res => {
+                if (res.status === 200) {
+                    this.$message.success(`删除成功！`);
+                } else {
+                    this.$message.error(`删除失败！`);
+                }
+            })
+        }
+        const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+        this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+        this.query.page = this.query.page < 1 ? 1 : this.query.page
+        this.ids = []
+        this.dialogvisible = false
+        this.gettabledata()
       },
 
 
       async onokson() {
-          for (let i = 0; i < this.ids.length; i++) {
-              await innerdelete(this.ids[i]).then(res => {
-                  if (res.status === 200) {
-                      this.$message.success(`删除成功！`);
-                  } else {
-                      this.$message.error(`删除失败！`);
-                  }
-              })
-          }
-          const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-          this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-          this.query.page = this.query.page < 1 ? 1 : this.query.page
-          this.gettabledata()
-          this.ids = []
-          this.dialogvisibleson = false
+        for (let i = 0; i < this.ids.length; i++) {
+            await innerdelete(this.ids[i]).then(res => {
+                if (res.status === 200) {
+                    this.$message.success(`删除成功！`);
+                } else {
+                    this.$message.error(`删除失败！`);
+                }
+            })
+        }
+        const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+        this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+        this.query.page = this.query.page < 1 ? 1 : this.query.page
+        this.ids = []
+        this.dialogvisibleson = false
+        this.gettabledata()
       },
 
       onno() {
@@ -1098,8 +1095,8 @@
               if (res.status === 200) {
                 this.$message.success('添加成功！')
                 this.addcadrhandleCancel()
-                this.gettabledata()
                 this.loading = false
+                this.gettabledata()
               } else {
                 this.$message.success('添加失败！')
                 this.loading = false
