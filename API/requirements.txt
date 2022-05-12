@@ -49,5 +49,5 @@ tzlocal==4.1
 ujson==5.1.0
 urllib3==1.26.8
 uvicorn==0.16.0
-DingtalkChatbot
+DingtalkChatbot==1.5.3
 pyDes==2.0.1

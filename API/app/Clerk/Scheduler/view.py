@@ -180,7 +180,7 @@ def loop_detection():
 
         # 发送钉钉
         for k, v in loop_di.items():
-            alarm_content = "心跳故障: " + str(v) + " 在设置时间 " + str(k) + " 分钟内，未发出心跳"  # 告警内容
+            alarm_content = "心跳故障:  任务-" + str(v) + " 在设置时间 " + str(k) + " 分钟内，未发出心跳"  # 告警内容
             stamp = str(round(time.time() * 1000))
             try:
                 url_token = globals_config.urlToken  # 钉钉群机器人Webhook
@@ -196,7 +196,7 @@ def loop_detection():
             # 判断需@人
             if k in at_di:
                 if "all" in at_di[k]:
-                    xiao_ding.send_markdown(title="心跳消失", text=alarm_content, is_auto_at=True)  # @所有人
+                    xiao_ding.send_markdown(title="心跳消失", text=alarm_content, is_at_all=True)  # @所有人
                 else:
                     # 对要@的人去空格去重去空
                     at = list(set(at_di[k].replace(" ", "").split(",")))
