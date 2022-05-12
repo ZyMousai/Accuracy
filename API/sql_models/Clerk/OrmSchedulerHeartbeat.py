@@ -16,5 +16,12 @@ class Heartbeat(PBaseModel):
     state = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=2, comment='状态:0-正常；1-异常；2-离线')
 
 
+class Machine(PBaseModel):
+    __tablename__ = 'machine'
+
+    machine_name = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, unique=True, comment='机器ip')
+    scope = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, unique=True, comment='范围,例：1-60')
+
+
 if __name__ == '__main__':
     create_table()
