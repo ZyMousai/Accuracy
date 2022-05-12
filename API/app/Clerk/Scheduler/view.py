@@ -153,7 +153,7 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     return response_json
 
 
-def loop_detection_():
+def loop_detection():
     loop_li = []
     job_names = []
     # 获取队列里所有要报警的任务数据
@@ -222,7 +222,7 @@ def loop_detection_():
 
 
 # 定时刷新库里的campaign信息
-loop_detection_scheduler.add_job(id="loop_detection_", func=loop_detection_, trigger="interval", seconds=5)
+loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5)
 loop_detection_scheduler.start()
 
 
