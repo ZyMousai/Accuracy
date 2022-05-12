@@ -106,13 +106,10 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     #                                 run_date=alarm_time)
 
     try:
-        print(11111111111)
         filter_condition = [
             ('job_name', f'=="{job_name}"', job_name)
         ]
         data_result = await Heartbeat.get_one(dbs, *filter_condition)
-        print(data_result)
-        print(2222222222222)
         if not data_result:
             # # 当数据库中没有这条数据时新增
             # data = {
@@ -127,7 +124,6 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
             # 当数据库中没有这条数据时
             return {"data": "Unknown task, this task name is not registered"}
         else:
-            print(3333333333333333)
             # 当数据库中有这条数据时，检查是否需要检测（alarm）
             if data_result.alarm == 0:
                 return {"data": "This task does not need to be run"}
@@ -144,21 +140,16 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     except Exception as ex:
         print(ex)
         at = "all"
-    print(at)
     # 告警时间(到此时间未接到下次心跳来重置告警就报警)
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60))
     # alarm_time = now_time + datetime.timedelta(seconds=10)
     print(alarm_time)
-
-
-
     heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, at],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
                                 # coalesce=True  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
                                 )
     response_json = {"data": job_name + " timed task created successfully"}
-    # response_json = {123}
     return response_json
 
 
