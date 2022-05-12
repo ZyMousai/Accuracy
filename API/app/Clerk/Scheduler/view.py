@@ -104,11 +104,15 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     #     # 创建告警任务
     #     heartbeat_scheduler.add_job(id=job_name, func=dingding, args=[alarm_content], trigger='date',
     #                                 run_date=alarm_time)
+
     try:
+        print(11111111111)
         filter_condition = [
             ('job_name', f'=="{job_name}"', job_name)
         ]
         data_result = await Heartbeat.get_one(dbs, *filter_condition)
+        print(data_result)
+        print(2222222222222)
         if not data_result:
             # # 当数据库中没有这条数据时新增
             # data = {
@@ -123,11 +127,13 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
             # 当数据库中没有这条数据时
             return {"data": "Unknown task, this task name is not registered"}
         else:
+            print(3333333333333333)
             # 当数据库中有这条数据时，检查是否需要检测（alarm）
             if data_result.alarm == 0:
                 return {"data": "This task does not need to be run"}
             interval = data_result.interval
             job_id = data_result.id
+            at = data_result.at
             data = {
                 "id": job_id,
                 "last_heartbeat": now_time,
@@ -135,24 +141,28 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
                 # "heartbeat_alarm": alarm_time,
             }
             await Heartbeat.update_data(dbs, data, is_delete=0)
-            at = data_result.at
     except Exception as ex:
         print(ex)
         at = "all"
+    print(at)
     # 告警时间(到此时间未接到下次心跳来重置告警就报警)
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60))
     # alarm_time = now_time + datetime.timedelta(seconds=10)
     print(alarm_time)
+
+
+
     heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, at],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
                                 # coalesce=True  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
                                 )
     response_json = {"data": job_name + " timed task created successfully"}
+    # response_json = {123}
     return response_json
 
 
-def loop_detection():
+def loop_detection_():
     loop_li = []
     job_names = []
     # 获取队列里所有要报警的任务数据
@@ -221,12 +231,12 @@ def loop_detection():
 
 
 # 定时刷新库里的campaign信息
-loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5)
+loop_detection_scheduler.add_job(id="loop_detection_", func=loop_detection_, trigger="interval", seconds=5)
 loop_detection_scheduler.start()
 
 
-def trigger_an_alarm(job_name, interval, job_id):
-    heartbeat_q.put([job_name, interval, job_id])
+def trigger_an_alarm(job_name, interval, at):
+    heartbeat_q.put([job_name, interval, at])
 
 
 @clerk_scheduler_router.get('/display')
