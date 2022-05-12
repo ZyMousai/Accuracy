@@ -18,7 +18,7 @@ import { request, METHOD } from '@/utils/request'
  */
  export async function GetServiceNameDateOne(id) {
         return request(HeartbeatGetServiceNameOne, METHOD.GET, {
-        id: id
+        heartbeat_id: id
     })
 }
 

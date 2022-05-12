@@ -181,14 +181,14 @@
             layout="vertical"
           >
             <a-row :gutter="16" v-if="this.tablename === '新增'">
-              <a-col :span="10">
+              <a-col :span="16">
                 <a-form-model-item label="服务名">
                   <a-input v-model="form.job_name" placeholder="输入框" />
                 </a-form-model-item>
               </a-col>
             </a-row>
             <a-row :gutter="16">
-              <a-col :span="10">
+              <a-col :span="16">
                 <a-form-model-item label="是否启用">
                   <a-switch
                     v-model="form.alarm"
@@ -198,7 +198,7 @@
               </a-col>
             </a-row>
             <a-row :gutter="16">
-              <a-col :span="10">
+              <a-col :span="16">
                 <a-form-model-item label="心跳间隔">
                   <a-input-number
                     v-model="form.interval"
@@ -207,6 +207,18 @@
                 </a-form-model-item>
               </a-col>
             </a-row>
+
+            <a-row :gutter="16">
+              <a-col :span="16">
+                <a-form-model-item label="被@人手机号(英文逗号分割，设为all代表全部)">
+                  <a-input
+                    v-model="form.at"
+                    :value="form.at"
+                  />
+                </a-form-model-item>
+              </a-col>
+            </a-row>
+
           </a-form-model>
         </template>
       </a-modal>
@@ -261,31 +273,34 @@
 
 <script>
 import StandardTable from "@/components/table/StandardTable";
-import { GetServiceNameDate } from "@/services/systemmanagement";
+import { GetServiceNameDate, GetServiceNameDateOne } from "@/services/systemmanagement";
 import {
   AddHeartbeatDisplay,
   DeleteHeartbeatDisplay,
   // GetServiceNameDateOne,
   PatchHeartbeatDisplay,
 } from "../../services/systemmanagement";
+
 const columns = [
-  { title: "id", dataIndex: "id" },
-  { title: "服务名", dataIndex: "job_name" },
-  { title: "断开时报警时间", dataIndex: "heartbeat_alarm" },
-  { title: "创建时间", dataIndex: "create_time" },
-  { title: "上次心跳", dataIndex: "last_heartbeat" },
+  {title: "id", dataIndex: "id"},
+  {title: "服务名", dataIndex: "job_name"},
+  {title: "断开时报警时间", dataIndex: "heartbeat_alarm"},
+  {title: "创建时间", dataIndex: "create_time"},
+  {title: "上次心跳", dataIndex: "last_heartbeat"},
   {
     title: "是否启用",
     dataIndex: "alarm",
-    scopedSlots: { customRender: "alarm" },
+    scopedSlots: {customRender: "alarm"},
   },
-  { title: "状态", dataIndex: "state", scopedSlots: { customRender: "state" } },
+  {title: "状态", dataIndex: "state", scopedSlots: {customRender: "state"}},
   {
     title: "心跳间隔",
     dataIndex: "interval",
-    scopedSlots: { customRender: "interval" },
+    scopedSlots: {customRender: "interval"},
   },
-  { title: "操作", scopedSlots: { customRender: "action" } },
+  {title: "操作", scopedSlots: {customRender: "action"}},
+  // {title: "钉钉通知人", dataIndex: "at",colSpan:0,width:0},
+
 ];
 
 const dataSource = [];
@@ -322,6 +337,7 @@ export default {
         create_time: "",
         last_heartbeat: "",
         heartbeat_alarm: "",
+        at: "",
         interval: 0,
         alarm: 0,
         state: 0,
@@ -510,24 +526,15 @@ export default {
         this.tablename = "编辑";
         this.isdisabled = true;
 
-        // 影响速度
-        // GetServiceNameDateOne(data.id).then((res) => {
-        //   this.form = res.data.data;
-        //   this.id = this.form.id;
-        //
-        //   // this.ruleslist.forEach((i) => {
-        //   //   if (i.role === this.form.users_role) {
-        //   //     this.form.role_id = i.id;
-        //   //     return;
-        //   //   }
-        //   // });
-        //   // this.form.gender = this.form.gender + "";
-        //   this.visible = true;
-        //   console.log(this.form)
-        // });
-        // 替代方案
-        this.form = data;
-        this.visible = true;
+        GetServiceNameDateOne(data.id).then((res) => {
+          this.form = res.data.data;
+          this.id = this.form.id;
+          this.visible = true;
+          console.log(this.form)
+        });
+        // // 替代方案
+        // this.form = data;
+        // this.visible = true;
       } else {
         this.tablename = "新增";
         this.isdisabled = false;

@@ -120,14 +120,13 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
             #     "state": 0,
             # }
             # await Heartbeat.add_data(dbs, data)
+            # 当数据库中没有这条数据时
             return {"data": "Unknown task, this task name is not registered"}
         else:
             # 当数据库中有这条数据时，检查是否需要检测（alarm）
             if data_result.alarm == 0:
                 return {"data": "This task does not need to be run"}
             interval = data_result.interval
-            # 告警时间(到此时间未接到下次心跳来重置告警就报警，设置30秒缓冲)
-            # alarm_time = now_time + datetime.timedelta(seconds=(interval * 60) + 30)
             job_id = data_result.id
             data = {
                 "id": job_id,
@@ -136,14 +135,15 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
                 # "heartbeat_alarm": alarm_time,
             }
             await Heartbeat.update_data(dbs, data, is_delete=0)
+            at = data_result.at
     except Exception as ex:
         print(ex)
-        job_id = -1
-        # 告警时间(到此时间未接到下次心跳来重置告警就报警)
+        at = "all"
+    # 告警时间(到此时间未接到下次心跳来重置告警就报警)
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60))
     # alarm_time = now_time + datetime.timedelta(seconds=10)
     print(alarm_time)
-    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, job_id],
+    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, at],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
                                 # coalesce=True  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
@@ -154,19 +154,28 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
 
 def loop_detection():
     loop_li = []
-    ids = []
+    job_names = []
     # 获取队列里所有要报警的任务数据
     while not heartbeat_q.empty():
         loop_li.append(heartbeat_q.get())
     if loop_li:
         loop_di = {}  # 要发送钉钉数据的name和限制的时长
+        at_di = {}  # 要发送钉钉的@人
         # 对数据摘取
         for loop in loop_li:
+            # 同一时长的分入一类一起报警
+            # 对名称分类
             if loop[1] in loop_di:
                 loop_di[loop[1]].append(loop[0])
             else:
                 loop_di[loop[1]] = [loop[0]]
-            ids.append(loop[2])
+            # 对需@人分类
+            if loop[2]:
+                if loop[1] in at_di:
+                    at_di[loop[1]] = at_di[loop[1]] + "," + loop[2]
+                else:
+                    at_di[loop[1]] = loop[2]
+            job_names.append(loop[0])
 
         # 发送钉钉
         for k, v in loop_di.items():
@@ -182,21 +191,33 @@ def loop_detection():
             hm_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
             sign_me = url_token + "&timestamp=" + stamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hm_code))
             xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
-            xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
+
+            # 判断需@人
+            if k in at_di:
+                if "all" in at_di[k]:
+                    xiao_ding.send_markdown(title="心跳消失", text=alarm_content, is_auto_at=True)  # @所有人
+                else:
+                    # 对要@的人去空格去重去空
+                    at = list(set(at_di[k].replace(" ", "").split(",")))
+                    while "" in at:
+                        at.remove("")
+                    xiao_ding.send_markdown(title="心跳消失", text=alarm_content, at_mobiles=at)  # @个人
+            else:
+                xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
 
         try:
-            hears = session.query(Heartbeat).filter(Heartbeat.id.in_(ids)).all()
+            hears = session.query(Heartbeat).filter(Heartbeat.job_name.in_(job_names)).all()
             if hears:
                 for he in hears:
                     he.state = 1
                     he.heartbeat_alarm = datetime.datetime.now()
                 session.commit()
                 session.close()
-                print({"code": "0000", "message": str(ids) + "修改成功"})
+                print({"code": "0000", "message": str(job_names) + "修改成功"})
             else:
-                print({"code": "0001", "message": str(ids) + "参数错误"})
+                print({"code": "0001", "message": str(job_names) + "参数错误"})
         except ArithmeticError:
-            print({"code": "0002", "message": str(ids) + "数据库错误"})
+            print({"code": "0002", "message": str(job_names) + "数据库错误"})
 
 
 # 定时刷新库里的campaign信息
@@ -250,11 +271,11 @@ async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJo
 
 
 @clerk_scheduler_router.get('/display/detail')
-async def get_heartbeat_display_one(id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
+async def get_heartbeat_display_one(heartbeat_id: Optional[int] = Query(None), dbs: AsyncSession = Depends(db_session)):
     """
         获取某个心跳功能注册列表的信息
 
-    :param id:
+    :param heartbeat_id:
 
         列表id
 
@@ -266,7 +287,7 @@ async def get_heartbeat_display_one(id: Optional[int] = Query(None), dbs: AsyncS
 
         单个列表的信息
     """
-    result = await Heartbeat.get_one_detail(dbs, id)
+    result = await Heartbeat.get_one_detail(dbs, heartbeat_id)
     if not result:
         raise HTTPException(status_code=404, detail="Get non-existent resources.")
     response_json = {"data": result}

@@ -24,6 +24,7 @@ class DisplaySearchJob(BaseModel):
     end_create_time: Optional[str] = Query(None)
     alarm: Optional[int] = Query(None)
     state: Optional[int] = Query(None)
+    at: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
 
@@ -32,6 +33,7 @@ class DisplayAddJob(BaseModel):
     job_name: str
     interval: int
     alarm: int
+    at: str
 
 
 class DisplayUpdateJob(BaseModel):
@@ -39,4 +41,5 @@ class DisplayUpdateJob(BaseModel):
     job_name: Optional[str] = Query(None)
     interval: Optional[int] = Query(None)
     alarm: Optional[int] = Query(None)
+    at: Optional[str] = Query(None)
 

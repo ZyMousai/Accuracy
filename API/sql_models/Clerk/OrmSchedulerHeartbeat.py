@@ -14,6 +14,7 @@ class Heartbeat(PBaseModel):
     interval = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, comment='心跳间隔')
     alarm = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, comment='是否启用:0-否；1-是')
     state = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=2, comment='状态:0-正常；1-异常；2-离线')
+    at = BaseType.BaseColumn(BaseType.BaseString(255), comment='@的用户:all-所有人；手机号,手机号-被@人的手机号，英文逗号分割')
 
 
 class Machine(PBaseModel):
