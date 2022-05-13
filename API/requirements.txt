@@ -51,3 +51,4 @@ urllib3==1.26.8
 uvicorn==0.16.0
 DingtalkChatbot==1.5.3
 pyDes==2.0.1
+paramiko==2.10.4

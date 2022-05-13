@@ -11,7 +11,7 @@ from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from dingtalkchatbot.chatbot import DingtalkChatbot
 from app.Clerk.Scheduler.DataValidation import Alarm, SearchJob, DisplaySearchJob, DisplayAddJob, DisplayUpdateJob
 from config import MysqlConfig, globals_config
-from sql_models.Clerk.OrmSchedulerHeartbeat import Heartbeat
+from sql_models.Clerk.OrmSchedulerHeartbeat import Heartbeat, Machine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 from fastapi import APIRouter, Depends, HTTPException
@@ -23,6 +23,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from queue import Queue
 from util.crypto import decrypt
+import paramiko
 # 系统管理 - 心跳功能
 clerk_scheduler_router = APIRouter(
     prefix="/heartbeat/v1",
@@ -35,24 +36,27 @@ MYSQL_URL = f"mysql+pymysql://{MysqlConfig.username}:{MysqlConfig.password}@{Mys
 # 执行器
 job_stores = {'default': SQLAlchemyJobStore(url=MYSQL_URL)}
 executors = {'default': ThreadPoolExecutor(20), 'processpool': ProcessPoolExecutor(5)}
-job_defaults = {'coalesce': True, 'max_instances': 20}
+job_defaults = {'coalesce': True, 'max_instances': 20, "misfire_grace_time": 3600}
 # heartbeat_scheduler = AsyncIOScheduler(
 heartbeat_scheduler = BackgroundScheduler(
     timezone="Asia/Shanghai",
     jobstores=job_stores,
     job_defaults=job_defaults,
-    executors=executors
-)
+    executors=executors)
 heartbeat_scheduler.start()
-loop_detection_scheduler = BackgroundScheduler(timezone="Asia/Shanghai", job_defaults=job_defaults,
-                                       SCHEDULER_API_ENABLED=True)
+loop_detection_scheduler = BackgroundScheduler(
+    timezone="Asia/Shanghai",
+    job_defaults=job_defaults,
+    SCHEDULER_API_ENABLED=True)
 engine = create_engine(MYSQL_URL, encoding='utf-8')
 # autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 实例化
 session = Session()
-# 报警队列
-heartbeat_q = Queue()
+# 队列
+heartbeat_q = Queue()  # 报警队列
+final_heartbeat_q = Queue()  # 最终报警队列
+back_online_q = Queue()  # 恢复上线队列
 
 
 @clerk_scheduler_router.get('/')
@@ -95,16 +99,6 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     job_name = data["job_name"]
     interval = data["interval"]
     now_time = datetime.datetime.now()
-
-    # 获取当前任务是否存在
-    # if heartbeat_scheduler.get_job(job_name):
-    #     # 修改当前任务告警时间
-    #     heartbeat_scheduler.reschedule_job(job_name, trigger='date', run_date=alarm_time)
-    # else:
-    #     # 创建告警任务
-    #     heartbeat_scheduler.add_job(id=job_name, func=dingding, args=[alarm_content], trigger='date',
-    #                                 run_date=alarm_time)
-
     try:
         filter_condition = [
             ('job_name', f'=="{job_name}"', job_name)
@@ -130,6 +124,7 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
             interval = data_result.interval
             job_id = data_result.id
             at = data_result.at
+            job_type = data_result.type
             data = {
                 "id": job_id,
                 "last_heartbeat": now_time,
@@ -140,59 +135,113 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     except Exception as ex:
         print(ex)
         at = "all"
-    # 告警时间(到此时间未接到下次心跳来重置告警就报警)
+        job_type = "serve"
+        # 告警时间(到此时间未接到下次心跳来重置告警就报警)
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60))
     # alarm_time = now_time + datetime.timedelta(seconds=10)
     print(alarm_time)
-    heartbeat_scheduler.add_job(id=job_name, func=trigger_an_alarm, args=[job_name, interval, at],
+
+    # 任务创建时，删除最终告警，发送恢复上线提醒
+    if not heartbeat_scheduler.get_job(job_name):
+        alert_job = str(int(job_name)) + "alert"
+        if heartbeat_scheduler.get_job(alert_job):
+            heartbeat_scheduler.remove_job(alert_job)
+        # 恢复上线
+        # back_online_q.put(job_name)
+    # 创建监控任务
+    heartbeat_scheduler.add_job(id=job_name, func=trigger_alarm, args=[job_name, interval, at, job_type],
                                 trigger='date', run_date=alarm_time,  # 执行时间
                                 replace_existing=True,  # 有就覆盖
-                                # coalesce=True  # 忽略服务器宕机时间段内的任务执行(否则就会出现服务器恢复之后一下子执行多次任务的情况)
+                                coalesce=True  # 如果调度程序确定作业应该连续运行一次以上，则运行一次而不是多次
                                 )
     response_json = {"data": job_name + " timed task created successfully"}
     return response_json
 
 
+# 初始化钉钉机器人
+def dingtalk_initialization():
+    stamp = str(round(time.time() * 1000))
+    try:
+        url_token = globals_config.urlToken  # 钉钉群机器人Webhook
+        secret = globals_config.secret  # 钉钉群机器人secret
+    except Exception as ex:
+        print(ex)
+        raise Exception("config.py folder has no url_token or secret fields")
+    string_to_sign_enc = '{}\n{}'.format(stamp, secret).encode('utf-8')
+    hm_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
+    sign_me = url_token + "&timestamp=" + stamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hm_code))
+    return DingtalkChatbot(sign_me)  # 初始化机器人
+
+
+# 查询数据中机器所在范围
+def interval_ip(num, machines_list):
+    for machine in machines_list:
+        sc = machine[0].split("-")
+        if int(sc[0]) <= num <= int(sc[1]):
+            return machine[1]
+    return None
+
+
+# 重启指定编号的机器
+def reset_machine(number, machines_list, port=22, username="dingzj", password="Ff!4242587"):
+    number = int(number)
+    # 获取机器对应的ip
+    hostname = interval_ip(number, machines_list)
+    if hostname:
+        # 链接机器执行重启命令
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=hostname, port=port, username=username, password=password)
+        number = str(number)
+        cmd_shutdown = "vim-cmd vmsvc/power.reset $(vim-cmd vmsvc/getallvms | awk '$2==" + number + \
+                       " {print $1}') && echo " + number + " success"
+        stdin, stdout, stderr = ssh.exec_command(cmd_shutdown)
+        n = stdout.read()
+        print(n)
+        ssh.close()
+
+        alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
+        dingtalk_initialization().send_markdown(title="故障修复", text=alarm_content)
+        alarm_time = datetime.datetime.now() + datetime.timedelta(seconds=30*60)  # 执行时间半小时后
+        heartbeat_scheduler.add_job(id=number + "alert", func=trigger_final_alarm, args=[number],
+                                    trigger='date', run_date=alarm_time,   # 执行时间
+                                    replace_existing=True,  # 有就覆盖
+                                    coalesce=True)  # 如果调度程序确定作业应该连续运行一次以上，则运行一次而不是多次
+
+
 def loop_detection():
-    loop_li = []
-    job_names = []
+    data_list = []  # 报警任务
+    job_names = []  # 要修改状态的任务名
     # 获取队列里所有要报警的任务数据
     while not heartbeat_q.empty():
-        loop_li.append(heartbeat_q.get())
-    if loop_li:
+        data_list.append(heartbeat_q.get())
+    if data_list:
         loop_di = {}  # 要发送钉钉数据的name和限制的时长
         at_di = {}  # 要发送钉钉的@人
+        reboot = []  # 要重启的机器
         # 对数据摘取
-        for loop in loop_li:
+        for data in data_list:
             # 同一时长的分入一类一起报警
             # 对名称分类
-            if loop[1] in loop_di:
-                loop_di[loop[1]].append(loop[0])
+            if data[1] in loop_di:
+                loop_di[data[1]].append(data[0])
             else:
-                loop_di[loop[1]] = [loop[0]]
+                loop_di[data[1]] = [data[0]]
             # 对需@人分类
-            if loop[2]:
-                if loop[1] in at_di:
-                    at_di[loop[1]] = at_di[loop[1]] + "," + loop[2]
+            if data[2]:
+                if data[1] in at_di:
+                    at_di[data[1]] = at_di[data[1]] + "," + data[2]
                 else:
-                    at_di[loop[1]] = loop[2]
-            job_names.append(loop[0])
+                    at_di[data[1]] = data[2]
+            # 类型是否为machine
+            if data[3]=="machine":
+                reboot.append(data[0])
+            job_names.append(data[0])
 
         # 发送钉钉
         for k, v in loop_di.items():
-            alarm_content = "心跳故障:  任务-" + str(v) + " 在设置时间 " + str(k) + " 分钟内，未发出心跳"  # 告警内容
-            stamp = str(round(time.time() * 1000))
-            try:
-                url_token = globals_config.urlToken  # 钉钉群机器人Webhook
-                secret = globals_config.secret  # 钉钉群机器人secret
-            except Exception as ex:
-                print(ex)
-                raise Exception("config.py folder has no url_token or secret fields")
-            string_to_sign_enc = '{}\n{}'.format(stamp, secret).encode('utf-8')
-            hm_code = hmac.new(secret.encode('utf-8'), string_to_sign_enc, digestmod=hashlib.sha256).digest()
-            sign_me = url_token + "&timestamp=" + stamp + "&sign=" + urllib.parse.quote_plus(base64.b64encode(hm_code))
-            xiao_ding = DingtalkChatbot(sign_me)  # 初始化机器人
-
+            alarm_content = "心跳故障: " + str(v) + " 在设置时间 " + str(k) + " 分钟内，未发出心跳"  # 告警内容
+            xiao_ding = dingtalk_initialization()
             # 判断需@人
             if k in at_di:
                 if "all" in at_di[k]:
@@ -206,6 +255,7 @@ def loop_detection():
             else:
                 xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
 
+        # 修改报警任务的状态为异常，上次报警时间为当前时间
         try:
             hears = session.query(Heartbeat).filter(Heartbeat.job_name.in_(job_names)).all()
             if hears:
@@ -213,22 +263,50 @@ def loop_detection():
                     he.state = 1
                     he.heartbeat_alarm = datetime.datetime.now()
                 session.commit()
-                session.close()
                 print({"code": "0000", "message": str(job_names) + "修改成功"})
             else:
                 print({"code": "0001", "message": str(job_names) + "参数错误"})
         except ArithmeticError:
             print({"code": "0002", "message": str(job_names) + "数据库错误"})
 
+        # 对报警的任务，type为machine的进行重启
+        if reboot:
+            machines = session.query(Machine).filter(Machine.restart_authorization == 1).all()
+            if machines:
+                machines_list = []  # machines list
+                for machine in machines:
+                    machines_list.append([machine.scope, machine.machine_ip])
+                for number in reboot:
+                    reset_machine(number, machines_list)
+
+    # 最终报警消息
+    final_job_names = []
+    while not final_heartbeat_q.empty():
+        final_job_names.append(final_heartbeat_q.get())
+    if final_job_names:
+        alarm_content = "心跳故障-最终报警: " + str(final_job_names) + "重启半小时后依旧未连接，请管理员介入"  # 告警内容
+        dingtalk_initialization().send_markdown(title="心跳故障", text=alarm_content, is_at_all=True)  # @所有人
+
+    # 恢复心跳消息
+    back_online = []
+    while not back_online_q.empty():
+        back_online.append(back_online_q.get())
+    if back_online:
+        alarm_content = "心跳故障恢复: " + str(back_online) + "已恢复上线"  # 告警内容
+        dingtalk_initialization().send_markdown(title="心跳恢复", text=alarm_content)
+
 
 # 定时刷新库里的campaign信息
-loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5)
+loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5, coalesce=True)
 loop_detection_scheduler.start()
 
 
-def trigger_an_alarm(job_name, interval, at):
-    heartbeat_q.put([job_name, interval, at])
+def trigger_alarm(job_name, interval, at, job_type):
+    heartbeat_q.put([job_name, interval, at, job_type])
 
+
+def trigger_final_alarm(job_name):
+    final_heartbeat_q.put(job_name)
 
 @clerk_scheduler_router.get('/display')
 async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJob),
