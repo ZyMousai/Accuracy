@@ -110,3 +110,8 @@ class SearchTask(BaseModel):
     user: Optional[str] = Query(None)
     page: Optional[int] = 1
     page_size: Optional[int] = 10
+
+
+class Export(BaseModel):
+    start_time: Optional[str] = Query(None)
+    end_time: Optional[str] = Query(None)

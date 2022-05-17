@@ -56,6 +56,10 @@
           <a-icon type="plus-circle"/>
           uid消耗与佣金查询
         </a-button>
+        <a-button type="primary" @click="showExcel">
+          <a-icon type="plus-circle"/>
+          导出excel
+        </a-button>
         <a-button type="primary" @click="showaddcadrModaluid">
           <a-icon type="plus-circle"/>
           新增单个卡号
@@ -423,6 +427,63 @@
         </template>
       </a-modal>
 
+      <!-- 导出excel -->
+      <a-modal v-model="visible_excel" title="导出Excel" on-ok="handleOk" :maskClosable="false" @afterClose="handleCancel_excel()"
+               :width='850'>
+        <template slot="footer">
+          <a-button key="back" @click="handleCancel_excel">
+            取消
+          </a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="excel_handleOk">
+            提交
+          </a-button>
+        </template>
+        <template>
+          <a-form-model
+              :label-col="{ span: 6 }"
+              :wrapper-col="{ span: 14 }"
+              layout="vertical"
+          >
+            <!--ref="ruleForm"-->
+            <!--:model="form"-->
+            <!--:rules="rules"-->
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="开始日期"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-date-picker
+                  style="width: 100%"
+                  v-model="excel_start_time"
+                  placeholder="请输入开始时间"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  format="YYYY-MM-DD HH:mm:ss"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                  label="结束日期"
+                  :labelCol="{span: 5}"
+                  :wrapperCol="{span: 18, offset: 1}"
+              >
+<!--                <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD HH:mm:ss"/>-->
+                <a-date-picker
+                  style="width: 100%"
+                  v-model="excel_end_time"
+                  placeholder="请输入结束时间"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  format="YYYY-MM-DD HH:mm:ss"
+                />
+              </a-form-item>
+            </a-col>
+
+            <div>消耗：{{ this.consume }} <br> 佣金：{{ this.commission }}</div>
+          </a-form-model>
+        </template>
+      </a-modal>
+
       <!-- 分页组件 -->
       <!--            <a-pagination-->
       <!--                style="margin-top: 15px;"-->
@@ -465,7 +526,7 @@
     AddCardAccount,
     AddCreditTask,
     AddOneCard,
-    GetAccountTaskNameData
+    GetAccountTaskNameData, ExcelExport
   } from "../../../services/statisticscardinformation";
   import Cookie from "js-cookie";
 
@@ -567,6 +628,8 @@
         },
         start_time: '',
         end_time: '',
+        excel_start_time: '',
+        excel_end_time: '',
         uuidSelect: {},
         updocuurl: "",
         advanced: true,
@@ -576,6 +639,7 @@
         taskname: '',
         visible: false,
         visibleuid: false,
+        visible_excel: false,
         innervisible: false,
         loading: false,
         innerloading: false,
@@ -663,6 +727,11 @@
         console.log(id);
         this.visibleuid = true;
       },
+      // 打开excel表单
+      showExcel(id) {
+        console.log(id);
+        this.visible_excel = true;
+      },
       // 查询
       queryevents() {
         // this.query.page = 1
@@ -682,6 +751,32 @@
         CommissionConsumetion(data).then(res =>{
           this.consume = res.data.total_consume;
           this.commission = res.data.total_commission;
+        })
+      },
+      // excel导出提交
+      excel_handleOk() {
+        console.log(this.uid)
+        console.log(this.excel_start_time)
+        console.log(this.excel_end_time)
+        var data = {
+          "start_time":this.excel_start_time ? this.excel_start_time : null,
+          "end_time":this.excel_end_time ? this.excel_end_time : null
+        }
+        ExcelExport(data).then(res =>{
+          if (!res.data) {
+            this.$message.error('Download failed')
+            return
+          }
+          const url = window.URL.createObjectURL(new Blob([res.data]))
+          const aLink = document.createElement('a')
+          aLink.style.display = 'none'
+          aLink.href = url
+          aLink.setAttribute('download', "download.xls")
+          document.body.appendChild(aLink)
+          aLink.click()
+          document.body.removeChild(aLink)
+          window.URL.revokeObjectURL(url)
+
         })
       },
       // 提交编辑表单
@@ -708,6 +803,12 @@
       // 关闭uid编辑表单
       handleCanceluid() {
           this.visibleuid = false;
+          this.$refs.ruleForm.resetFields();
+          console.log('ok');
+      },
+      // 关闭Excel表单
+      handleCancel_excel() {
+          this.visible_excel = false;
           this.$refs.ruleForm.resetFields();
           console.log('ok');
       },

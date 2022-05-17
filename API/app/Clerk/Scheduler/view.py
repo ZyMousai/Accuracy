@@ -34,19 +34,15 @@ MYSQL_URL = f"mysql+pymysql://{MysqlConfig.username}:{MysqlConfig.password}@{Mys
             f"{MysqlConfig.port}/{MysqlConfig.db}?charset=utf8"
 # MYSQL_URL = f"mysql+pymysql://root:root@127.0.0.1:3306/{MysqlConfig.db}?charset=utf8"
 # 执行器
-job_stores = {'default': SQLAlchemyJobStore(url=MYSQL_URL)}
-executors = {'default': ThreadPoolExecutor(20), 'processpool': ProcessPoolExecutor(5)}
-job_defaults = {'coalesce': True, 'max_instances': 20, "misfire_grace_time": 3600}
-# heartbeat_scheduler = AsyncIOScheduler(
 heartbeat_scheduler = BackgroundScheduler(
     timezone="Asia/Shanghai",
-    jobstores=job_stores,
-    job_defaults=job_defaults,
-    executors=executors)
+    jobstores={'default': SQLAlchemyJobStore(url=MYSQL_URL)},
+    job_defaults={'coalesce': True, 'max_instances': 20, "misfire_grace_time": 3600},
+    executors={'default': ThreadPoolExecutor(20), 'processpool': ProcessPoolExecutor(5)})
 heartbeat_scheduler.start()
 loop_detection_scheduler = BackgroundScheduler(
     timezone="Asia/Shanghai",
-    job_defaults=job_defaults,
+    job_defaults={'coalesce': True},
     SCHEDULER_API_ENABLED=True)
 engine = create_engine(MYSQL_URL, encoding='utf-8')
 # autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
@@ -143,9 +139,13 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
 
     # 任务创建时，删除最终告警，发送恢复上线提醒
     if not heartbeat_scheduler.get_job(job_name):
-        alert_job = str(int(job_name)) + "alert"
-        if heartbeat_scheduler.get_job(alert_job):
-            heartbeat_scheduler.remove_job(alert_job)
+        try:
+            alert_job = str(int(job_name)) + "alert"
+            if heartbeat_scheduler.get_job(alert_job):
+                heartbeat_scheduler.remove_job(alert_job)
+        except Exception as ex:
+            print(ex)
+
         # 恢复上线
         # back_online_q.put(job_name)
     # 创建监控任务
@@ -210,6 +210,23 @@ def reset_machine(number, machines_list, port=22, username="dingzj", password="F
 
 
 def loop_detection():
+    # 最终报警消息
+    final_job_names = []
+    while not final_heartbeat_q.empty():
+        final_job_names.append(final_heartbeat_q.get())
+    if final_job_names:
+        alarm_content = "心跳故障-最终报警: " + str(final_job_names) + "重启半小时后依旧未连接，请管理员介入"  # 告警内容
+        dingtalk_initialization().send_markdown(title="心跳故障", text=alarm_content, is_at_all=True)  # @所有人
+
+    # 恢复心跳消息
+    back_online = []
+    while not back_online_q.empty():
+        back_online.append(back_online_q.get())
+    if back_online:
+        alarm_content = "心跳故障恢复: " + str(back_online) + "已恢复上线"  # 告警内容
+        dingtalk_initialization().send_markdown(title="心跳恢复", text=alarm_content)
+
+    # 初次报警消息
     data_list = []  # 报警任务
     job_names = []  # 要修改状态的任务名
     # 获取队列里所有要报警的任务数据
@@ -279,22 +296,6 @@ def loop_detection():
                 for number in reboot:
                     reset_machine(number, machines_list)
 
-    # 最终报警消息
-    final_job_names = []
-    while not final_heartbeat_q.empty():
-        final_job_names.append(final_heartbeat_q.get())
-    if final_job_names:
-        alarm_content = "心跳故障-最终报警: " + str(final_job_names) + "重启半小时后依旧未连接，请管理员介入"  # 告警内容
-        dingtalk_initialization().send_markdown(title="心跳故障", text=alarm_content, is_at_all=True)  # @所有人
-
-    # 恢复心跳消息
-    back_online = []
-    while not back_online_q.empty():
-        back_online.append(back_online_q.get())
-    if back_online:
-        alarm_content = "心跳故障恢复: " + str(back_online) + "已恢复上线"  # 告警内容
-        dingtalk_initialization().send_markdown(title="心跳恢复", text=alarm_content)
-
 
 # 定时刷新库里的campaign信息
 loop_detection_scheduler.add_job(id="loop_detection", func=loop_detection, trigger="interval", seconds=5, coalesce=True)
@@ -307,6 +308,7 @@ def trigger_alarm(job_name, interval, at, job_type):
 
 def trigger_final_alarm(job_name):
     final_heartbeat_q.put(job_name)
+
 
 @clerk_scheduler_router.get('/display')
 async def get_heartbeat_display(info: DisplaySearchJob = Depends(DisplaySearchJob),

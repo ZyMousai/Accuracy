@@ -7,6 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File
 from sql_models.Clerk.OrmCardManagement import *
 from app.Clerk.Card.DataValidation import *
 from sql_models.db_config import db_session
+import xlwt
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 
 clerk_card_router = APIRouter(
     prefix="/card/v1",
@@ -923,3 +926,118 @@ async def get_statistics(info: Statistics = Depends(Statistics),
         "total_consume": total_consume,
         "total_commission": total_commission,
     }
+
+
+@clerk_card_router.post('/export')
+async def update_task(info: Export, dbs: AsyncSession = Depends(db_session)):
+    """
+      以流的形式导出到excel
+
+    """
+    header = ['uid', '任务名', '操作时间', "佣金", "消耗", "操作人", "卡号"]
+
+    def set_style():
+        """
+        设置样式
+        :return:
+        """
+        # 居中设置
+        alignment = xlwt.Alignment()
+        alignment.horz = xlwt.Alignment.HORZ_CENTER
+        alignment.vert = xlwt.Alignment.VERT_CENTER
+        # 设置表头字体样式
+        head_style = xlwt.XFStyle()
+        font = xlwt.Font()
+        font.name = 'Times New Roman'  # 字体
+        font.bold = True  # 字体加粗
+        head_style.font = font  # 设置字体
+        head_style.alignment = alignment  # Add Alignment to Style
+        # 设置表中内容样式
+        cont_style = xlwt.XFStyle()
+        font = xlwt.Font()
+        font.name = 'Times New Roman'  # 字体
+        font.bold = False  # 字体加粗
+        cont_style.font = font  # 设置字体
+        cont_style.alignment = alignment  # Add Alignment to Style
+        # 设置单元格边界
+        borders = xlwt.Borders()
+        borders.left = xlwt.Borders.THIN
+        borders.right = xlwt.Borders.THIN
+        borders.top = xlwt.Borders.THIN
+        borders.bottom = xlwt.Borders.THIN
+        head_style.borders = borders
+        # cont_style.borders = borders
+        return head_style, cont_style
+
+    def get_sheet(_book, _index):
+        """
+        创建sheet页
+        :param _book:
+        :param _index:
+        :return:
+        """
+        _name = "sheet_{}".format(str(_index))
+        _sheet = _book.add_sheet(_name)
+        return _sheet
+
+    def write_head(_head, _sheet, _head_style):
+        """
+        写入表头
+        :param _head:
+        :param _sheet:
+        :param _head_style:
+        :return:
+        """
+        for head in range(len(header)):
+            context = str(header[head])
+            need_width = (1 + len(context)) * 256
+            table_sheet.col(head).width = need_width
+            # table_sheet.write(0, head, context, style=_head_style)
+            table_sheet.write(0, head, context, style=_head_style)
+
+    sheet_index = 1
+    book = xlwt.Workbook(encoding='utf-8')  # 创建 Excel 文件
+    table_sheet = get_sheet(book, sheet_index)  # 添加sheet表
+    h_style, c_style = set_style()
+    write_head(header, table_sheet, h_style)
+    # 获取数据
+    # fls = crud.get_fls_export(db, bank_name, acc_code, file_type, prod_codes, prod_names, status)
+    args = [
+        ("creation_date", f'>="{info.start_time}"', info.start_time),
+        ("creation_date", f'<="{info.end_time}"', info.end_time)
+    ]
+    filter_condition = list()
+    for x in args:
+        if x[2] is not None:
+            filter_condition.append(eval(f'TbTask.{x[0]}{x[1]}'))
+    _orm = select(
+        TbAccount.uid.label('uid'),
+        TbTask.task.label('task'),
+        TbTask.creation_date.label('creation_date'),
+        TbTask.commission.label('commission'),
+        TbTask.consume.label('consume'),
+        TbTask.user.label('user'),
+        TbTask.secondary_consumption.label('secondary_consumption'),
+        TbCard.card_number.label('card_number')
+    ).where(*filter_condition).join(TbTask.account).join(TbTask.card)
+
+    result = (await dbs.execute(_orm)).all()
+    # return result
+
+    # 插入数据
+    row = 1
+    for res in result:
+        table_sheet.write(row, 0, res["uid"], style=c_style)
+        table_sheet.write(row, 1, res["task"], style=c_style)
+        table_sheet.write(row, 2, str(res["creation_date"]), style=c_style)
+        table_sheet.write(row, 3, res["commission"], style=c_style)
+        table_sheet.write(row, 4, res["consume"], style=c_style)
+        table_sheet.write(row, 5, res["user"], style=c_style)
+        table_sheet.write(row, 6, res["card_number"], style=c_style)
+        row += 1
+    sio = BytesIO()  # 返回文件流到浏览端下载，浏览端必须以form提交方式方能下载成功！
+    book.save(sio)  # 这点很重要，传给save函数的不是保存文件名，而是一个StringIO流
+    sio.seek(0)  # 保存流
+    headers = {"content-type": "application/vnd.ms-excel", "content-disposition": 'attachment;filename=download.xls'}
+    # 以流的形式返回浏览器
+    return StreamingResponse(sio, media_type="text/xlsx", headers=headers)

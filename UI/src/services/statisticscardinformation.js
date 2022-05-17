@@ -1,4 +1,4 @@
-import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards, GetAccountTaskName } from '@/services/api'
+import { GetCreditCardListData, GetTaskListData, CardAccount, CommissionConsume, CardsExcel, addcards, GetAccountTaskName, CardsExcelExport } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -50,7 +50,6 @@ export async function GetAccountTaskNameData(query) {
 export async function AddCreditTask(query) {
     return request(GetTaskListData, METHOD.POST, query)
 }
-
 /**
  * 统计卡页面
  * 新增卡号
@@ -95,7 +94,6 @@ export async function innerdelete(id) {
     })
 }
 
-
 /**
  * 统计卡页面
  * 获取账号列表
@@ -106,6 +104,7 @@ export async function CardAccountListData(query) {
     return request(CardAccount, METHOD.GET, query)
 }
 
+
 /**
  * 统计卡页面
  * 添加账号列表
@@ -115,7 +114,6 @@ export async function CardAccountListData(query) {
 export async function AddCardAccount(form) {
     return request(CardAccount, METHOD.POST, form)
 }
-
 
 /**
  * 统计卡页面
@@ -128,6 +126,7 @@ export async function CardAccountdelete(id) {
         ids: id
     })
 }
+
 
 /**
  * 统计卡页面
@@ -147,4 +146,14 @@ export async function CommissionConsumetion(query) {
  */
 export async function AddCardsExcel(query) {
     return request(CardsExcel, METHOD.POST, query)
+}
+
+/**
+ * 统计卡页面
+ * 导出数据成excel
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function ExcelExport(query) {
+    return request(CardsExcelExport, METHOD.POST, query, {responseType: 'arraybuffer'})
 }
