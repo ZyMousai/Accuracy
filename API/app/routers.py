@@ -7,6 +7,7 @@ from app.Clerk.Card.view import clerk_card_router
 from app.Clerk.Scheduler.view import clerk_scheduler_router
 from app.DocumentManagement.Documents.view import documents_router
 from app.DocumentManagement.Recycle.view import recycle_router
+from app.OffersSystem.Offers.view import offers_router
 from app.OffersSystem.OffersAccount.view import offers_account_router
 from app.OffersSystem.OffersUnion.view import offers_union_router
 from app.PersonnelManagement.Departments.view import departments_router
@@ -45,3 +46,4 @@ server_man_router.include_router(server_router)
 offers_system_router = APIRouter(prefix="/api/OffersSystem")
 offers_system_router.include_router(offers_account_router)
 offers_system_router.include_router(offers_union_router)
+offers_system_router.include_router(offers_router)
