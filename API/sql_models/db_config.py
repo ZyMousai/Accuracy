@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, registry
-from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float, or_, desc
+from sqlalchemy import Integer, Column, String, Boolean, Date, DateTime, Float, or_, desc, JSON, Text
 from sqlalchemy import select, func, delete
 from starlette.responses import JSONResponse
 
 async_session_local = None
+
 
 def create_eng(config):
     async_eng = create_async_engine(config.MYSQL_URL)
@@ -42,6 +43,8 @@ class BaseType(object):
     BaseDate = Date
     BaseDateTime = DateTime
     BaseFloat = Float
+    BaseJson = JSON
+    BaseText = Text
 
 
 class PBaseModel(Base):
@@ -142,7 +145,8 @@ class PBaseModel(Base):
 
             # 查询数据
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
-            _orm = select(cls).where(*filter_condition).order_by(desc('id')).limit(page_size).offset((page - 1) * page_size)
+            _orm = select(cls).where(*filter_condition).order_by(desc('id')).limit(page_size).offset(
+                (page - 1) * page_size)
             result = (await dbs.execute(_orm)).scalars().all()
         except Exception as e:
             return JSONResponse(status_code=400, content={"detail": str(e)})
