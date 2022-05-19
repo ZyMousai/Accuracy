@@ -67,7 +67,7 @@ async def get_docs_page(query: SearchDocumentManagement = Depends(SearchDocument
         ("created_time", f'>="{query.start_time}"', query.start_time),
         ("created_time", f'<="{query.end_time}"', query.end_time),
         ("is_delete", '==0', 0),
-        ("department_id", f'=={query.department_id}', query.department_id),
+        ("department_id", f'=={query.department_id}', query.department_id)
     ]
 
     result, count, total_page = await DocumentManagement.get_all_detail_page(dbs, query.page, query.page_size,
