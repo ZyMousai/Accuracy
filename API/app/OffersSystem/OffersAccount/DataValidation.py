@@ -20,9 +20,9 @@ class AddOffersAccount(BaseModel):
     offers_account: str
     offers_pwd: str
     offers_api_key: Optional[str]
-    options: Optional[List[Dict]] = Query([])
+    options: Optional[Dict] = Query({})
     status: int = Query(1)
-    ip_info: Optional[Dict] = Query({"nation": "US", "state": ""})
+    ip_info: Optional[Dict] = Query({"country": "US", "state": ""})
 
 
 class UpdateOffersAccount(BaseModel):
