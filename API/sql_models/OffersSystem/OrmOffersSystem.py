@@ -35,9 +35,9 @@ class OffersUnion(PBaseModel):
             # 查询数据
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
-            _orm = select(cls.id,cls.union_name, cls.union_url, UnionSystem.union_system,
+            _orm = select(cls.id, cls.union_name, cls.union_url, UnionSystem.union_system,
                           func.date_format(cls.create_time, "%Y-%m-%d %H:%i:%S")).outerjoin(UnionSystem,
-                                                                                               UnionSystem.id == cls.union_system_id).where(
+                                                                                            UnionSystem.id == cls.union_system_id).where(
                 *filter_condition).order_by().limit(
                 page_size).offset((page - 1) * page_size)
 
@@ -51,6 +51,7 @@ class OffersUnion(PBaseModel):
 class UnionSystem(PBaseModel):
     __tablename__ = 'union_system'
     union_system = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False, unique=True)  # 联盟系统
+    union_system_api_url = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, unique=True)  # 联盟系统api_url
 
 
 class OffersAccount(PBaseModel):
@@ -61,7 +62,43 @@ class OffersAccount(PBaseModel):
     offers_api_key = BaseType.BaseColumn(BaseType.BaseString(88), nullable=False)  # api key
     options = BaseType.BaseColumn(BaseType.BaseJson)  # api key
     status = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)
+    ip_info = BaseType.BaseColumn(BaseType.BaseJson)
     create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
+
+    @classmethod
+    async def get_all_detail_page_associated(cls, dbs, page, page_size, *args):
+        """获取所有数据-分页"""
+        try:
+            # 构建查询条件
+            filter_condition = list()
+            for x in args:
+                if x[2] is not None:
+                    filter_condition.append(eval(f'{x[0]}{x[1]}'))
+            # 处理分页
+            _orm_count = select(func.count(cls.id)).outerjoin(OffersUnion,
+                                                              cls.union_id == OffersUnion.id).where(*filter_condition)
+
+            count = (await dbs.execute(_orm_count)).scalar()
+            remainder = count % page_size
+            if remainder == 0:
+                total_page = int(count // page_size)
+            else:
+                total_page = int(count // page_size) + 1
+
+            # 查询数据
+            # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
+
+            _orm = select(cls.id, OffersUnion.union_name, cls.offers_account, cls.offers_pwd, cls.offers_api_key,
+                          cls.status).outerjoin(OffersUnion,
+                                                OffersUnion.id == cls.union_id).where(
+                *filter_condition).order_by().limit(
+                page_size).offset((page - 1) * page_size)
+
+            result = (await dbs.execute(_orm)).all()
+
+        except Exception as e:
+            return JSONResponse(status_code=400, content={"detail": str(e)})
+        return result, count, total_page
 
 
 class Offers(PBaseModel):
