@@ -3,7 +3,7 @@ from typing import List
 from util.crypto import encrypt, decrypt
 from app.OffersSystem.OffersAccount.DataValidation import OffersAccountSearch, AddOffersAccount, UpdateOffersAccount
 from sql_models.OffersSystem.OrmOffersSystem import OffersAccount
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sql_models.db_config import db_session
 
@@ -14,7 +14,7 @@ offers_account_router = APIRouter(
 
 
 @offers_account_router.delete("/")
-async def delete_offers_account(offers_account_ids: List[int], dbs=Depends(db_session)):
+async def delete_offers_account(offers_account_ids: List[int] = Query(...), dbs=Depends(db_session)):
     result = await OffersAccount.delete_data(dbs, tuple(offers_account_ids), auto_commit=False)
     if not result:
         raise HTTPException(status_code=404, detail="Delete non-existent resources.")

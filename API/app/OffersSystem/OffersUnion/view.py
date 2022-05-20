@@ -1,6 +1,6 @@
 # offers联盟管理
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.OffersSystem.OffersUnion.DataValidation import OffersUnionSearch, AddOffersUnion, UpdateOffersUnion
 from sql_models.OffersSystem.OrmOffersSystem import OffersUnion, UnionSystem
@@ -14,7 +14,7 @@ offers_union_router = APIRouter(
 
 
 @offers_union_router.delete("/")
-async def delete_offers_union(offers_union_ids: List[int], dbs=Depends(db_session)):
+async def delete_offers_union(offers_union_ids: List[int] = Query(...), dbs=Depends(db_session)):
     result = await OffersUnion.delete_data(dbs, tuple(offers_union_ids), auto_commit=False)
     if not result:
         raise HTTPException(status_code=404, detail="Delete non-existent resources.")
