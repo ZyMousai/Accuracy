@@ -10,16 +10,7 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.filename" placeholder="请输入" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="上传用户"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-input v-model="query.user_name" style="width: 100%" placeholder="请输入" />
+              <a-input v-model="query.user_name" placeholder="联盟名" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -28,9 +19,9 @@
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.union_name" placeholder="请选择" :allowClear="true">
+              <a-select v-model="query.union_system_id" placeholder="请选择" :allowClear="true">
                 <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
-                  {{item.union_name}}
+                  {{item.union_system}}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -69,20 +60,6 @@
     </div>
     <div>
       <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
-      <a-button type="primary" @click="Batchdwon()" style="margin-left: 5px;"><a-icon type="cloud-download" />批量下载</a-button>
-      <a-space class="operator">
-        <a-upload
-          name="files"
-          :multiple="true"
-          :action="updocuurl"
-          :headers="headers"
-          :before-upload="beforeUpload"
-          @change="handleChange"
-          style="margin-left: 5px;"
-        >
-        <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
-        </a-upload>
-      </a-space>
       <standard-table
         :columns="columns"
         :dataSource="dataSource"
@@ -92,9 +69,6 @@
         :pagination="false"
       >
         <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px" @click="downdocument(record.file_url, record.filename)">
-            <a-icon type="cloud-download"/>下载
-          </a>
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
@@ -129,16 +103,16 @@
           :label-col="{ span: 4 }"
           :wrapper-col="{ span: 14 }"
         >
-          <a-form-model-item ref="filename" label="文件名" prop="filename">
+          <a-form-model-item ref="filename" label="联盟名" prop="filename">
             <a-input
-              v-model="editform.filename"
+              v-model="editform.user_name"
               :disabled="true"
             />
           </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department_id">
-            <a-select v-model="editform.department_id" placeholder="请选择" :allowClear="true">
+          <a-form-model-item label="追踪系统" prop="union_system_id">
+            <a-select v-model="editform.union_system_id" placeholder="请选择" :allowClear="true">
               <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
-                {{item.department}}
+                {{item.union_system}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
@@ -208,18 +182,16 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        filename: null,
         user_name: null,
-        union_name: null,
-
+        union_system_id: "",
         start_time: null,
         end_time: null,
       },
       total: 0,
       editform: {
         id: '',
-        filename: '',
-        union_name: ''
+        user_name: null,
+        union_system_id: "",
       },
       advanced: true,
       columns: columns,
@@ -235,8 +207,8 @@ export default {
       dialogvisible: false,
       offersunionsystem: [],
       editrules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department_id: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
+        user_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
+        union_system_id: [{ required: true, message: '请选择追踪系统列表', trigger: 'change' }]
       },
       tableloading: false,
       alone: '',
@@ -258,7 +230,7 @@ export default {
           console.log(this.roles);
           this.offersunionsystem = res.data.data
           this.gettabledata()
-          this.query.department_id = localStorage.getItem('department_id') - ''
+          this.query.union_system_id = localStorage.getItem('union_system_id') - ''
         } else {
           this.$message.error('获取追踪系统列表失败！')
         }
@@ -312,15 +284,15 @@ export default {
       }
       this.query.page = '1'
       this.query.page_size = '10'
-      this.query.department_id = localStorage.getItem('department_id') - ''
+      this.query.union_system_id = localStorage.getItem('union_system_id') - ''
       this.gettabledata()
     },
     // 打开编辑表单
     showModal(data) {
       console.log(data);
       this.editform.id = data.id
-      this.editform.department_id = data.department_id  - ''
-      this.editform.filename = data.filename
+      this.editform.user_name = data.user_name
+      this.editform.union_system_id = data.union_system_id - ''
       console.log(this.editform);
       this.visible = true;
     },
@@ -397,23 +369,6 @@ export default {
     async oncancel() {
       this.dialogvisible = false
     },
-    // 上传文件
-    handleChange(info) {
-      if (info.file.status !== 'uploading') {
-        console.log(info.file, info.fileList);
-      }
-      if (info.file.status === 'done') {
-        this.$message.success(`${info.file.name}文件上传成功！`);
-        this.gettabledata()
-      } else if (info.file.status === 'error') {
-        this.$message.error(`${info.file.name}文件上传失败！`);
-      }
-    },
-    beforeUpload() {
-      const user_id  = localStorage.getItem('id')
-      const department_id  = localStorage.getItem('department_id')
-      this.updocuurl = `${this.alone}/DocumentManagement/documents/v1/upload?user_id=${user_id}&department_id=${department_id}`
-    },
     // 自定义删除对话框底部按钮
     modalfooter() {
       return (
@@ -423,19 +378,6 @@ export default {
           <a-button onClick={this.canceldelete}>取消</a-button>
         </div>
       )
-    },
-    // 文档下载
-    downdocument(url, name) {
-      console.log(URL);
-      const a = document.createElement('a')
-      fetch(url).then(res => res.blob()).then(blob => {
-        a.href = URL.createObjectURL(blob)
-        a.download = name || ''
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(a.href);
-        document.body.removeChild(a);
-      })
     },
     // 分页配置
     onShowSizeChange(current, pageSize) {
@@ -447,13 +389,6 @@ export default {
       this.query.page = pageNumber
       this.gettabledata()
     },
-    // 批量下载
-    Batchdwon() {
-      console.log(this.selectedRows);
-      for (let i = 0; i < this.selectedRows.length; i++) {
-        this.downdocument(this.selectedRows[i].file_url, this.selectedRows[i].filename)
-      }
-    }
   }
 }
 </script>
