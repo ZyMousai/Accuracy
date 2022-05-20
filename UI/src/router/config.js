@@ -52,7 +52,8 @@ const options = {
                         icon: 'folder-open',
                     },
                     component: BlankView,
-                    children: [{
+                    children: [
+                        {
                             path: 'document',
                             name: '文档',
                             component: () =>
@@ -63,6 +64,34 @@ const options = {
                             name: '回收站',
                             component: () =>
                                 import ('@/pages/documentmanagement/recyclebin'),
+                        }
+                    ]
+                },
+                {
+                    path: 'offerssystem',
+                    name: 'offers系统',
+                    meta: {
+                        icon: 'folder-open',
+                    },
+                    component: BlankView,
+                    children: [
+                        {
+                            path: 'offersalliance',
+                            name: '联盟管理',
+                            component: () =>
+                                import ('@/pages/offerssystem/offersalliance'),
+                        },
+                        {
+                            path: 'offersaccount',
+                            name: '账号管理',
+                            component: () =>
+                                import ('@/pages/offerssystem/offersaccount'),
+                        },
+                        {
+                            path: 'offers',
+                            name: 'offers',
+                            component: () =>
+                                import ('@/pages/offerssystem/offers'),
                         }
                     ]
                 },

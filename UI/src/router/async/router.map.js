@@ -168,6 +168,18 @@ const routerMap = {
         component: () =>
             import ('@/pages/systemmanagement')
     },
+    offerssystem:{
+        path:'offerssystem',
+        name:'offers系统',
+        icon: 'setting',
+        component: view.BlankView,
+    },
+    offersalliance: {
+        path: 'offersalliance',
+        name: '联盟管理',
+        component: () =>
+            import ('@/pages/offerssystem/offersalliance')
+    },
     exp403: {
         authority: '*',
         name: 'exp403',

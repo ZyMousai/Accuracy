@@ -299,7 +299,6 @@ const columns = [
     scopedSlots: {customRender: "interval"},
   },
   {title: "操作", scopedSlots: {customRender: "action"}},
-  // {title: "钉钉通知人", dataIndex: "at",colSpan:0,width:0},
 
 ];
 

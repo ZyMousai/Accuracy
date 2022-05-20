@@ -13,7 +13,8 @@ from app.PersonnelManagement.Users.permissions import Permissions
 from config import globals_config
 from util.crypto import sha1_encode
 from app.PersonnelManagement.Users.DataValidation import AddUser, UpdateUser, UpdatePassword, SearchUser
-from sql_models.PersonnelManagement.OrmPersonnelManagement import *
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Users, Roles, RoleUserMapping, Permission, \
+    RolePermissionMapping, DepartmentUserMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 from sql_models.db_config import db_session
 

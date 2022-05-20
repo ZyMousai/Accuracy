@@ -2,7 +2,7 @@ from sql_models import create_table
 from sql_models.db_config import PBaseModel, BaseType
 from sqlalchemy import select
 
-from sql_models.PersonnelManagement.OrmPersonnelManagement import *
+from sql_models.PersonnelManagement.OrmPersonnelManagement import Users
 
 
 # from sql_models.PersonnelManagement.OrmUsers import Roles, RoleUserMapping

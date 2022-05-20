@@ -35,7 +35,7 @@ class OffersUnion(PBaseModel):
             # 查询数据
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
-            _orm = select(cls.id, cls.union_name, cls.union_url, UnionSystem.union_system,
+            _orm = select(cls.id, cls.union_name, cls.union_url, UnionSystem.union_system,cls.union_system_id,
                           func.date_format(cls.create_time, "%Y-%m-%d %H:%i:%S")).outerjoin(UnionSystem,
                                                                                             UnionSystem.id == cls.union_system_id).where(
                 *filter_condition).order_by().limit(

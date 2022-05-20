@@ -70,6 +70,6 @@ async def update_offers_union(info: UpdateOffersUnion, dbs=Depends(db_session)):
 
 @offers_union_router.get('/union_system')
 async def search_offers_union(dbs=Depends(db_session)):
-    result = await OffersUnion.get_all(dbs, *[("is_delete", '==0', 0)])
+    result = await UnionSystem.get_all(dbs, *[("is_delete", '==0', 0)])
     response_json = {"data": result}
     return response_json

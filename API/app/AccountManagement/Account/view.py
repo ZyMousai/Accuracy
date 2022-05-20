@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.AccountManagement.Account.DataValidation import SearchAccount, AddAccount, UpdateAccount
 from sql_models.AccountManagement.OrmAccountManagement import Account
-from sql_models.PersonnelManagement.OrmPersonnelManagement import *
+from sql_models.PersonnelManagement.OrmPersonnelManagement import RoleAccountMapping
 from sql_models.db_config import db_session
 from util.crypto import encrypt, decrypt
 
