@@ -55,7 +55,6 @@ async def read_root():
 #     return response
 
 
-
 init_middleware(app)
 
 # # 在FastAPI创建前创建Redis连接

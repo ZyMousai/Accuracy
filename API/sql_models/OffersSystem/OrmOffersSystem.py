@@ -35,7 +35,7 @@ class OffersUnion(PBaseModel):
             # 查询数据
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
-            _orm = select(cls.id, cls.union_name, cls.union_url, UnionSystem.union_system,cls.union_system_id,
+            _orm = select(cls.id, cls.union_name, cls.union_url, UnionSystem.union_system, cls.union_system_id,
                           func.date_format(cls.create_time, "%Y-%m-%d %H:%i:%S")).outerjoin(UnionSystem,
                                                                                             UnionSystem.id == cls.union_system_id).where(
                 *filter_condition).order_by().limit(
@@ -107,6 +107,7 @@ class Offers(PBaseModel):
     account_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 账号id
     offers_name = BaseType.BaseColumn(BaseType.BaseString(288), nullable=False)  # 任务名
     offers_desc = BaseType.BaseColumn(BaseType.BaseText)  # 任务描述
+    country = BaseType.BaseColumn(BaseType.BaseString(28), nullable=False)  # 国家
     pay = BaseType.BaseColumn(BaseType.BaseInteger)  # 佣金
     pay_unit = BaseType.BaseColumn(BaseType.BaseString(288))  # 佣金单位
     offers_url = BaseType.BaseColumn(BaseType.BaseString(288))  # 任务链接
