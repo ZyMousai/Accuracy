@@ -4,14 +4,6 @@ import requests
 
 from util.mysql_c.MysqlClient import MysqlClient
 
-system_t = {
-    'hasoffers': 'https://{network-id}.api.hasoffers.com/Apiv3/json',  # 网盟id
-    'offer18': 'https://api.offer18.com/api/{plate}/{fun}',  # 板块，功能
-    'affise': 'http://api.adswapper.affise.com/{version}/{plate}',  # 版本，板块
-    'everflow': 'https://api.eflow.team/{version}/{plate}/{fun}',  # 版本，板块，功能
-    'cake': 'https://login.suited45.com/affiliates/api/{plate}/{fun}'  # 板块，功能
-}
-
 
 class UnionApi(object):
     def __init__(self, **account_info):
@@ -113,18 +105,26 @@ class UnionApiRun(object):
     # 入库
 
 
-ttt = {
-    'union_id': 1,
-    'union_system_id': 5,
-    'union_system': 'cake',
-    'union_system_url': 'https://login.suited45.com/affiliates/api/{plate}/{fun}',
-    'account_id': 1,
-    'account': 'root',
-    'account_password': '123',
-    'account_api_key': '123',
-    'account_options': {},
-    'account_ip_info': {}
+if __name__ == '__main__':
+    system_t = {
+        'hasoffers': 'https://{network-id}.api.hasoffers.com/Apiv3/json',  # 网盟id
+        'offer18': 'https://api.offer18.com/api/{plate}/{fun}',  # 板块，功能
+        'affise': 'http://api.adswapper.affise.com/{version}/{plate}',  # 版本，板块
+        'everflow': 'https://api.eflow.team/{version}/{plate}/{fun}',  # 版本，板块，功能
+        'cake': 'https://login.suited45.com/affiliates/api/{plate}/{fun}'  # 板块，功能
+    }
+    ttt = {
+        'union_id': 1,
+        'union_system_id': 5,
+        'union_system': 'cake',
+        'union_system_url': 'https://login.suited45.com/affiliates/api/{plate}/{fun}',
+        'account_id': 1,
+        'account': 'root',
+        'account_password': '123',
+        'account_api_key': '123',
+        'account_options': {},
+        'account_ip_info': {}
 
-}
-ax = UnionApi(**ttt)
-ax.run()
+    }
+    ax = UnionApi(**ttt)
+    ax.run()
