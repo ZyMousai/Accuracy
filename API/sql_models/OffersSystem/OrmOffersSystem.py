@@ -94,6 +94,7 @@ class OffersAccount(PBaseModel):
                 *filter_condition).order_by().limit(
                 page_size).offset((page - 1) * page_size)
 
+
             result = (await dbs.execute(_orm)).all()
 
         except Exception as e:

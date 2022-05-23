@@ -47,6 +47,9 @@ async def search_offers_account(search_info: OffersAccountSearch = Depends(Offer
                          "offers_pwd": decrypt(i.offers_pwd),
                          "offers_api_key": i.offers_api_key,
                          "status": i.status,
+                         "ip_info": i.ip_info,
+                         "options": i.options,
+                         "union_id": i.union_id
                      } for i in result]
                      }
     return response_json
