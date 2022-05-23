@@ -15,7 +15,7 @@ offers_account_router = APIRouter(
 
 @offers_account_router.delete("/")
 async def delete_offers_account(offers_account_ids: List[int] = Query(...), dbs=Depends(db_session)):
-    result = await OffersAccount.delete_data(dbs, tuple(offers_account_ids))
+    result = await OffersAccount.delete_data(dbs, tuple(offers_account_ids), auto_commit=False)
     if not result:
         raise HTTPException(status_code=404, detail="Delete non-existent resources.")
     return result
@@ -75,8 +75,6 @@ async def add_offers_account_id(info: AddOffersAccount, dbs=Depends(db_session))
 async def update_offers_account(info: UpdateOffersAccount, dbs=Depends(db_session)):
     if info.offers_pwd:
         info.offers_pwd = encrypt(info.offers_pwd)
-    else:
-        info.__delattr__("offers_pwd")
     update_data_dict = info.dict(exclude_unset=True)
     result = await OffersAccount.update_data(dbs, update_data_dict, is_delete=0)
     if not result:
