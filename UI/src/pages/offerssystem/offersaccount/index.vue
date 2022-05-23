@@ -4,58 +4,62 @@
       <a-form layout="horizontal" :model="query">
         <div :class="advanced ? null: 'fold'">
           <a-row >
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="文件名"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-input v-model="query.filename" placeholder="请输入" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="上传用户"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-input v-model="query.user_name" style="width: 100%" placeholder="请输入" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="部门选择"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-select v-model="query.department_id" placeholder="请选择" :allowClear="true" :disabled="OperationVerification()">
-                <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
-                  {{item.department}}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="联盟名"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.union_name" placeholder="联盟名" />
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="账号"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.offers_account" placeholder="账号" />
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-row v-if="advanced">
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="开始日期"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="结束日期"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="开始日期"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="结束日期"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24">
+              <a-form-item
+                label="状态"
+                :labelCol="{ span: 5 }"
+                :wrapperCol="{ span: 18, offset: 1 }"
+              >
+                <a-select v-model="query.state" placeholder="请选择">
+                  <a-select-option
+                    v-for="item in state_select"
+                    :key="item[1]"
+                    :value="item[1]"
+                  >
+                    {{ item[0] }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
         </div>
         <span style="float: right; margin-top: 3px;">
           <a-button type="primary" @click="queryevents">查询</a-button>
@@ -68,33 +72,18 @@
       </a-form>
     </div>
     <div>
-      <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
-      <a-button type="primary" @click="Batchdwon()" style="margin-left: 5px;"><a-icon type="cloud-download" />批量下载</a-button>
-      <a-space class="operator">
-        <a-upload
-          name="files"
-          :multiple="true"
-          :action="updocuurl"
-          :headers="headers"
-          :before-upload="beforeUpload"
-          @change="handleChange"
-          style="margin-left: 5px;"
-        >
-        <a-button type="primary"><a-icon type="cloud-upload" />批量上传</a-button>
-        </a-upload>
-      </a-space>
-      <standard-table
+      <a-button type="primary" @click="showModal">
+        <a-icon type="plus-circle" />新增
+      </a-button>
+      <a-table
         :columns="columns"
-        :dataSource="dataSource"
+        :data-source="dataSource"
         :selectedRows.sync="selectedRows"
         :rowKey='record=>record.id'
         :loading="tableloading"
         :pagination="false"
       >
-        <div slot="action" slot-scope="{record}">
-          <a style="margin-right: 8px" @click="downdocument(record.file_url, record.filename)">
-            <a-icon type="cloud-download"/>下载
-          </a>
+        <div slot="action" slot-scope="record">
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
           </a>
@@ -102,7 +91,13 @@
             <a-icon type="delete" />删除
           </a>
         </div>
-      </standard-table>
+        <div slot="status" slot-scope="record">
+          <a-switch slot="status" :loading="record.status_loading" default-checked
+                    :checked="record.status ? true : false"
+                    @change="record.status_loading=true;status_change(record.status, record.id)"/>
+        </div>
+        <!--                    :checked="record.status ? true : false"-->
+      </a-table>
       <a-pagination
         style="margin-top: 15px;"
         v-model="query.page"
@@ -112,7 +107,7 @@
         :show-total="total => `一共 ${total} 条`"
         @change="pageonChange" />
       <!-- 编辑表单 -->
-      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
+      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
       <template slot="footer">
         <a-button key="back" @click="closeform">
           取消
@@ -129,19 +124,67 @@
           :label-col="{ span: 4 }"
           :wrapper-col="{ span: 14 }"
         >
-          <a-form-model-item ref="filename" label="文件名" prop="filename">
-            <a-input
-              v-model="editform.filename"
-              :disabled="true"
-            />
-          </a-form-model-item>
-          <a-form-model-item label="权限部门" prop="department_id">
-            <a-select v-model="editform.department_id" placeholder="请选择" :allowClear="true">
-              <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
-                {{item.department}}
+<!--          <a-form-model-item ref="union_id" label="联盟名" prop="union_name">-->
+<!--            <a-input v-model="editform.union_name" />-->
+<!--          </a-form-model-item>-->
+          <a-form-model-item label="联盟名" prop="union_id">
+            <a-select v-model="editform.union_id" placeholder="请选择" :allowClear="true">
+              <a-select-option v-for="item in unionnamesystem" :key="item.id" :value="item.id">
+                {{item.union_name}}
               </a-select-option>
             </a-select>
           </a-form-model-item>
+
+          <a-form-model-item ref="offers_account" label="账号" prop="offers_account">
+            <a-input v-model="editform.offers_account" />
+          </a-form-model-item>
+
+          <a-form-model-item ref="offers_pwd" label="密码" prop="offers_pwd">
+            <a-input v-model="editform.offers_pwd" type="password"/>
+          </a-form-model-item>
+
+          <a-form-model-item ref="offers_api_key" label="api-key" prop="offers_api_key">
+            <a-input v-model="editform.offers_api_key" />
+          </a-form-model-item>
+
+          <a-form-model-item ref="ip_info_state" label="ip国家" prop="ip_info_state">
+            <a-input v-model="editform.ip_info_state" />
+          </a-form-model-item>
+          <a-form-model-item ref="ip_info_country" label="ip洲或地区" prop="ip_info_country">
+            <a-input v-model="editform.ip_info_country" />
+          </a-form-model-item>
+
+          <a-space
+            v-for="(user, index) in editform.users"
+            :key="user.id"
+            style="display: flex; margin-bottom: 0px"
+            align="baseline"
+          >
+            <a-form-item
+              :name="['users', index, 'key']"
+              :rules="{
+                required: true,
+                message: 'Missing key',
+              }"
+            >
+              <a-input v-model="user.key" placeholder="key" />
+            </a-form-item>
+            <a-form-item
+              :name="['users', index, 'value']"
+              :rules="{
+                required: true,
+                message: 'Missing value',
+              }"
+            >
+              <a-input v-model="user.value" placeholder="value" />
+            </a-form-item>
+            <a-button @click="removeUser(user)">删除</a-button>
+          </a-space>
+          <a-form-item>
+            <a-button type="dashed" block @click="addUser">
+              Add Option
+            </a-button>
+          </a-form-item>
         </a-form-model>
       </template>
     </a-modal>
@@ -153,41 +196,56 @@
      @icon="oncancel"
      :footer="modalfooter"
     >
-      <p>是否放入回收站</p>
-      <p>小提示：如果不放入回收站则直接删除，无法恢复!</p>
+      <p>是否删除</p>
     </a-modal>
     </div>
   </a-card>
 </template>
 
 <script>
-import StandardTable from '@/components/table/StandardTable'
-import {DocumentDate, DeleteDocuments, EditDate} from '@/services/documentmanagement'
-import {DepartmentDate} from '@/services/personnelmanagement'
-import {OperationVerification} from '@/plugins/permissionverify'
 import Cookie from 'js-cookie'
+import {
+  OffersAccountAdd,
+  OffersAccountDate,
+  OffersAccountDelete,
+  OffersAccountEdit
+} from "../../../services/offersaccount";
+import {OffersUnionDateAll} from "../../../services/offersunion";
+
 const columns = [
+  // {
+  //   title: '序号',
+  //   dataIndex: 'index',
+  //   width: 80
+  // },
   {
-    title: '序号',
-    dataIndex: 'index',
-    width: 80
+    title: 'id',
+    dataIndex: 'id',
   },
   {
-    title: '上传时间',
-    dataIndex: 'created_time'
+    title: '联盟名',
+    dataIndex: 'union_name'
   },
   {
-    title: '文件名',
-    dataIndex: 'filename'
+    title: '账号',
+    dataIndex: 'offers_account'
   },
   {
-    title: '文件大小',
-    dataIndex: 'file_size'
+    title: '密码',
+    dataIndex: 'offers_pwd_mi'
   },
   {
-    title: '上传人',
-    dataIndex: 'uploader_name'
+    title: 'api-key',
+    dataIndex: 'offers_api_key'
   },
+  // {
+  //   title: '状态',
+  //   dataIndex: 'status'
+  // },
+  {
+    title: '状态',
+    key: 'status',
+    scopedSlots: {customRender: 'status'}},
   {
     title: '操作',
     scopedSlots: { customRender: 'action' }
@@ -198,24 +256,35 @@ const dataSource = []
 
 export default {
   name: 'QueryList',
-  components: {StandardTable},
   data () {
     return {
       query: {
         page: 1,
         page_size: 10,
-        filename: null,
-        user_name: null,
-        department_id: null,
+        union_name: null,
+        status: null,
+        offers_account: null,
         start_time: null,
         end_time: null,
       },
       total: 0,
       editform: {
         id: '',
-        filename: '',
-        department_id: ''
+        status: null,
+        union_id: null,
+        offers_account: null,
+        offers_pwd: null,
+        offers_api_key: null,
+        options: null,
+        ip_info: null,
+        ip_info_state: "",
+        ip_info_country: "",
+        users:[],
       },
+      state_select: [
+        ["开启", 0],
+        ["关闭", 1],
+      ],
       advanced: true,
       columns: columns,
       dataSource: dataSource,
@@ -227,11 +296,12 @@ export default {
       start_time: '',
       end_time: '',
       role_id: '',
+      tablename: "",
       dialogvisible: false,
-      departmentoptions: [],
+      unionnamesystem: [],
       editrules: {
-        filename: [{ required: true, message: '请输入文件名', trigger: 'blur' }],
-        department_id: [{ required: true, message: '请选择部门权限', trigger: 'change' }]
+        union_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
+        union_system_id: [{ required: true, message: '请选择追踪系统列表', trigger: 'change' }]
       },
       tableloading: false,
       alone: '',
@@ -239,24 +309,35 @@ export default {
         accept: 'application/json',
         authorization: 'authorization-text',
         token: Cookie.get('Authorization')
-      }
+      },
     }
   },
   created () {
-    this.getdepartmentoptions()
+    this.getunionnamesystem()
   },
   methods: {
-    OperationVerification,
-    //获取部门列表
-    getdepartmentoptions(){
-      DepartmentDate().then(res => {
+    removeUser(item){
+      let index = this.editform.users.indexOf(item);
+
+      if (index !== -1) {
+        this.editform.users.splice(index, 1);
+      }
+    },
+    addUser(){
+      this.editform.users.push({
+        key: '',
+        value: '',
+      });
+    },
+    //获取追踪系统列表
+    getunionnamesystem(){
+      OffersUnionDateAll().then(res => {
         if (res.status === 200) {
           console.log(this.roles);
-          this.departmentoptions = res.data.data
+          this.unionnamesystem = res.data.data
           this.gettabledata()
-          this.query.department_id = localStorage.getItem('department_id') - ''
         } else {
-          this.$message.error('获取部门列表失败！')
+          this.$message.error('获取联盟列表失败！')
         }
       })
     },
@@ -264,17 +345,27 @@ export default {
     gettabledata () {
       this.alone = process.env.VUE_APP_API_ALONE_URL
       this.tableloading = true
-      DocumentDate(this.query).then(res => {
+      OffersAccountDate(this.query).then(res => {
         if (res.status === 200) {
           console.log(res);
-          this.dataSource = res.data.data
+          var reg = /(.*)(.)$/;
+          var re_da = res.data.data;
+          // 给予序号
+          for (var i = 0; i < re_da.length; i++) {
+            re_da[i]["index"] = i + 1
+            re_da[i]["status_loading"] = false
+            re_da[i]["offers_pwd_mi"] = re_da[i]["offers_pwd"].replace(reg,function(a,b){
+                return b.replace(/./g,"*") + "*";
+            });
+          }
+          this.dataSource = re_da
           this.total = res.data.total
           console.log(this.total);
           this.tableloading = false
-          for (var i = 0; i < this.dataSource.length; i++) {
-            this.dataSource[i]["index"] = i + 1
-            this.dataSource[i]["file_url"] = this.alone + '/DocumentManagement/documents/v1/download/' + this.dataSource[i].filename
-          }
+          // for (var i = 0; i < this.dataSource.length; i++) {
+          //   this.dataSource[i]["index"] = i + 1
+          //   this.dataSource[i]["file_url"] = this.alone + '/DocumentManagement/documents/v1/download/' + this.dataSource[i].filename
+          // }
           console.log(this.dataSource);
         } else {
           this.tableloading = false
@@ -287,6 +378,7 @@ export default {
     },
     // 查询
     queryevents() {
+      console.log(this.query)
       this.query.page = 1
       this.query.page_size = 10
       this.query.start_time = this.start_time ? this.start_time.format('YYYY-MM-DD') : null
@@ -308,16 +400,39 @@ export default {
       }
       this.query.page = '1'
       this.query.page_size = '10'
-      this.query.department_id = localStorage.getItem('department_id') - ''
+      // this.query.union_system_id = localStorage.getItem('union_system_id') - ''
       this.gettabledata()
     },
     // 打开编辑表单
     showModal(data) {
-      console.log(data);
-      this.editform.id = data.id
-      this.editform.department_id = data.department_id  - ''
-      this.editform.filename = data.filename
-      console.log(this.editform);
+      if (data.id) {
+        this.tablename = "编辑";
+        this.isdisabled = true;
+        console.log(data);
+        this.editform.id = data.id
+        this.editform.status = data.status
+        this.editform.union_id = data.union_id
+        this.editform.offers_account = data.offers_account
+        this.editform.offers_pwd = data.offers_pwd
+        this.editform.offers_api_key = data.offers_api_key
+
+        this.editform.ip_info_state = data.ip_info["state"]
+        this.editform.ip_info_country = data.ip_info["nation"]
+
+        this.editform.options = data.options
+        this.editform.users = []
+        for(var da_k in data.options){
+          this.editform.users.push({
+            key: da_k,
+            value: data.options[da_k],
+          });
+        }
+
+        console.log(this.editform);
+      }else {
+        this.tablename = "新增";
+        this.isdisabled = false;
+      }
       this.visible = true;
     },
     // 提交编辑表单
@@ -325,19 +440,39 @@ export default {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          EditDate(this.editform).then(res => {
-            if (res.status === 200) {
-              this.$message.success(`编辑成功！`);
-              this.loading = false;
-              this.visible = false;
-              this.gettabledata()
-            } else {
-              this.$message.error(`编辑失败！`);
-              this.loading = false;
-              this.visible = false;
-              this.gettabledata()
-            }
+          var dick_options = {}
+          this.editform.users.forEach(e => {
+            dick_options[e.key] = e.value
           })
+          this.editform.options = dick_options
+          this.editform.ip_info = {
+            "state": this.editform.ip_info_state,
+            "nation": this.editform.ip_info_country
+          }
+          if (this.tablename === "新增"){
+            this.editform.status = 1
+            OffersAccountAdd(this.editform).then(res => {
+              if (res.status === 200) {
+                this.$message.success(`新增成功！`);
+              } else {
+                this.$message.error(`新增失败！`);
+              }
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata()
+            })
+          }else {
+            OffersAccountEdit(this.editform).then(res => {
+              if (res.status === 200) {
+                this.$message.success(`编辑成功！`);
+              } else {
+                this.$message.error(`编辑失败！`);
+              }
+              this.loading = false;
+              this.visible = false;
+              this.gettabledata()
+            })
+          }
         }
       })
     },
@@ -351,27 +486,8 @@ export default {
       this.dialogvisible = true
     },
     async onok() {
-      let is_logic_del = '1';
       for (let i = 0; i < this.ids.length; i++) {
-        await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
-          if (res.status === 200) {
-            this.$message.success(`删除成功！`);
-          } else {
-            this.$message.error(`删除失败！`);
-          }
-        })
-      }
-      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-      this.query.page = this.query.page < 1 ? 1 : this.query.page
-      this.gettabledata();
-      this.ids = [];
-      this.dialogvisible = false
-    },
-    async onno() {
-      let is_logic_del = '0';
-      for (let i = 0; i < this.ids.length; i++) {
-        await DeleteDocuments(this.ids[i], is_logic_del).then(res => {
+        await OffersAccountDelete(this.ids[i]).then(res => {
           if (res.status === 200) {
             this.$message.success(`删除成功！`);
           } else {
@@ -393,46 +509,17 @@ export default {
     async oncancel() {
       this.dialogvisible = false
     },
-    // 上传文件
-    handleChange(info) {
-      if (info.file.status !== 'uploading') {
-        console.log(info.file, info.fileList);
-      }
-      if (info.file.status === 'done') {
-        this.$message.success(`${info.file.name}文件上传成功！`);
-        this.gettabledata()
-      } else if (info.file.status === 'error') {
-        this.$message.error(`${info.file.name}文件上传失败！`);
-      }
-    },
-    beforeUpload() {
-      const user_id  = localStorage.getItem('id')
-      const department_id  = localStorage.getItem('department_id')
-      this.updocuurl = `${this.alone}/DocumentManagement/documents/v1/upload?user_id=${user_id}&department_id=${department_id}`
-    },
     // 自定义删除对话框底部按钮
     modalfooter() {
       return (
         <div>
           <a-button onClick={this.onok}  type="primary">是</a-button>
-          <a-button onClick={this.onno}  type="danger">直接删除</a-button>
           <a-button onClick={this.canceldelete}>取消</a-button>
         </div>
       )
     },
-    // 文档下载
-    downdocument(url, name) {
-      console.log(URL);
-      const a = document.createElement('a')
-      fetch(url).then(res => res.blob()).then(blob => {
-        a.href = URL.createObjectURL(blob)
-        a.download = name || ''
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(a.href);
-        document.body.removeChild(a);
-      })
-    },
+    // <a-button onClick={this.onno}  type="danger">直接删除</a-button>
+
     // 分页配置
     onShowSizeChange(current, pageSize) {
       this.query.page = 1
@@ -443,13 +530,18 @@ export default {
       this.query.page = pageNumber
       this.gettabledata()
     },
-    // 批量下载
-    Batchdwon() {
-      console.log(this.selectedRows);
-      for (let i = 0; i < this.selectedRows.length; i++) {
-        this.downdocument(this.selectedRows[i].file_url, this.selectedRows[i].filename)
-      }
-    }
+    status_change(status, id) {
+      console.log("id");
+      console.log(id);
+      console.log("id");
+      // id.loadingchanr = true
+      OffersAccountEdit({status: status ? 0 : 1, id: id}).then(res => {
+        console.log("成功")
+        console.log(res)
+        this.gettabledata()
+      })
+    },
+
   }
 }
 </script>

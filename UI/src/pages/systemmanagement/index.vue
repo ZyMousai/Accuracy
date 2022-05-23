@@ -95,12 +95,12 @@
     </div>
     <div>
       <a-space class="operator">
-        <a-button type="primary" @click="showModal"
-          ><a-icon type="plus-circle" />新增</a-button
-        >
-        <a-button type="primary" @click="Batchdelete()"
-          ><a-icon type="delete" />批量删除</a-button
-        >
+        <a-button type="primary" @click="showModal">
+          <a-icon type="plus-circle" />新增
+        </a-button>
+        <a-button type="primary" @click="Batchdelete()">
+          <a-icon type="delete" />批量删除
+        </a-button>
       </a-space>
       <standard-table
         :columns="columns"
@@ -124,7 +124,6 @@
           <div v-else>是</div>
         </div> -->
         <div slot="state" slot-scope="{ record }">
-          <!-- 这里可以替换成指示灯 -->
           <div v-if="record.state === 0" class="normal light_frame"></div>
           <div v-else-if="record.state === 1" class="abnormal light_frame"></div>
           <div v-else class="offline light_frame"></div>

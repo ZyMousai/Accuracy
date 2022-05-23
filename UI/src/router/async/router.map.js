@@ -180,6 +180,18 @@ const routerMap = {
         component: () =>
             import ('@/pages/offerssystem/offersalliance')
     },
+    offersaccount: {
+        path: 'offersaccount',
+        name: '账号管理',
+        component: () =>
+            import ('@/pages/offerssystem/offersaccount')
+    },
+    offers: {
+        path: 'offers',
+        name: 'offers',
+        component: () =>
+            import ('@/pages/offerssystem/offers')
+    },
     exp403: {
         authority: '*',
         name: 'exp403',

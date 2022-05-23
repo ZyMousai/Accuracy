@@ -6,11 +6,11 @@
           <a-row >
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="文件名"
+              label="联盟名"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-input v-model="query.user_name" placeholder="联盟名" />
+              <a-input v-model="query.union_name" placeholder="联盟名" />
             </a-form-item>
           </a-col>
           <a-col :md="8" :sm="24" >
@@ -59,6 +59,9 @@
       </a-form>
     </div>
     <div>
+      <a-button type="primary" @click="showModal">
+        <a-icon type="plus-circle" />新增
+      </a-button>
       <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       <standard-table
         :columns="columns"
@@ -86,7 +89,7 @@
         :show-total="total => `一共 ${total} 条`"
         @change="pageonChange" />
       <!-- 编辑表单 -->
-      <a-modal v-model="visible" title="编辑" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
+      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
       <template slot="footer">
         <a-button key="back" @click="closeform">
           取消
@@ -103,11 +106,11 @@
           :label-col="{ span: 4 }"
           :wrapper-col="{ span: 14 }"
         >
-          <a-form-model-item ref="filename" label="联盟名" prop="filename">
-            <a-input
-              v-model="editform.user_name"
-              :disabled="true"
-            />
+          <a-form-model-item ref="union_name" label="联盟名" prop="union_name">
+            <a-input v-model="editform.union_name" />
+          </a-form-model-item>
+          <a-form-model-item ref="union_url" label="URL" prop="union_url">
+            <a-input v-model="editform.union_url" />
           </a-form-model-item>
           <a-form-model-item label="追踪系统" prop="union_system_id">
             <a-select v-model="editform.union_system_id" placeholder="请选择" :allowClear="true">
@@ -127,8 +130,7 @@
      @icon="oncancel"
      :footer="modalfooter"
     >
-      <p>是否放入回收站</p>
-      <p>小提示：如果不放入回收站则直接删除，无法恢复!</p>
+      <p>是否删除</p>
     </a-modal>
     </div>
   </a-card>
@@ -136,9 +138,14 @@
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {OffersUnionDate} from '@/services/offerssystem'
+import {OffersUnionDate} from '@/services/offersunion'
 import Cookie from 'js-cookie'
-import {OffersUnionDelete, OffersUnionEdit, OffersUnionSystemDate} from "../../../services/offerssystem";
+import {
+  OffersUnionAdd,
+  OffersUnionDelete,
+  OffersUnionEdit,
+  OffersUnionSystemDate
+} from "../../../services/offersunion";
 const columns = [
   // {
   //   title: '序号',
@@ -182,16 +189,17 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        user_name: null,
-        union_system_id: "",
+        union_name: null,
+        union_system_id: null,
         start_time: null,
         end_time: null,
       },
       total: 0,
       editform: {
         id: '',
-        user_name: null,
-        union_system_id: "",
+        union_name: null,
+        union_url: null,
+        union_system_id: null,
       },
       advanced: true,
       columns: columns,
@@ -204,10 +212,11 @@ export default {
       start_time: '',
       end_time: '',
       role_id: '',
+      tablename: "",
       dialogvisible: false,
       offersunionsystem: [],
       editrules: {
-        user_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
+        union_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
         union_system_id: [{ required: true, message: '请选择追踪系统列表', trigger: 'change' }]
       },
       tableloading: false,
@@ -230,7 +239,6 @@ export default {
           console.log(this.roles);
           this.offersunionsystem = res.data.data
           this.gettabledata()
-          this.query.union_system_id = localStorage.getItem('union_system_id') - ''
         } else {
           this.$message.error('获取追踪系统列表失败！')
         }
@@ -263,6 +271,7 @@ export default {
     },
     // 查询
     queryevents() {
+      console.log(this.query)
       this.query.page = 1
       this.query.page_size = 10
       this.query.start_time = this.start_time ? this.start_time.format('YYYY-MM-DD') : null
@@ -284,36 +293,55 @@ export default {
       }
       this.query.page = '1'
       this.query.page_size = '10'
-      this.query.union_system_id = localStorage.getItem('union_system_id') - ''
+      // this.query.union_system_id = localStorage.getItem('union_system_id') - ''
       this.gettabledata()
     },
     // 打开编辑表单
     showModal(data) {
-      console.log(data);
-      this.editform.id = data.id
-      this.editform.user_name = data.user_name
-      this.editform.union_system_id = data.union_system_id - ''
-      console.log(this.editform);
+      if (data.id) {
+        this.tablename = "编辑";
+        this.isdisabled = true;
+        console.log(data);
+        this.editform.id = data.id
+        this.editform.union_name = data.union_name
+        this.editform.union_system_id = data.union_system_id - ''
+        console.log(this.editform);
+      }else {
+        this.tablename = "新增";
+        this.isdisabled = false;
+      }
       this.visible = true;
+
+
     },
     // 提交编辑表单
     submitform() {
       this.$refs.ruleForm.validate(valid => {
         if (valid) {
           this.loading = true;
-          OffersUnionEdit(this.editform).then(res => {
-            if (res.status === 200) {
-              this.$message.success(`编辑成功！`);
+          if (this.tablename === "新增"){
+            OffersUnionAdd(this.editform).then(res => {
+              if (res.status === 200) {
+                this.$message.success(`新增成功！`);
+              } else {
+                this.$message.error(`新增失败！`);
+              }
               this.loading = false;
               this.visible = false;
               this.gettabledata()
-            } else {
-              this.$message.error(`编辑失败！`);
+            })
+          }else {
+            OffersUnionEdit(this.editform).then(res => {
+              if (res.status === 200) {
+                this.$message.success(`编辑成功！`);
+              } else {
+                this.$message.error(`编辑失败！`);
+              }
               this.loading = false;
               this.visible = false;
               this.gettabledata()
-            }
-          })
+            })
+          }
         }
       })
     },
@@ -327,27 +355,8 @@ export default {
       this.dialogvisible = true
     },
     async onok() {
-      let is_logic_del = '1';
       for (let i = 0; i < this.ids.length; i++) {
-        await OffersUnionDelete(this.ids[i], is_logic_del).then(res => {
-          if (res.status === 200) {
-            this.$message.success(`删除成功！`);
-          } else {
-            this.$message.error(`删除失败！`);
-          }
-        })
-      }
-      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-      this.query.page = this.query.page < 1 ? 1 : this.query.page
-      this.gettabledata();
-      this.ids = [];
-      this.dialogvisible = false
-    },
-    async onno() {
-      let is_logic_del = '0';
-      for (let i = 0; i < this.ids.length; i++) {
-        await OffersUnionDelete(this.ids[i], is_logic_del).then(res => {
+        await OffersUnionDelete(this.ids[i]).then(res => {
           if (res.status === 200) {
             this.$message.success(`删除成功！`);
           } else {
@@ -374,11 +383,12 @@ export default {
       return (
         <div>
           <a-button onClick={this.onok}  type="primary">是</a-button>
-          <a-button onClick={this.onno}  type="danger">直接删除</a-button>
           <a-button onClick={this.canceldelete}>取消</a-button>
         </div>
       )
     },
+    // <a-button onClick={this.onno}  type="danger">直接删除</a-button>
+
     // 分页配置
     onShowSizeChange(current, pageSize) {
       this.query.page = 1

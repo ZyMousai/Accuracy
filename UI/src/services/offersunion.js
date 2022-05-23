@@ -1,4 +1,4 @@
-import { OffersUnion, OffersUnionOne, OffersUnionSystem } from '@/services/api'
+import { OffersUnion, OffersUnionOne, OffersUnionSystem, OffersUnionAll } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -9,6 +9,16 @@ import { request, METHOD } from '@/utils/request'
  */
 export async function OffersUnionDate(query) {
     return request(OffersUnion, METHOD.GET, query)
+}
+
+/**
+ * 联盟管理页面
+ * 查询联盟所有数据
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function OffersUnionDateAll(query) {
+    return request(OffersUnionAll, METHOD.GET, query)
 }
 
 /**
@@ -45,13 +55,18 @@ export async function OffersUnionEdit(form) {
 
 /**
  * 联盟管理页面
- * 修改联盟
- * @param form  查新请求参数
+ * 删除联盟
+ * @param ids  查新请求参数
  * @returns {Promise<AxiosResponse<T>>}
  */
-export async function OffersUnionDelete(form) {
-    return request(OffersUnion, 'DELETE1', form)
+export async function OffersUnionDelete(ids) {
+    return request(OffersUnion, "DELETE", {
+        offers_union_ids: ids,
+    })
 }
+// export async function OffersUnionDelete(ids) {
+//     return request(OffersUnion, "DELETE", ids)
+// }
 
 
 /**
