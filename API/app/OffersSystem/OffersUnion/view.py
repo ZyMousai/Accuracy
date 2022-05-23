@@ -15,10 +15,17 @@ offers_union_router = APIRouter(
 
 @offers_union_router.delete("/")
 async def delete_offers_union(offers_union_ids: List[int] = Query(...), dbs=Depends(db_session)):
-    result = await OffersUnion.delete_data(dbs, tuple(offers_union_ids), auto_commit=False)
+    result = await OffersUnion.delete_data(dbs, tuple(offers_union_ids))
     if not result:
         raise HTTPException(status_code=404, detail="Delete non-existent resources.")
     return result
+
+
+@offers_union_router.get('/all')
+async def get_offers_union_all(dbs=Depends(db_session)):
+    result = await OffersUnion.get_all(dbs,*[("is_delete", '==0', 0)])
+    response_json = {"data": result}
+    return response_json
 
 
 @offers_union_router.get('/')
