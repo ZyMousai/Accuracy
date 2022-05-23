@@ -89,10 +89,11 @@ class OffersAccount(PBaseModel):
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
             _orm = select(cls.id, OffersUnion.union_name, cls.offers_account, cls.offers_pwd, cls.offers_api_key,
-                          cls.status).outerjoin(OffersUnion,
-                                                OffersUnion.id == cls.union_id).where(
+                          cls.status, cls.ip_info, cls.options, cls.union_id).outerjoin(OffersUnion,
+                                                                                        OffersUnion.id == cls.union_id).where(
                 *filter_condition).order_by().limit(
                 page_size).offset((page - 1) * page_size)
+
 
             result = (await dbs.execute(_orm)).all()
 
