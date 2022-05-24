@@ -1,5 +1,5 @@
 import random
-
+import json
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from util.mysql_c.MysqlClient import MysqlClient
@@ -30,8 +30,10 @@ class UnionApi(object):
         self.__request_headers = {
             'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/99.0.4844.59 Mobile/15E148 Safari/604.1'
         }
-        # 解析前的请求结果
-        self.__response = None
+        # 解析前的请求结果 json格式
+        self.__response_json = None
+        # 解析前的请求结果 byte格式
+        self.__response_content = None
         # 解析后的请求响应体
         self.parse_response = None
 
@@ -52,7 +54,8 @@ class UnionApi(object):
         r = requests.get(url=self.__request_url, params=self.__request_params, headers=self.__request_headers,
                          proxies=self.__request_proxy, verify=False)
         if r.status_code == 200:
-            self.__response = r.content
+            self.__response_json = r.json()
+            self.__response_content = r.content
             r.close()
 
     def __generate_requests_proxy(self):
@@ -61,8 +64,8 @@ class UnionApi(object):
         :return:
         """
         """获取所有代理信息"""
-        country = self.__account_ip_info['country']
-        state = self.__account_ip_info['state']
+        country = self.__account_ip_info.get('country')
+        state = self.__account_ip_info.get('state')
         session_id = random.randint(10000, 99999)
         if state:
             proxy = f'lum-customer-{self.__customer}-zone-{self.__zone}-session-{session_id}-country-{country}' \
@@ -83,14 +86,14 @@ class UnionApi(object):
         # 选择domain
         # 目前访问得都是offers板块
         if self.__union_system == 'cake':
-            self.__request_url = self.__union_system_url.format(plate='Offers', fun='FeaturedOffer')
+            self.__request_url = self.__union_system_url.format(plate='Offers', fun='Feed')
         elif self.__union_system == 'hasoffers':
             self.__request_url = self.__union_system_url.format(network_id=self.__account_options['NetworkId'],
                                                                 plate='Affiliate_Offer', fun='findAll')
         elif self.__union_system == 'offer18':
             self.__request_url = self.__union_system_url.format(plate='af', fun='offers')
         elif self.__union_system == 'affise':
-            self.__request_url = self.__union_system_url.format(version='3.0', fun='offers')
+            self.__request_url = self.__union_system_url.format(version='3.0', plate='offers')
         elif self.__union_system == 'everflow':
             self.__request_url = self.__union_system_url.format(version='v1', plate='affiliates', fun='alloffers')
         elif self.__union_system == 'adpump':
@@ -112,20 +115,26 @@ class UnionApi(object):
         elif self.__union_system == 'offer18':
             self.__request_params = {
                 'key': self.__account_api_key,
-                'aid': self.__account_options['affiliate_id'],
+                'aid': self.__account_options['aid'],
                 'mid': self.__account_options['mid']
             }
         elif self.__union_system == 'affise':
-            self.__request_params = {}
+            self.__request_params = {
+                'limit': 500
+            }
             self.__request_headers['API-Key'] = self.__account_api_key
         elif self.__union_system == 'everflow':
-            self.__request_params = {}
+            self.__request_params = {
+                "page_size": 500
+            }
             self.__request_headers['X-Eflow-API-Key'] = self.__account_api_key
             self.__request_headers['content-type'] = 'application/json'
         elif self.__union_system == 'cake':
             self.__request_params = {
                 'api_key': self.__account_api_key,
-                'affiliate_id': self.__account_options['affiliate_id']
+                'affiliate_id': self.__account_options['affiliate_id'],
+                "start_at_row": 1,
+                "row_limit": 500
             }
         elif self.__union_system == 'adpump':
             pass
@@ -137,15 +146,19 @@ class UnionApi(object):
     def __parse_result(self):
         if self.__union_system == 'hasoffers':
             from app.OffersSystem.Offers.SpiderParse.HasOffers import HasOffersParse
-            self.parse_response = HasOffersParse.parse(self.__union_id, self.__account_id, self.__response)
+            self.parse_response = HasOffersParse.parse(self.__union_id, self.__account_id, self.__response_json)
         elif self.__union_system == 'offer18':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.Offer18Parse import Offer18Parse
+            self.parse_response = Offer18Parse.parse(self.__union_id, self.__account_id, self.__response_json)
         elif self.__union_system == 'affise':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.Affise import AffiseParse
+            self.parse_response = AffiseParse.parse(self.__union_id, self.__account_id, self.__response_json)
         elif self.__union_system == 'everflow':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.EverFlow import EverFlowParse
+            self.parse_response = EverFlowParse.parse(self.__union_id, self.__account_id, self.__response_json)
         elif self.__union_system == 'cake':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.CakeSystem import CakeSystemParse
+            self.parse_response = CakeSystemParse.parse(self.__union_id, self.__account_id, self.__response_json)
         elif self.__union_system == 'adpump':
             pass
         elif self.__union_system == 'imp':
@@ -177,7 +190,30 @@ class UnionApiDB(object):
         return self.__mysql.select_many(sql)
 
     def save_data(self, data):
-        pass
+        # 插入数据
+        sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
+        offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        insert_list = []
+        for offers in data:
+            for offer in offers:
+                insert_list.append(
+                    (
+                        offer['union_id'],
+                        offer['account_id'],
+                        offer['offers_name'],
+                        offer['offers_desc'],
+                        offer['pay'],
+                        offer['pay_unit'],
+                        offer['country'],
+                        offer['offers_url'],
+                    )
+                )
+        self.__mysql.handle_many(sql, insert_list)
+
+    def clear_table(self):
+        # 清空表
+        sql = """TRUNCATE table offers;"""
+        self.__mysql.handle_one(sql)
 
     def close(self):
         self.__mysql.close()
@@ -212,9 +248,8 @@ class UnionApiRun(object):
                 'account': x[1],
                 'account_password': x[2],
                 'account_api_key': x[3],
-                'account_options': x[4],
-                'account_ip_info': x[5],
-
+                'account_options': json.loads(x[4]),
+                'account_ip_info': json.loads(x[5]),
             }
             task_list.append(task)
 
@@ -225,8 +260,10 @@ class UnionApiRun(object):
             return ua_obj.parse_response
 
         executor = ThreadPoolExecutor(max_workers=5)
-
         result = [data for data in executor.map(run_union_api, task_list)]
+
+        # 清空现有表
+        mysql_conn.clear_table()
         # 入库
         mysql_conn.save_data(result)
         # 关闭数据连接

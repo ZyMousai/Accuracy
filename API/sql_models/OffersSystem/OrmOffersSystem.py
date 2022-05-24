@@ -108,7 +108,7 @@ class Offers(PBaseModel):
     account_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 账号id
     offers_name = BaseType.BaseColumn(BaseType.BaseString(288), nullable=False)  # 任务名
     offers_desc = BaseType.BaseColumn(BaseType.BaseText)  # 任务描述
-    country = BaseType.BaseColumn(BaseType.BaseString(28), nullable=False)  # 国家
+    country = BaseType.BaseColumn(BaseType.BaseString(28))  # 国家
     pay = BaseType.BaseColumn(BaseType.BaseInteger)  # 佣金
     pay_unit = BaseType.BaseColumn(BaseType.BaseString(288))  # 佣金单位
     offers_url = BaseType.BaseColumn(BaseType.BaseString(288))  # 任务链接

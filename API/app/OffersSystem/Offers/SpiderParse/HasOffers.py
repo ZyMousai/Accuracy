@@ -12,7 +12,7 @@ class HasOffersParse(object):
                         "account_id": account_id,
                         "offers_name": offer["name"],
                         "offers_desc": offer["description"],
-                        "country": "US",
+                        "country": None,
                         "pay": offer["default_payout"],
                         "pay_unit": "$",
                         "offers_url": offer["preview_url"]
