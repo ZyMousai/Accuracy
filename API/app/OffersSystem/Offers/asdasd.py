@@ -15,3 +15,5 @@
 # print(result)
 
 
+a = f'123{0}'
+print(a)

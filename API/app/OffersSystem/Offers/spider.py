@@ -5,6 +5,8 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 from util.mysql_c.MysqlClient import MysqlClient
 
+requests.packages.urllib3.disable_warnings()
+
 
 class UnionApi(object):
     def __init__(self, **account_info):
@@ -236,25 +238,29 @@ class UnionApiDB(object):
         sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
         offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
         insert_list = []
-        for offers in data:
-            for offer in offers:
-                insert_list.append(
-                    (
-                        offer['union_id'],
-                        offer['account_id'],
-                        offer['offers_name'],
-                        offer['offers_desc'],
-                        offer['pay'],
-                        offer['pay_unit'],
-                        offer['country'],
-                        offer['offers_url'],
+        if data:
+            for offers in data:
+                for offer in offers:
+                    insert_list.append(
+                        (
+                            offer['union_id'],
+                            offer['account_id'],
+                            offer['offers_name'],
+                            offer['offers_desc'],
+                            offer['pay'],
+                            offer['pay_unit'],
+                            offer['country'],
+                            offer['offers_url'],
+                        )
                     )
-                )
-        return self.__mysql.handle_many(sql, insert_list, auto_commit=True)
+        tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
+        if not tag:
+            raise SystemError('Save Data Failed.')
 
     def clear_table(self):
         # 清空表
         sql = """Delete from offers;"""
+        # sql = """Truncate table offers;"""
         self.__mysql.handle_one(sql, auto_commit=False)
 
     def close(self):
@@ -333,14 +339,15 @@ class UnionApiRun(object):
         if result:
             # 清空现有表
             mysql_conn.clear_table()
-            PrintLog.print_log(self.__name, PrintLog.INFO, f'TableName<offers> Clear Success')
-            # 入库
-            tag = mysql_conn.save_data(result)
-            if tag:
-                PrintLog.print_log(self.__name, PrintLog.INFO, f'SaveData Success')
-            else:
+            PrintLog.print_log(self.__name, PrintLog.INFO, 'TableName<offers> Clear Success')
+            try:
+                # 入库
+                mysql_conn.save_data(result)
+                PrintLog.print_log(self.__name, PrintLog.INFO, 'SaveData Success')
+
+            except Exception as e:
                 mysql_conn.rollback()
-                PrintLog.print_log(self.__name, PrintLog.ERROR, f'SaveData Failed, Rollback Success')
+                PrintLog.print_log(self.__name, PrintLog.ERROR, f'SaveData Failed, Rollback Success,Error:{str(e)}')
 
         # 关闭数据连接
         del mysql_conn
@@ -383,10 +390,5 @@ if __name__ == '__main__':
         }
 
     }
-    # ax = UnionApi(**ttt)
-    # ax.run()
-    # r = requests.get(url="https://adtrustmedia.api.hasoffers.com/Apiv3/json?Target=Affiliate_Offer&Method=findAll", params={"api_key":"f2f1023c033d0ce3f46ed89d9c5ebde1f59c32935fd8558c2d672a141efcd000"},
-    #                  verify=False)
-    # print(r.json())
     ax = UnionApiRun()
     ax.run()
