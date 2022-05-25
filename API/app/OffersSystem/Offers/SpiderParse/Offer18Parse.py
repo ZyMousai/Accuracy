@@ -2,21 +2,22 @@ class Offer18Parse(object):
 
     @staticmethod
     def parse(union_id, account_id, data):
-        response = data['data']
         result_list = []
-        for index, offer in response.items():
-            result_list.append(
-                {
-                    "union_id": union_id,
-                    "account_id": account_id,
-                    "offers_name": offer["name"],
-                    "offers_desc": offer["offer_terms"],
-                    "country": offer["country_allow"],
-                    "pay": offer["price"],
-                    "pay_unit": offer["currency"],
-                    "offers_url": offer["preview_url"].replace("\\", "")
-                }
-            )
+        for x in data:
+            response = x['data']
+            for index, offer in response.items():
+                result_list.append(
+                    {
+                        "union_id": union_id,
+                        "account_id": account_id,
+                        "offers_name": offer["name"],
+                        "offers_desc": offer["offer_terms"],
+                        "country": offer["country_allow"],
+                        "pay": offer["price"],
+                        "pay_unit": offer["currency"],
+                        "offers_url": offer["preview_url"].replace("\\", "")
+                    }
+                )
 
         return result_list
 

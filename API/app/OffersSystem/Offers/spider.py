@@ -1,4 +1,5 @@
 import random
+import datetime
 import json
 import requests
 from concurrent.futures import ThreadPoolExecutor
@@ -7,8 +8,11 @@ from util.mysql_c.MysqlClient import MysqlClient
 
 class UnionApi(object):
     def __init__(self, **account_info):
+        # 模块名
+        self.__name = self.__class__.__name__
         # #### 账号信息分解
         self.__union_id = account_info['union_id']  # 联盟id
+        self.__union_name = account_info['union_name']  # 联盟id
         self.__union_system_id = account_info['union_system_id']
         self.__union_system = account_info['union_system']
         self.__union_system_url = account_info['union_system_url']
@@ -31,11 +35,15 @@ class UnionApi(object):
             'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/99.0.4844.59 Mobile/15E148 Safari/604.1'
         }
         # 解析前的请求结果 json格式
-        self.__response_json = None
+        self.__response_json_list = []
         # 解析前的请求结果 byte格式
         self.__response_content = None
         # 解析后的请求响应体
         self.parse_response = None
+        # 请求page
+        self.__page = 1
+        # 请求pagesize
+        self.__pagesize = 1000
 
         # #### lum 代理信息
         # todo 暂时写死
@@ -44,19 +52,39 @@ class UnionApi(object):
         self.__password = '6az62t9nrgbi'
 
     def __request_union(self):
-        # 组建url
-        self.__generate_requests_url()
-        # 组建params
-        self.____generate_requests_params()
-        # 组建代理
-        self.__generate_requests_proxy()
-        # 发送请求
-        r = requests.get(url=self.__request_url, params=self.__request_params, headers=self.__request_headers,
-                         proxies=self.__request_proxy, verify=False)
-        if r.status_code == 200:
-            self.__response_json = r.json()
-            self.__response_content = r.content
-            r.close()
+        session = requests.Session()
+        while True:
+            # 组建url
+            self.__generate_requests_url()
+            # 组建params
+            self.____generate_requests_params()
+            # 组建代理
+            self.__generate_requests_proxy()
+            # 发送请求
+            r = session.get(url=self.__request_url, params=self.__request_params, headers=self.__request_headers,
+                            proxies=self.__request_proxy, verify=False)
+            if r.status_code == 200:
+                json_result = r.json()
+                if self.__union_system == 'affise':
+                    self.__response_json_list.append(json_result)
+                    if json_result.get("pagination").get("next_page"):
+                        self.__page = json_result.get("pagination").get("next_page")
+                    else:
+                        break
+                elif self.__union_system == 'everflow':
+                    if not json_result.get("offers"):
+                        break
+                    else:
+                        self.__response_json_list.append(json_result)
+                        if json_result.get("paging").get("total_count") > self.__pagesize:
+                            self.__page += 1
+                        else:
+                            break
+                else:
+                    self.__response_json_list.append(json_result)
+                    break
+
+        session.close()
 
     def __generate_requests_proxy(self):
         """
@@ -120,12 +148,14 @@ class UnionApi(object):
             }
         elif self.__union_system == 'affise':
             self.__request_params = {
-                'limit': 500
+                'page': self.__page,
+                'limit': self.__pagesize
             }
             self.__request_headers['API-Key'] = self.__account_api_key
         elif self.__union_system == 'everflow':
             self.__request_params = {
-                "page_size": 500
+                "page": self.__page,
+                "page_size": self.__pagesize
             }
             self.__request_headers['X-Eflow-API-Key'] = self.__account_api_key
             self.__request_headers['content-type'] = 'application/json'
@@ -134,7 +164,7 @@ class UnionApi(object):
                 'api_key': self.__account_api_key,
                 'affiliate_id': self.__account_options['affiliate_id'],
                 "start_at_row": 1,
-                "row_limit": 500
+                "row_limit": self.__pagesize
             }
         elif self.__union_system == 'adpump':
             pass
@@ -146,19 +176,19 @@ class UnionApi(object):
     def __parse_result(self):
         if self.__union_system == 'hasoffers':
             from app.OffersSystem.Offers.SpiderParse.HasOffers import HasOffersParse
-            self.parse_response = HasOffersParse.parse(self.__union_id, self.__account_id, self.__response_json)
+            self.parse_response = HasOffersParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'offer18':
             from app.OffersSystem.Offers.SpiderParse.Offer18Parse import Offer18Parse
-            self.parse_response = Offer18Parse.parse(self.__union_id, self.__account_id, self.__response_json)
+            self.parse_response = Offer18Parse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'affise':
             from app.OffersSystem.Offers.SpiderParse.Affise import AffiseParse
-            self.parse_response = AffiseParse.parse(self.__union_id, self.__account_id, self.__response_json)
+            self.parse_response = AffiseParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'everflow':
             from app.OffersSystem.Offers.SpiderParse.EverFlow import EverFlowParse
-            self.parse_response = EverFlowParse.parse(self.__union_id, self.__account_id, self.__response_json)
+            self.parse_response = EverFlowParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'cake':
             from app.OffersSystem.Offers.SpiderParse.CakeSystem import CakeSystemParse
-            self.parse_response = CakeSystemParse.parse(self.__union_id, self.__account_id, self.__response_json)
+            self.parse_response = CakeSystemParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'adpump':
             pass
         elif self.__union_system == 'imp':
@@ -167,16 +197,28 @@ class UnionApi(object):
             pass
 
     def run(self):
-        # 1. 请求
-        self.__request_union()
-        #  2. 解析
-        self.__parse_result()
+        try:
+            # 1. 请求
+            self.__request_union()
+            #  2. 解析
+            self.__parse_result()
+        except Exception as e:
+            PrintLog.print_log(self.__name, PrintLog.ERROR,
+                               f'Union:{self.__union_name}---UnionSystem:{self.__union_system}---'
+                               f'Account:{self.__account}Url:{self.__request_url}---Page:{self.__page}---'
+                               f'PageSize:{self.__pagesize}---Error:{str(e)}')
+        else:
+            PrintLog.print_log(self.__name, PrintLog.INFO,
+                               f'Union:{self.__union_name}---UnionSystem:{self.__union_system}---'
+                               f'Account:{self.__account}---Get Success')
 
 
 class UnionApiDB(object):
     """数据库操作"""
 
     def __init__(self):
+        # 模块名
+        self.__name = self.__class__.__name__
         # 初始化mysql连接
         self.__mysql = MysqlClient(host='45.63.5.115', port=3306, user='root', password='4242587f*',
                                    database='AccuracyDB')
@@ -208,15 +250,21 @@ class UnionApiDB(object):
                         offer['offers_url'],
                     )
                 )
-        self.__mysql.handle_many(sql, insert_list)
+        return self.__mysql.handle_many(sql, insert_list, auto_commit=True)
 
     def clear_table(self):
         # 清空表
-        sql = """TRUNCATE table offers;"""
-        self.__mysql.handle_one(sql)
+        sql = """Delete from offers;"""
+        self.__mysql.handle_one(sql, auto_commit=False)
 
     def close(self):
         self.__mysql.close()
+
+    def commit(self):
+        self.__mysql.commit()
+
+    def rollback(self):
+        self.__mysql.rollback()
 
     def __del__(self):
         self.close()
@@ -225,8 +273,13 @@ class UnionApiDB(object):
 class UnionApiRun(object):
     """流程类"""
 
-    @staticmethod
-    def run():
+    def __init__(self):
+        # 模块名
+        self.__name = self.__class__.__name__
+        # 线程池数量
+        self.__thread_num = 5
+
+    def run(self):
         # 建立数据库链接
         mysql_conn = UnionApiDB()
         # 查询出相关信息
@@ -238,9 +291,11 @@ class UnionApiRun(object):
         oa.id,oa.offers_account,oa.offers_pwd,oa.offers_api_key,oa.`options`,oa.ip_info,oa.union_id,
         ou.union_name,ou.union_url,ou.union_system_id,us.union_system,us.union_system_api_url
         """
+        print_task_list = []
         for x in query_info[1]:
             task = {
                 'union_id': x[6],
+                'union_name': x[7],
                 'union_system_id': x[9],
                 'union_system': x[10],
                 'union_system_url': x[11],
@@ -252,22 +307,54 @@ class UnionApiRun(object):
                 'account_ip_info': json.loads(x[5]),
             }
             task_list.append(task)
+            print_task_list.append(
+                {
+                    'union_id': x[6],
+                    'union_name': x[7],
+                    'account_id': x[0],
+                    'account': x[1],
+                }
+            )
+
+        # 打印日志
+        PrintLog.print_log(self.__name, PrintLog.INFO, f'ThreadNum:{self.__thread_num}---TotalTask:{print_task_list}')
 
         # 发送请求解析数据 使用线程池
         def run_union_api(task_info):
             ua_obj = UnionApi(**task_info)
             ua_obj.run()
+
             return ua_obj.parse_response
 
-        executor = ThreadPoolExecutor(max_workers=5)
+        # 开始执行
+        executor = ThreadPoolExecutor(max_workers=self.__thread_num)
         result = [data for data in executor.map(run_union_api, task_list)]
 
-        # 清空现有表
-        mysql_conn.clear_table()
-        # 入库
-        mysql_conn.save_data(result)
+        if result:
+            # 清空现有表
+            mysql_conn.clear_table()
+            PrintLog.print_log(self.__name, PrintLog.INFO, f'TableName<offers> Clear Success')
+            # 入库
+            tag = mysql_conn.save_data(result)
+            if tag:
+                PrintLog.print_log(self.__name, PrintLog.INFO, f'SaveData Success')
+            else:
+                mysql_conn.rollback()
+                PrintLog.print_log(self.__name, PrintLog.ERROR, f'SaveData Failed, Rollback Success')
+
         # 关闭数据连接
         del mysql_conn
+
+
+class PrintLog(object):
+    INFO = 'INFO'
+    ERROR = 'ERROR'
+
+    @staticmethod
+    def print_log(system_name, log_level, message):
+        now_time = str(datetime.datetime.now())
+        log_format = f"{system_name}---{log_level}---{now_time}---{message}"
+        print(log_format)
 
 
 if __name__ == '__main__':

@@ -2,21 +2,23 @@ class EverFlowParse(object):
 
     @staticmethod
     def parse(union_id, account_id, data):
-        response = data['offers']
         result_list = []
-        for offer in response:
-            result_list.append(
-                {
-                    "union_id": union_id,
-                    "account_id": account_id,
-                    "offers_name": offer["name"],
-                    "offers_desc": offer["terms_and_conditions"],
-                    "country": None,
-                    "pay": 0,
-                    "pay_unit": offer["currency_id"],
-                    "offers_url": offer["preview_url"]
-                }
-            )
+        for x in data:
+            response = x['offers']
+
+            for offer in response:
+                result_list.append(
+                    {
+                        "union_id": union_id,
+                        "account_id": account_id,
+                        "offers_name": offer["name"],
+                        "offers_desc": offer["terms_and_conditions"],
+                        "country": None,
+                        "pay": 0,
+                        "pay_unit": offer["currency_id"],
+                        "offers_url": offer["preview_url"]
+                    }
+                )
         return result_list
 
 

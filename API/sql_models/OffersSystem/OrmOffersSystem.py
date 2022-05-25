@@ -94,7 +94,6 @@ class OffersAccount(PBaseModel):
                 *filter_condition).order_by().limit(
                 page_size).offset((page - 1) * page_size)
 
-
             result = (await dbs.execute(_orm)).all()
 
         except Exception as e:
@@ -108,10 +107,10 @@ class Offers(PBaseModel):
     account_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 账号id
     offers_name = BaseType.BaseColumn(BaseType.BaseString(288), nullable=False)  # 任务名
     offers_desc = BaseType.BaseColumn(BaseType.BaseText)  # 任务描述
-    country = BaseType.BaseColumn(BaseType.BaseString(28))  # 国家
+    country = BaseType.BaseColumn(BaseType.BaseString(888))  # 国家
     pay = BaseType.BaseColumn(BaseType.BaseInteger)  # 佣金
     pay_unit = BaseType.BaseColumn(BaseType.BaseString(288))  # 佣金单位
-    offers_url = BaseType.BaseColumn(BaseType.BaseString(288))  # 任务链接
+    offers_url = BaseType.BaseColumn(BaseType.BaseString(888))  # 任务链接
     remark = BaseType.BaseColumn(BaseType.BaseText)  # 备注
 
     @classmethod
@@ -140,9 +139,9 @@ class Offers(PBaseModel):
         _orm = select(cls.id, cls.union_id, OffersUnion.union_name,
                       cls.account_id, OffersAccount.offers_account,
                       cls.offers_name, cls.offers_desc, cls.country,
-                      cls.pay, cls.pay_unit, cls.offers_url, cls.remark)\
-            .outerjoin(OffersUnion, cls.union_id == OffersUnion.id)\
-            .outerjoin(OffersAccount, cls.account_id == OffersAccount.id)\
+                      cls.pay, cls.pay_unit, cls.offers_url, cls.remark) \
+            .outerjoin(OffersUnion, cls.union_id == OffersUnion.id) \
+            .outerjoin(OffersAccount, cls.account_id == OffersAccount.id) \
             .where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
 
         result = (await dbs.execute(_orm)).all()

@@ -31,7 +31,8 @@ async def get_user(info: SearchOffers = Depends(SearchOffers),
         ('country', f'.like(f"%{info.country}%")', info.country),
         ('is_delete', '==0', 0)
     ]
-    result, count, total_page = await Offers.get_all_detail_page_associated(dbs, info.page, info.page_size, *filter_condition)
+    result, count, total_page = await Offers.get_all_detail_page_associated(dbs, info.page, info.page_size,
+                                                                            *filter_condition)
     response_json = {"total": count,
                      "page": info.page,
                      "page_size": info.page_size,
@@ -55,10 +56,3 @@ async def update_offer(offers: UpdateOffers, dbs: AsyncSession = Depends(db_sess
             raise HTTPException(status_code=403, detail="offer does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
-
-
-@offers_router.get('/test')
-async def tttt():
-    ax = UnionApi('cake')
-    ax.run()
-    return 'ok'

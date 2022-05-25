@@ -2,22 +2,24 @@ class HasOffersParse(object):
 
     @staticmethod
     def parse(union_id, account_id, data):
-        response = data['response']['data']
         result_list = []
-        for index, offers in response.items():
-            for o_index, offer in offers.items():
-                result_list.append(
-                    {
-                        "union_id": union_id,
-                        "account_id": account_id,
-                        "offers_name": offer["name"],
-                        "offers_desc": offer["description"],
-                        "country": None,
-                        "pay": offer["default_payout"],
-                        "pay_unit": "$",
-                        "offers_url": offer["preview_url"]
-                    }
-                )
+        for x in data:
+            response = x['response']['data']
+
+            for index, offers in response.items():
+                for o_index, offer in offers.items():
+                    result_list.append(
+                        {
+                            "union_id": union_id,
+                            "account_id": account_id,
+                            "offers_name": offer["name"],
+                            "offers_desc": offer["description"],
+                            "country": None,
+                            "pay": offer["default_payout"],
+                            "pay_unit": "$",
+                            "offers_url": offer["preview_url"]
+                        }
+                    )
 
         return result_list
 

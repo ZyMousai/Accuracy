@@ -52,37 +52,47 @@ class MysqlClient(object):
         result = self._cursor.fetchall()
         return count, result
 
-    def handle_one(self, sql, param=()):
+    def handle_one(self, sql, param=(), auto_commit=True):
         """
         处理一条数据，增删改
         :param sql:
         :param param:
+        :param auto_commit:
         :return:
         """
         try:
             self.__execute(sql, param)
-            self._conn.commit()
+            if auto_commit:
+                self._conn.commit()
             return True
         except Exception as e:
             self._conn.rollback()
             print('mysql handle_one fail >>>>' + str(e))
             return False
 
-    def handle_many(self, sql, param=()):
+    def handle_many(self, sql, param=(), auto_commit=True):
         """
         处理多条数据，增删改
         :param sql:
         :param param:
+        :param auto_commit:
         :return:
         """
         try:
             self._cursor.executemany(sql, param)
-            self._conn.commit()
+            if auto_commit:
+                self._conn.commit()
             return True
         except Exception as e:
             self._conn.rollback()
             print('mysql handle_many fail >>>>' + str(e))
             return False
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
 
     # def execute(self, sql, param=()):
     #     count = self.__execute(sql, param)

@@ -2,28 +2,31 @@ class AffiseParse(object):
 
     @staticmethod
     def parse(union_id, account_id, data):
-        response = data['offers']
         result_list = []
-        for offer in response:
-            country = offer.get("countries")
-            if country:
-                country = ",".join(country)
-            else:
-                country = ",".join(offer["payments"][0]["countries"])
-            result_dict = {
-                "union_id": union_id,
-                "account_id": account_id,
-                "offers_name": offer["title"],
-                "country": country,
-                "pay": offer["payments"][0]["currency"],
-                "pay_unit": offer["payments"][0]["revenue"],
-                "offers_url": offer["preview_url"]
-            }
-            for index, desc in offer["description_lang"].items():
-                if desc:
-                    result_dict["offers_desc"] = desc
-                    break
-            result_list.append(result_dict)
+        for x in data:
+            response = x['offers']
+
+            for offer in response:
+                country = offer.get("countries")
+                if country:
+                    country = ",".join(country)
+                else:
+                    country = ",".join(offer["payments"][0]["countries"])
+                result_dict = {
+                    "union_id": union_id,
+                    "account_id": account_id,
+                    "offers_name": offer["title"],
+                    "country": country,
+                    "pay": offer["payments"][0]["revenue"],
+                    "pay_unit": offer["payments"][0]["currency"],
+                    "offers_url": offer["preview_url"],
+                    "offers_desc": None
+                }
+                for index, desc in offer["description_lang"].items():
+                    if desc:
+                        result_dict["offers_desc"] = desc
+                        break
+                result_list.append(result_dict)
         return result_list
 
 
