@@ -3,50 +3,76 @@
     <div :class="advanced ? 'search' : null">
       <a-form layout="horizontal" :model="query">
         <div :class="advanced ? null: 'fold'">
-          <a-row >
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="联盟名"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-input v-model="query.union_name" placeholder="联盟名" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="追踪系统列表选择"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-select v-model="query.union_system_id" placeholder="请选择" :allowClear="true">
-                <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
-                  {{item.union_system}}
-                </a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
+          <a-row>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="联盟"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-select v-model="query.union_id" placeholder="请选择" :allowClear="true">
+                  <a-select-option v-for="item in offersalliancesystem" :key="item.id" :value="item.id">
+                    {{item.union_name}}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="账号"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-select v-model="query.account_id" placeholder="请选择" :allowClear="true">
+                  <a-select-option v-for="item in offersaccountsystem" :key="item.id" :value="item.id">
+                    {{item.offers_account}}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-row v-if="advanced">
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="开始日期"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-date-picker v-model="start_time" style="width: 100%" placeholder="请输入开始时间" format="YYYY-MM-DD"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="8" :sm="24" >
-            <a-form-item
-              label="结束日期"
-              :labelCol="{span: 5}"
-              :wrapperCol="{span: 18, offset: 1}"
-            >
-              <a-date-picker v-model="end_time" style="width: 100%" placeholder="请输入结束时间" format="YYYY-MM-DD" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="任务名"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.offers_name" placeholder="任务名" />
+              </a-form-item>
+            </a-col>
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="佣金"
+                :labelCol="{ span: 5 }"
+                :wrapperCol="{ span: 18, offset: 1 }"
+              >
+                <a-select v-model="query.pay_filter" placeholder="" style="width: 66px;">
+                  <a-select-option
+                    v-for="item in ['<','<=','==','>=', '>', '!=']"
+                    :key="item"
+                    :value="item"
+                  >
+                    {{ item }}
+                  </a-select-option>
+                </a-select>
+                <a-input-number
+                  v-model="query.pay"
+                  :value="query.pay"
+                />
+              </a-form-item>
+            </a-col>
+
+            <a-col :md="8" :sm="24" >
+              <a-form-item
+                label="Country"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.country" placeholder="Country" />
+              </a-form-item>
+            </a-col>
+          </a-row>
         </div>
         <span style="float: right; margin-top: 3px;">
           <a-button type="primary" @click="queryevents">查询</a-button>
@@ -59,26 +85,32 @@
       </a-form>
     </div>
     <div>
-      <a-button type="primary" @click="showModal">
-        <a-icon type="plus-circle" />新增
-      </a-button>
-      <a-button type="primary" @click="Batchdelete()"><a-icon type="delete" />批量删除</a-button>
       <standard-table
         :columns="columns"
         :dataSource="dataSource"
-        :selectedRows.sync="selectedRows"
         :rowKey='record=>record.id'
         :loading="tableloading"
         :pagination="false"
       >
-        <div slot="action" slot-scope="{record}">
-          <a @click="showModal(record)" style="margin-right: 8px">
-            <a-icon type="edit"/>修改
-          </a>
-          <a @click="deletedialog(record.id)">
-            <a-icon type="delete" />删除
-          </a>
+<!--        <div slot="action" slot-scope="{record}">-->
+<!--          <a @click="showModal(record)" style="margin-right: 8px">-->
+<!--            <a-icon type="edit"/>修改-->
+<!--          </a>-->
+<!--          <a @click="deletedialog(record.id)">-->
+<!--            <a-icon type="delete" />删除-->
+<!--          </a>-->
+<!--        </div>-->
+        <div slot="offers_desc" slot-scope="{record}">
+          <a-button  @click="showModal(record.offers_desc)">查看</a-button>
         </div>
+        <div slot="offers_url" slot-scope="{record}">
+          <a-button  @click="register(record.offers_url)">Preview Landing Page</a-button>
+        </div>
+        <div slot="remark" slot-scope="{record}">
+          <a-input v-model="record.remark" style="width: 100%" @blur="remarkEdit(record)"/>
+        </div>
+
+
       </standard-table>
       <a-pagination
         style="margin-top: 15px;"
@@ -89,63 +121,26 @@
         :show-total="total => `一共 ${total} 条`"
         @change="pageonChange" />
       <!-- 编辑表单 -->
-      <a-modal v-model="visible" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
-      <template slot="footer">
-        <a-button key="back" @click="closeform">
-          取消
-        </a-button>
-        <a-button key="submit" type="primary" :loading="loading" @click="submitform">
-          提交
-        </a-button>
-      </template>
-      <template>
-        <a-form-model
-          ref="ruleForm"
-          :model="editform"
-          :rules="editrules"
-          :label-col="{ span: 4 }"
-          :wrapper-col="{ span: 14 }"
-        >
-          <a-form-model-item ref="union_name" label="联盟名" prop="union_name">
-            <a-input v-model="editform.union_name" />
-          </a-form-model-item>
-          <a-form-model-item ref="union_url" label="URL" prop="union_url">
-            <a-input v-model="editform.union_url" />
-          </a-form-model-item>
-          <a-form-model-item label="追踪系统" prop="union_system_id">
-            <a-select v-model="editform.union_system_id" placeholder="请选择" :allowClear="true">
-              <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
-                {{item.union_system}}
-              </a-select-option>
-            </a-select>
-          </a-form-model-item>
-        </a-form-model>
-      </template>
-    </a-modal>
-    <!-- 删除确认对话框 -->
-    <a-modal
-     title="系统消息"
-     :visible="dialogvisible"
-     :closable="false"
-     @icon="oncancel"
-     :footer="modalfooter"
-    >
-      <p>是否删除</p>
-    </a-modal>
+      <a-modal v-model="visible" width="66%" :title="tablename" on-ok="handleOk" :maskClosable="false" @afterClose="closeform()">
+        <template slot="footer">
+          <a-button key="back" @click="closeform">
+            取消
+          </a-button>
+        </template>
+        <template>
+          <div ref="reportHTML" v-html="htmlText" class="web-con"></div>
+        </template>
+      </a-modal>
     </div>
   </a-card>
 </template>
 
 <script>
 import StandardTable from '@/components/table/StandardTable'
-import {OffersUnionDate} from '@/services/offersunion'
 import Cookie from 'js-cookie'
-import {
-  OffersUnionAdd,
-  OffersUnionDelete,
-  OffersUnionEdit,
-  OffersUnionSystemDate
-} from "../../../services/offersunion";
+import {OffersUnionDateAll} from "../../../services/offersunion";
+import {OffersAccountDateAll} from "../../../services/offersaccount";
+import {OffersDate, OffersEdit} from "../../../services/offers";
 const columns = [
   // {
   //   title: '序号',
@@ -155,28 +150,42 @@ const columns = [
   {
     title: 'id',
     dataIndex: 'id',
-    width: 80
   },
   {
-    title: '联盟名',
+    title: '联盟',
     dataIndex: 'union_name'
   },
   {
-    title: '联盟网址',
-    dataIndex: 'union_url'
+    title: '账号',
+    dataIndex: 'offers_account'
   },
   {
-    title: '追踪系统',
-    dataIndex: 'union_system'
+    title: '任务名',
+    dataIndex: 'offers_name'
+  },
+  // {
+  //   title: '任务描述',
+  //   dataIndex: 'offers_desc'
+  // },
+  {
+    title: '任务描述',
+    key: 'offers_desc',
+    scopedSlots: {customRender: 'offers_desc'}
   },
   {
-    title: '创建时间',
-    dataIndex: 'date_format'
+    title: '佣金',
+    dataIndex: 'pay_pay_unit'
   },
   {
-    title: '操作',
-    scopedSlots: { customRender: 'action' }
-  }
+    title: 'Preview',
+    key: 'offers_url',
+    scopedSlots: {customRender: 'offers_url'}
+  },
+  {
+    title: '备注',
+    key: 'remark',
+    scopedSlots: {customRender: 'remark'}
+  },
 ]
 
 const dataSource = []
@@ -189,17 +198,17 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        union_name: null,
-        union_system_id: null,
-        start_time: null,
-        end_time: null,
+        union_id: null,
+        account_id: null,
+        offers_name: null,
+        pay: null,
+        pay_filter: null,
+        country: null,
       },
       total: 0,
       editform: {
         id: '',
-        union_name: null,
-        union_url: null,
-        union_system_id: null,
+        remark: null,
       },
       advanced: true,
       columns: columns,
@@ -213,8 +222,10 @@ export default {
       end_time: '',
       role_id: '',
       tablename: "",
+      htmlText: "<h1>123123123</h1>",
       dialogvisible: false,
-      offersunionsystem: [],
+      offersalliancesystem: [],
+      offersaccountsystem: [],
       editrules: {
         union_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
         union_system_id: [{ required: true, message: '请选择追踪系统列表', trigger: 'change' }]
@@ -225,22 +236,35 @@ export default {
         accept: 'application/json',
         authorization: 'authorization-text',
         token: Cookie.get('Authorization')
+      },
+      bodystyle:{
+        width:"66%",
       }
     }
   },
   created () {
-    this.getoffersunionsystem()
+    this.getoffersalliancesystem()
+    this.gettabledata()
+
   },
   methods: {
-    //获取追踪系统列表
-    getoffersunionsystem(){
-      OffersUnionSystemDate().then(res => {
+    //获取联盟列表
+    getoffersalliancesystem(){
+      OffersUnionDateAll().then(res => {
         if (res.status === 200) {
           console.log(this.roles);
-          this.offersunionsystem = res.data.data
-          this.gettabledata()
+          this.offersalliancesystem = res.data.data
         } else {
-          this.$message.error('获取追踪系统列表失败！')
+          this.$message.error('获取联盟列表失败！')
+        }
+      })
+      //获取账号列表
+      OffersAccountDateAll().then(res => {
+        if (res.status === 200) {
+          console.log(this.roles);
+          this.offersaccountsystem = res.data.data
+        } else {
+          this.$message.error('获取账号列表失败！')
         }
       })
     },
@@ -248,10 +272,16 @@ export default {
     gettabledata () {
       this.alone = process.env.VUE_APP_API_ALONE_URL
       this.tableloading = true
-      OffersUnionDate(this.query).then(res => {
+      OffersDate(this.query).then(res => {
         if (res.status === 200) {
           console.log(res);
-          this.dataSource = res.data.data
+          var re_da = res.data.data;
+          // 给予序号
+          for (var i = 0; i < re_da.length; i++) {
+            re_da[i]["index"] = i + 1
+            re_da[i]["pay_pay_unit"] = re_da[i]["pay"].toString()+" "+re_da[i]["pay_unit"]
+          }
+          this.dataSource = re_da
           this.total = res.data.total
           console.log(this.total);
           this.tableloading = false
@@ -278,14 +308,6 @@ export default {
       this.query.end_time = this.end_time ? this.end_time.format('YYYY-MM-DD') : null
       this.gettabledata()
     },
-    // 批量删除
-    Batchdelete() {
-      this.dialogvisible = true
-      console.log(this.selectedRows);
-      for (let i = 0; i < this.selectedRows.length; i++) {
-        this.ids.push(this.selectedRows[i].id)
-      }
-    },
     // 重置查询表单
     resettingqueryform() {
       for(var key in this.query) {
@@ -297,53 +319,12 @@ export default {
       this.gettabledata()
     },
     // 打开编辑表单
-    showModal(data) {
-      if (data.id) {
-        this.tablename = "编辑";
-        this.isdisabled = true;
-        console.log(data);
-        this.editform.id = data.id
-        this.editform.union_name = data.union_name
-        this.editform.union_system_id = data.union_system_id - ''
-        console.log(this.editform);
-      }else {
-        this.tablename = "新增";
-        this.isdisabled = false;
-      }
+    showModal(offers_desc) {
+      this.tablename = "任务描述";
+      this.isdisabled = true;
+      this.htmlText = offers_desc
+      console.log(this.editform);
       this.visible = true;
-
-
-    },
-    // 提交编辑表单
-    submitform() {
-      this.$refs.ruleForm.validate(valid => {
-        if (valid) {
-          this.loading = true;
-          if (this.tablename === "新增"){
-            OffersUnionAdd(this.editform).then(res => {
-              if (res.status === 200) {
-                this.$message.success(`新增成功！`);
-              } else {
-                this.$message.error(`新增失败！`);
-              }
-              this.loading = false;
-              this.visible = false;
-              this.gettabledata()
-            })
-          }else {
-            OffersUnionEdit(this.editform).then(res => {
-              if (res.status === 200) {
-                this.$message.success(`编辑成功！`);
-              } else {
-                this.$message.error(`编辑失败！`);
-              }
-              this.loading = false;
-              this.visible = false;
-              this.gettabledata()
-            })
-          }
-        }
-      })
     },
     // 关闭编辑表单
     closeform() {
@@ -354,23 +335,6 @@ export default {
       this.ids.push(id)
       this.dialogvisible = true
     },
-    async onok() {
-      for (let i = 0; i < this.ids.length; i++) {
-        await OffersUnionDelete(this.ids[i]).then(res => {
-          if (res.status === 200) {
-            this.$message.success(`删除成功！`);
-          } else {
-            this.$message.error(`删除失败！`);
-          }
-        })
-      }
-      const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-      this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-      this.query.page = this.query.page < 1 ? 1 : this.query.page
-      this.gettabledata();
-      this.ids = [];
-      this.dialogvisible = false
-    },
     canceldelete() {
       this.ids = [];
       this.dialogvisible = false
@@ -378,17 +342,6 @@ export default {
     async oncancel() {
       this.dialogvisible = false
     },
-    // 自定义删除对话框底部按钮
-    modalfooter() {
-      return (
-        <div>
-          <a-button onClick={this.onok}  type="primary">是</a-button>
-          <a-button onClick={this.canceldelete}>取消</a-button>
-        </div>
-      )
-    },
-    // <a-button onClick={this.onno}  type="danger">直接删除</a-button>
-
     // 分页配置
     onShowSizeChange(current, pageSize) {
       this.query.page = 1
@@ -398,6 +351,21 @@ export default {
     pageonChange(pageNumber) {
       this.query.page = pageNumber
       this.gettabledata()
+    },
+    register(offers_url){
+      window.open(offers_url)
+    },
+    remarkEdit(data){
+      OffersEdit({id: data.id, remark: data.remark}).then(res => {
+        if (res.status === 200) {
+          this.$message.success(`编辑成功！`);
+        } else {
+          this.$message.error(`编辑失败！`);
+        }
+        this.loading = false;
+        this.visible = false;
+        this.gettabledata()
+      })
     },
   }
 }

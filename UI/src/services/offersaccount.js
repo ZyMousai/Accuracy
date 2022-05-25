@@ -1,4 +1,4 @@
-import { OffersAccount, OffersAccountOne } from '@/services/api'
+import { OffersAccount, OffersAccountOne, OffersAccountAll } from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 
 /**
@@ -9,6 +9,16 @@ import { request, METHOD } from '@/utils/request'
  */
 export async function OffersAccountDate(query) {
     return request(OffersAccount, METHOD.GET, query)
+}
+
+/**
+ * 账号管理页面
+ * 查询所有账号
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function OffersAccountDateAll(query) {
+    return request(OffersAccountAll, METHOD.GET, query)
 }
 
 /**

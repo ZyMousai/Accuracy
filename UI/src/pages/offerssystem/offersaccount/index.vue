@@ -153,33 +153,34 @@
           <a-form-model-item ref="ip_info_country" label="ip洲或地区" prop="ip_info_country">
             <a-input v-model="editform.ip_info_country" />
           </a-form-model-item>
-
-          <a-space
-            v-for="(user, index) in editform.users"
-            :key="user.id"
-            style="display: flex; margin-bottom: 0px"
-            align="baseline"
-          >
-            <a-form-item
-              :name="['users', index, 'key']"
-              :rules="{
-                required: true,
-                message: 'Missing key',
-              }"
+          <a-form-model-item label="options">
+            <a-space
+              v-for="(user, index) in editform.users"
+              :key="user.id"
+              style="display: flex; margin-bottom: 0px;align-items: center;"
+              align="baseline"
             >
-              <a-input v-model="user.key" placeholder="key" />
-            </a-form-item>
-            <a-form-item
-              :name="['users', index, 'value']"
-              :rules="{
-                required: true,
-                message: 'Missing value',
-              }"
-            >
-              <a-input v-model="user.value" placeholder="value" />
-            </a-form-item>
-            <a-button @click="removeUser(user)">删除</a-button>
-          </a-space>
+              <a-form-item
+                :name="['users', index, 'key']"
+                :rules="{
+                  required: true,
+                  message: 'Missing key',
+                }"
+              >
+                <a-input v-model="user.key" placeholder="key" />
+              </a-form-item>
+              <a-form-item
+                :name="['users', index, 'value']"
+                :rules="{
+                  required: true,
+                  message: 'Missing value',
+                }"
+              >
+                <a-input v-model="user.value" placeholder="value" />
+              </a-form-item>
+                <a-button @click="removeUser(user)" style="margin-bottom: 24px;">删除</a-button>
+            </a-space>
+          </a-form-model-item>
           <a-form-item>
             <a-button type="dashed" block @click="addUser">
               Add Option
@@ -245,7 +246,8 @@ const columns = [
   {
     title: '状态',
     key: 'status',
-    scopedSlots: {customRender: 'status'}},
+    scopedSlots: {customRender: 'status'}
+  },
   {
     title: '操作',
     scopedSlots: { customRender: 'action' }
@@ -318,16 +320,12 @@ export default {
   methods: {
     removeUser(item){
       let index = this.editform.users.indexOf(item);
-
       if (index !== -1) {
         this.editform.users.splice(index, 1);
       }
     },
-    addUser(){
-      this.editform.users.push({
-        key: '',
-        value: '',
-      });
+    addUser() {
+      this.editform.users.push({key: '', value: ''});
     },
     //获取追踪系统列表
     getunionnamesystem(){

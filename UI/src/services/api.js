@@ -3,6 +3,7 @@
 //     const API_PROXY_PREFIX = 'http://127.0.0.1:8000/api'
 const API_PROXY_PREFIX = 'http://accuracy.vqmjc.cc/api'
     // const API_PROXY_PREFIX = 'http://192.168.50.23:8000/api'
+    // const API_PROXY_PREFIX = 'http://192.168.50.18:8000/api'
 const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API_BASE_URL : API_PROXY_PREFIX
     // const BASE_URL = process.env.VUE_APP_API_BASE_URL
 module.exports = {
@@ -46,4 +47,12 @@ module.exports = {
     DocumentDownloadURL: `${BASE_URL}/DocumentManagement/documents/v1/download`,
     HeartbeatGetServiceName: `${BASE_URL}/Clerk/heartbeat/v1/display`,
     HeartbeatGetServiceNameOne: `${BASE_URL}/Clerk/heartbeat/v1/display/detail`,
+    OffersUnion: `${BASE_URL}/OffersSystem/OffersUnion/v1/`,
+    OffersUnionOne: `${BASE_URL}/OffersSystem/OffersUnion/v1/detail`,
+    OffersUnionSystem: `${BASE_URL}/OffersSystem/OffersUnion/v1/union_system`,
+    OffersUnionAll: `${BASE_URL}/OffersSystem/OffersUnion/v1/all`,
+    OffersAccount: `${BASE_URL}/OffersSystem/OffersAccount/v1/`,
+    OffersAccountOne: `${BASE_URL}/OffersSystem/OffersAccount/v1/detail`,
+    OffersAccountAll: `${BASE_URL}/OffersSystem/OffersAccount/v1/all`,
+    Offers: `${BASE_URL}/OffersSystem/Offers/v1/`,
 }
