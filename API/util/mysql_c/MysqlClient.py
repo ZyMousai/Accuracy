@@ -88,6 +88,16 @@ class MysqlClient(object):
             print('mysql handle_many fail >>>>' + str(e))
             return False
 
+    def execute_sql(self, sql, auto_commit=True):
+        try:
+            self._cursor.execute(sql)
+            if auto_commit:
+                self._conn.commit()
+            return True
+        except Exception as e:
+            self._conn.rollback()
+            print('mysql handle_many fail >>>>' + str(e))
+
     def commit(self):
         self._conn.commit()
 

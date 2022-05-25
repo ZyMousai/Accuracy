@@ -235,25 +235,39 @@ class UnionApiDB(object):
 
     def save_data(self, data):
         # 插入数据
+        # sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
+        # offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
         sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
-        offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
-        insert_list = []
+        offers_url) values """
+        # insert_list = []
         if data:
             for offers in data:
                 for offer in offers:
-                    insert_list.append(
-                        (
-                            offer['union_id'],
-                            offer['account_id'],
-                            offer['offers_name'],
-                            offer['offers_desc'],
-                            offer['pay'],
-                            offer['pay_unit'],
-                            offer['country'],
-                            offer['offers_url'],
-                        )
-                    )
-        tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
+                    # 拼接sql 运行效率更快
+                    offer_desc = offer['offers_desc']
+                    offer_name = offer['offers_name']
+                    if offer_desc:
+                        offer_desc = offer_desc.replace('"', "'")
+                    if offer_name:
+                        offer_name = offer_name.replace('"', "'")
+                    sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{offer_desc}",{offer['pay']},"{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
+                    sql += sql_p
+                    # executemany 伪批量插入
+                    # insert_list.append(
+                    #     (
+                    #         offer['union_id'],
+                    #         offer['account_id'],
+                    #         offer['offers_name'],
+                    #         offer['offers_desc'],
+                    #         offer['pay'],
+                    #         offer['pay_unit'],
+                    #         offer['country'],
+                    #         offer['offers_url'],
+                    #     )
+                    # )
+        sql = sql[:-1]
+        tag = self.__mysql.execute_sql(sql)
+        # tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
         if not tag:
             raise SystemError('Save Data Failed.')
 
@@ -349,6 +363,8 @@ class UnionApiRun(object):
                 mysql_conn.rollback()
                 PrintLog.print_log(self.__name, PrintLog.ERROR, f'SaveData Failed, Rollback Success,Error:{str(e)}')
 
+        # 关闭线程池
+        executor.shutdown()
         # 关闭数据连接
         del mysql_conn
 

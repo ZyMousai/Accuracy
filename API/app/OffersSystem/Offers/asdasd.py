@@ -15,5 +15,5 @@
 # print(result)
 
 
-a = f'123{0}'
-print(a)
+a = f"123{0}'"
+print(a.replace("'", '"'))
