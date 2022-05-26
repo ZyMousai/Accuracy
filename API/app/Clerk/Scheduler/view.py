@@ -202,10 +202,14 @@ def reset_machine(number, machines_list, port=22, username="dingzj", password="F
                        " {print $1}') && echo " + number + " success"
         stdin, stdout, stderr = ssh.exec_command(cmd_shutdown)
         n = stdout.read()
-        print(n)
         ssh.close()
+        print(n)
+        if "success" not in n:
+            # 当机器没开机时才会出现这种情况
+            alarm_content = "心跳故障修复尝试失败: 机器：" + number + "执行重启命令失败"  # 告警内容
+        else:
+            alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
 
-        alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
         dingtalk_initialization().send_markdown(title="故障修复", text=alarm_content)
         alarm_time = datetime.datetime.now() + datetime.timedelta(seconds=30*60)  # 执行时间半小时后
         heartbeat_scheduler.add_job(id=number + "alert", func=trigger_final_alarm, args=[number],
