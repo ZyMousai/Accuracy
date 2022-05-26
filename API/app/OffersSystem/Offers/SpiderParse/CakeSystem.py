@@ -2,25 +2,27 @@ class CakeSystemParse(object):
 
     @staticmethod
     def parse(union_id, account_id, data):
-        response = data['data']
         result_list = []
-        for offer in response:
-            if offer.get("allowed_countries"):
-                country = offer.get("allowed_countries")[0].get("country_code")
-            else:
-                country = None
-            result_list.append(
-                {
-                    "union_id": union_id,
-                    "account_id": account_id,
-                    "offers_name": offer.get("offer_name"),
-                    "offers_desc": offer.get("description"),
-                    "country": country,
-                    "pay": offer["price"],
-                    "pay_unit": offer["currency_symbol"],
-                    "offers_url": offer.get("preview_link")
-                }
-            )
+        for x in data:
+            response = x['data']
+
+            for offer in response:
+                if offer.get("allowed_countries"):
+                    country = offer.get("allowed_countries")[0].get("country_code")
+                else:
+                    country = None
+                result_list.append(
+                    {
+                        "union_id": union_id,
+                        "account_id": account_id,
+                        "offers_name": offer.get("offer_name"),
+                        "offers_desc": offer.get("description"),
+                        "country": country,
+                        "pay": offer["price"],
+                        "pay_unit": offer["currency_symbol"],
+                        "offers_url": offer.get("preview_link")
+                    }
+                )
         return result_list
 
 
