@@ -112,7 +112,7 @@
           </a-col>
           <a-col :span="10">
             <a-form-model-item label="权限角色" prop="role_id">
-            <a-select v-model="form.role_id" placeholder="请选择角色" mode="multiple">
+            <a-select v-model="reform.role_id" placeholder="请选择角色">
               <a-select-option v-for="item in departmentoptions" :key="item.id" :value="item.id">
                 {{item.role}}
               </a-select-option>
@@ -202,7 +202,7 @@ export default {
         password: ''
       },
       reform: {
-        role_id: ''
+        role_id: ""
       },
       KEY: KEY,
       IV: IV,
@@ -302,6 +302,7 @@ export default {
       for (let i = 0; i < this.selectedRows.length; i++) {
         this.ids.push(this.selectedRows[i].id)
       }
+      this.deleteaccountrole(this.reform)
       this.dialogvisible = true
     },
     // 重置查询表单
@@ -321,7 +322,6 @@ export default {
         GetOngAccountDate(data.id).then(res => {
           this.form = res.data.data
           this.form.password = this.Decrypt(this.form.password)
-          this.reform.role_id = res.data.data.role_id
           this.accountid = data.id
           this.visible = true;
         })
@@ -345,7 +345,7 @@ export default {
         if (res.status === 200) {
           console.log(res.data.id);
           this.accountid = res.data.id
-          this.addaccountrole(this.form)
+          this.addaccountrole(this.reform)
         } else {
           this.$message.error(`${this.tablename}失败！`);
         }
@@ -358,6 +358,7 @@ export default {
       EditAccount(this.form).then(res => {
         if (res.status === 200) {
           this.deleteaccountrole(this.reform)
+          this.addaccountrole(this.reform)
         } else {
           this.$message.error(`${this.tablename}失败！`);
         }
@@ -470,7 +471,11 @@ export default {
       });
       var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8).split('/0')[0];
       return decryptedStr.toString();
-    }
+    },
+    // 搜索框根据显示的内容搜索的组件
+    filterOption(input, option){
+			return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+		},
   }
 }
 </script>
