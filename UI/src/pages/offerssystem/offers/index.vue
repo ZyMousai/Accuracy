@@ -4,50 +4,62 @@
       <a-form layout="horizontal" :model="query">
         <div :class="advanced ? null: 'fold'">
           <a-row>
-            <a-col :md="8" :sm="24" >
+            <a-col :md="6" :sm="24" >
               <a-form-item
                 label="联盟"
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-select v-model="query.union_id" placeholder="请选择" :allowClear="true">
+                <a-select v-model="query.union_id" placeholder="请选择" :allowClear="true" :showSearch="true"
+                    :filter-option ="filterOption">
                   <a-select-option v-for="item in offersalliancesystem" :key="item.id" :value="item.id">
                     {{item.union_name}}
                   </a-select-option>
                 </a-select>
               </a-form-item>
             </a-col>
-            <a-col :md="8" :sm="24" >
+            <a-col :md="6" :sm="24" >
               <a-form-item
                 label="账号"
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-select v-model="query.account_id" placeholder="请选择" :allowClear="true">
+                <a-select v-model="query.account_id" placeholder="请选择" :allowClear="true" :showSearch="true"
+                    :filter-option ="filterOption">
                   <a-select-option v-for="item in offersaccountsystem" :key="item.id" :value="item.id">
                     {{item.offers_account}}
                   </a-select-option>
                 </a-select>
               </a-form-item>
             </a-col>
-          </a-row>
-          <a-row v-if="advanced">
-            <a-col :md="8" :sm="24" >
+            <a-col :md="6" :sm="24" >
               <a-form-item
                 label="任务名"
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-input v-model="query.offers_name" placeholder="任务名" />
+                <a-input v-model="query.offers_name" placeholder="任务名" :allowClear="true"/>
               </a-form-item>
             </a-col>
-            <a-col :md="8" :sm="24" >
+          </a-row>
+          <a-row v-if="advanced">
+            <a-col :md="6" :sm="24" >
+              <a-form-item
+                label="Country"
+                :labelCol="{span: 5}"
+                :wrapperCol="{span: 18, offset: 1}"
+              >
+                <a-input v-model="query.country" placeholder="Country" :allowClear="true"/>
+              </a-form-item>
+            </a-col>
+
+            <a-col :md="6" :sm="24" >
               <a-form-item
                 label="佣金"
                 :labelCol="{ span: 5 }"
                 :wrapperCol="{ span: 18, offset: 1 }"
               >
-                <a-select v-model="query.pay_filter" placeholder="" style="width: 66px;">
+                <a-select v-model="query.pay_filter" placeholder="" :allowClear="true" style="width: 66px;">
                   <a-select-option
                     v-for="item in ['<','<=','==','>=', '>', '!=']"
                     :key="item"
@@ -59,17 +71,8 @@
                 <a-input-number
                   v-model="query.pay"
                   :value="query.pay"
+                  :allowClear="true"
                 />
-              </a-form-item>
-            </a-col>
-
-            <a-col :md="8" :sm="24" >
-              <a-form-item
-                label="Country"
-                :labelCol="{span: 5}"
-                :wrapperCol="{span: 18, offset: 1}"
-              >
-                <a-input v-model="query.country" placeholder="Country" />
               </a-form-item>
             </a-col>
           </a-row>
@@ -101,10 +104,10 @@
 <!--          </a>-->
 <!--        </div>-->
         <div slot="offers_desc" slot-scope="{record}">
-          <a-button  @click="showModal(record.offers_desc)">查看</a-button>
+          <a-button  :disabled="record.offers_desc_disabled" @click="showModal(record.offers_desc)">查看</a-button>
         </div>
         <div slot="offers_url" slot-scope="{record}">
-          <a-button  @click="register(record.offers_url)">Preview Landing Page</a-button>
+          <a-button :disabled="record.offers_url_disabled"  @click="register(record.offers_url)">Preview Landing Page</a-button>
         </div>
         <div slot="remark" slot-scope="{record}">
           <a-input v-model="record.remark" style="width: 100%" @blur="remarkEdit(record)"/>
@@ -148,8 +151,8 @@ const columns = [
   //   width: 80
   // },
   {
-    title: 'id',
-    dataIndex: 'id',
+    title: '序号',
+    dataIndex: 'index',
   },
   {
     title: '联盟',
@@ -280,10 +283,11 @@ export default {
           for (var i = 0; i < re_da.length; i++) {
             re_da[i]["index"] = i + 1
             re_da[i]["pay_pay_unit"] = re_da[i]["pay"].toString()+" "+re_da[i]["pay_unit"]
+            re_da[i]["offers_url_disabled"] = re_da[i]["offers_url"] ? false : true
+            re_da[i]["offers_desc_disabled"] = re_da[i]["offers_desc"] ? false : true
           }
           this.dataSource = re_da
           this.total = res.data.total
-          console.log(this.total);
           this.tableloading = false
           // for (var i = 0; i < this.dataSource.length; i++) {
           //   this.dataSource[i]["index"] = i + 1
@@ -367,6 +371,10 @@ export default {
         this.gettabledata()
       })
     },
+    // 搜索框根据显示的内容搜索的组件
+    filterOption(input, option){
+			return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+		},
   }
 }
 </script>

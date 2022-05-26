@@ -6,11 +6,21 @@
           <a-row >
             <a-col :md="8" :sm="24" >
               <a-form-item
-                label="联盟名"
+                label="联盟"
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-input v-model="query.union_name" placeholder="联盟名" />
+                <a-select
+                    v-model="query.union_id"
+                    placeholder="请选择"
+                    :allowClear="true"
+                    :showSearch="true"
+                    :filter-option ="filterOption"
+                >
+                  <a-select-option v-for="item in unionnamesystem" :key="item.id" :value="item.id">
+                    {{item.union_name}}
+                  </a-select-option>
+                </a-select>
               </a-form-item>
             </a-col>
             <a-col :md="8" :sm="24" >
@@ -19,7 +29,7 @@
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-input v-model="query.offers_account" placeholder="账号" />
+                <a-input v-model="query.offers_account" placeholder="账号"  :allowClear="true"/>
               </a-form-item>
             </a-col>
           </a-row>
@@ -48,7 +58,7 @@
                 :labelCol="{ span: 5 }"
                 :wrapperCol="{ span: 18, offset: 1 }"
               >
-                <a-select v-model="query.state" placeholder="请选择">
+                <a-select v-model="query.state" placeholder="请选择" :allowClear="true">
                   <a-select-option
                     v-for="item in state_select"
                     :key="item[1]"
@@ -221,7 +231,7 @@ const columns = [
   // },
   {
     title: 'id',
-    dataIndex: 'id',
+    dataIndex: 'index',
   },
   {
     title: '联盟名',
@@ -239,10 +249,10 @@ const columns = [
     title: 'api-key',
     dataIndex: 'offers_api_key'
   },
-  // {
-  //   title: '状态',
-  //   dataIndex: 'status'
-  // },
+  {
+    title: '创建时间',
+    dataIndex: 'create_time'
+  },
   {
     title: '状态',
     key: 'status',
@@ -263,7 +273,7 @@ export default {
       query: {
         page: 1,
         page_size: 10,
-        union_name: null,
+        union_id: null,
         status: null,
         offers_account: null,
         start_time: null,
@@ -301,6 +311,7 @@ export default {
       tablename: "",
       dialogvisible: false,
       unionnamesystem: [],
+      unionnamesystem_search: [],
       editrules: {
         union_name: [{ required: true, message: '请输入联盟名', trigger: 'blur' }],
         union_system_id: [{ required: true, message: '请选择追踪系统列表', trigger: 'change' }]
@@ -331,7 +342,6 @@ export default {
     getunionnamesystem(){
       OffersUnionDateAll().then(res => {
         if (res.status === 200) {
-          console.log(this.roles);
           this.unionnamesystem = res.data.data
           this.gettabledata()
         } else {
@@ -358,7 +368,6 @@ export default {
           }
           this.dataSource = re_da
           this.total = res.data.total
-          console.log(this.total);
           this.tableloading = false
           // for (var i = 0; i < this.dataSource.length; i++) {
           //   this.dataSource[i]["index"] = i + 1
@@ -425,7 +434,7 @@ export default {
             value: data.options[da_k],
           });
         }
-
+        this.visible = true;
         console.log(this.editform);
       }else {
         this.tablename = "新增";
@@ -539,7 +548,10 @@ export default {
         this.gettabledata()
       })
     },
-
+    // 搜索框根据显示的内容搜索的组件
+    filterOption(input, option){
+			return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+		},
   }
 }
 </script>

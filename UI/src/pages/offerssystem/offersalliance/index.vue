@@ -15,11 +15,12 @@
           </a-col>
           <a-col :md="8" :sm="24" >
             <a-form-item
-              label="追踪系统列表选择"
+              label="追踪系统"
               :labelCol="{span: 5}"
               :wrapperCol="{span: 18, offset: 1}"
             >
-              <a-select v-model="query.union_system_id" placeholder="请选择" :allowClear="true">
+              <a-select v-model="query.union_system_id" placeholder="请选择" :allowClear="true" :showSearch="true"
+                    :filter-option ="filterOption">
                 <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
                   {{item.union_system}}
                 </a-select-option>
@@ -153,8 +154,8 @@ const columns = [
   //   width: 80
   // },
   {
-    title: 'id',
-    dataIndex: 'id',
+    title: '序号',
+    dataIndex: 'index',
     width: 80
   },
   {
@@ -250,15 +251,14 @@ export default {
       this.tableloading = true
       OffersUnionDate(this.query).then(res => {
         if (res.status === 200) {
-          console.log(res);
-          this.dataSource = res.data.data
-          this.total = res.data.total
-          console.log(this.total);
           this.tableloading = false
-          // for (var i = 0; i < this.dataSource.length; i++) {
-          //   this.dataSource[i]["index"] = i + 1
-          //   this.dataSource[i]["file_url"] = this.alone + '/DocumentManagement/documents/v1/download/' + this.dataSource[i].filename
-          // }
+          var re_da = res.data.data;
+          // 给予序号
+          for (var i = 0; i < re_da.length; i++) {
+            re_da[i]["index"] = i + 1
+          }
+          this.dataSource = re_da
+
           console.log(this.dataSource);
         } else {
           this.tableloading = false
@@ -399,6 +399,10 @@ export default {
       this.query.page = pageNumber
       this.gettabledata()
     },
+    // 搜索框根据显示的内容搜索的组件
+    filterOption(input, option){
+			return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+		},
   }
 }
 </script>
