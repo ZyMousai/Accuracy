@@ -181,7 +181,7 @@ const columns = [
 const dataSource = []
 
 const KEY = CryptoJS.enc.Utf8.parse(" ");
-const IV = CryptoJS.enc.Utf8.parse(" "); 
+const IV = CryptoJS.enc.Utf8.parse(" ");
 
 export default {
   name: 'QueryList',
@@ -348,8 +348,10 @@ export default {
           this.addaccountrole(this.form)
         } else {
           this.$message.error(`${this.tablename}失败！`);
-          this.loading = false;
         }
+        this.loading = false;
+        this.visible = false;
+        this.gettabledata()
       })
     },
     ediddata() {
@@ -358,8 +360,10 @@ export default {
           this.deleteaccountrole(this.reform)
         } else {
           this.$message.error(`${this.tablename}失败！`);
-          this.loading = false;
         }
+        this.loading = false;
+        this.visible = false;
+        this.gettabledata()
       })
     },
     // 添加用户关联角色
