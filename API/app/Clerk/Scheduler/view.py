@@ -205,8 +205,8 @@ def reset_machine(number, machines_list, port=22, username="dingzj", password="F
         ssh.close()
         print(n)
         if "success" not in n:
-            # 当机器没开机时才会出现这种情况
-            alarm_content = "心跳故障修复尝试失败: 机器：" + number + "执行重启命令失败"  # 告警内容
+            # 当机器没开机时会出现这种情况
+            alarm_content = "心跳故障修复失败: 机器：" + number + "执行重启命令失败"  # 告警内容
         else:
             alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
 

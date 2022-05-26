@@ -425,7 +425,7 @@ export default {
         this.editform.offers_api_key = data.offers_api_key
 
         this.editform.ip_info_state = data.ip_info["state"]
-        this.editform.ip_info_country = data.ip_info["nation"]
+        this.editform.ip_info_country = data.ip_info["country"]
 
         this.editform.options = data.options
         this.editform.users = []
@@ -455,7 +455,7 @@ export default {
           this.editform.options = dick_options
           this.editform.ip_info = {
             "state": this.editform.ip_info_state,
-            "nation": this.editform.ip_info_country
+            "country": this.editform.ip_info_country
           }
           if (this.tablename === "新增"){
             this.editform.status = 1
