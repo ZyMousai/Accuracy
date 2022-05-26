@@ -186,7 +186,12 @@ def interval_ip(num, machines_list):
 def reset_machine(number, machines_list, port=22, username="dingzj", password="Ff!4242587"):
     number = int(number)
     # 获取机器对应的ip
+    # try:
     hostname = interval_ip(number, machines_list)
+    # except Exception as e:
+    #     alarm_content = str(number) + " 故障: 获取机器对应ip失败" + str(e)  # 告警内容
+    #     dingtalk_initialization().send_markdown(title="故障", text=alarm_content)
+    #     return False
     if hostname:
         # 链接机器执行重启命令
         ssh = paramiko.SSHClient()
@@ -273,18 +278,19 @@ def loop_detection():
                 xiao_ding.send_markdown(title="心跳消失", text=alarm_content)
 
         # 修改报警任务的状态为异常，上次报警时间为当前时间
-        try:
-            hears = session.query(Heartbeat).filter(Heartbeat.job_name.in_(job_names)).all()
-            if hears:
-                for he in hears:
-                    he.state = 1
-                    he.heartbeat_alarm = datetime.datetime.now()
-                session.commit()
-                print({"code": "0000", "message": str(job_names) + "修改成功"})
-            else:
-                print({"code": "0001", "message": str(job_names) + "参数错误"})
-        except ArithmeticError:
-            print({"code": "0002", "message": str(job_names) + "数据库错误"})
+        if job_names:
+            try:
+                hears = session.query(Heartbeat).filter(Heartbeat.job_name.in_(job_names)).all()
+                if hears:
+                    for he in hears:
+                        he.state = 1
+                        he.heartbeat_alarm = datetime.datetime.now()
+                    session.commit()
+                    print({"code": "0000", "message": str(job_names) + "修改成功"})
+                else:
+                    print({"code": "0001", "message": str(job_names) + "参数错误"})
+            except ArithmeticError:
+                print({"code": "0002", "message": str(job_names) + "数据库错误"})
 
         # 对报警的任务，type为machine的进行重启
         if reboot:
@@ -295,6 +301,12 @@ def loop_detection():
                     machines_list.append([machine.scope, machine.machine_ip])
                 for number in reboot:
                     reset_machine(number, machines_list)
+
+        # 连接数据库修改数据后，关闭数据库的连接
+        if job_names or reboot:
+            session.close()
+
+
 
 
 # 定时刷新库里的campaign信息
