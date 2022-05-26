@@ -138,7 +138,8 @@
 <!--            <a-input v-model="editform.union_name" />-->
 <!--          </a-form-model-item>-->
           <a-form-model-item label="联盟名" prop="union_id">
-            <a-select v-model="editform.union_id" placeholder="请选择" :allowClear="true">
+            <a-select v-model="editform.union_id" placeholder="请选择" :allowClear="true"  :showSearch="true"
+                    :filter-option ="filterOption">
               <a-select-option v-for="item in unionnamesystem" :key="item.id" :value="item.id">
                 {{item.union_name}}
               </a-select-option>

@@ -59,7 +59,8 @@
                 :labelCol="{ span: 5 }"
                 :wrapperCol="{ span: 18, offset: 1 }"
               >
-                <a-select v-model="query.pay_filter" placeholder="" :allowClear="true" style="width: 66px;">
+                <a-select v-model="query.pay_filter" placeholder="" :allowClear="true" :showSearch="true"
+                    :filter-option ="filterOption" style="width: 66px;">
                   <a-select-option
                     v-for="item in ['<','<=','==','>=', '>', '!=']"
                     :key="item"

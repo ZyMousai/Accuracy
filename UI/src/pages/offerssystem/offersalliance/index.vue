@@ -114,7 +114,8 @@
             <a-input v-model="editform.union_url" />
           </a-form-model-item>
           <a-form-model-item label="追踪系统" prop="union_system_id">
-            <a-select v-model="editform.union_system_id" placeholder="请选择" :allowClear="true">
+            <a-select v-model="editform.union_system_id" placeholder="请选择" :allowClear="true" :showSearch="true"
+                    :filter-option ="filterOption">
               <a-select-option v-for="item in offersunionsystem" :key="item.id" :value="item.id">
                 {{item.union_system}}
               </a-select-option>
@@ -304,6 +305,7 @@ export default {
         console.log(data);
         this.editform.id = data.id
         this.editform.union_name = data.union_name
+        this.editform.union_url = data.union_url
         this.editform.union_system_id = data.union_system_id - ''
         console.log(this.editform);
       }else {
