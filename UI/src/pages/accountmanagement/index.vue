@@ -223,7 +223,7 @@ export default {
         platform: [{ required: true, message: '请输入平台', trigger: 'blur' }],
         account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-        role_id: [{ required: true, message: '请选择角色', trigger: 'change' }],
+        // role_id: [{ required: true, message: '请选择角色', trigger: 'change' }],
         remark: [{ required: false, trigger: 'blur' }],
       }
     }
