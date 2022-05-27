@@ -254,7 +254,7 @@ export async function EditDepartment(form) {
  * @returns {Promise<AxiosResponse<T>>}
  */
 export async function DeleteDepartment(id) {
-    return request(DEPARTMENTS, METHOD.DELETE, {
+    return request(DEPARTMENTS, "DELETE", {
         ids: id
     })
 }

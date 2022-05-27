@@ -81,7 +81,8 @@
 
 <script>
     import StandardTable from '@/components/table/StandardTable'
-    import {DepartmentDate, DeleteDepartment} from '@/services/personnelmanagement'
+    import {DepartmentDate} from '@/services/personnelmanagement'
+    import {DeleteDepartment} from "../../../services/personnelmanagement";
 
     const columns = [
         {
@@ -190,21 +191,21 @@
                 }
             },
             async onok() {
-                for (let i = 0; i < this.ids.length; i++) {
-                    await DeleteDepartment(this.ids[i]).then(res => {
-                        if (res.status === 200) {
-                          this.$message.success(`删除成功！`);
-                        } else {
-                          this.$message.error(`删除失败！`);
-                        }  
-                    })
-                }
-                const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
-                this.query.page = this.query.page > totalPage ? totalPage : this.query.page
-                this.query.page = this.query.page < 1 ? 1 : this.query.page
-                this.gettabledata();
-                this.ids = [];
-                this.dialogvisible = false
+              for (let i = 0; i < this.ids.length; i++) {
+                await DeleteDepartment(this.ids[i]).then(res => {
+                  if (res.status === 200) {
+                    this.$message.success(`删除成功！`);
+                  } else {
+                    this.$message.error(`删除失败！`);
+                  }
+                })
+              }
+              const totalPage = Math.ceil((this.total - 1) / this.query.page_size)
+              this.query.page = this.query.page > totalPage ? totalPage : this.query.page
+              this.query.page = this.query.page < 1 ? 1 : this.query.page
+              this.gettabledata();
+              this.ids = [];
+              this.dialogvisible = false
             },
             async onno() {
                 this.dialogvisible = false
