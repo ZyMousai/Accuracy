@@ -89,8 +89,10 @@ class OffersAccount(PBaseModel):
             # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
             _orm = select(cls.id, OffersUnion.union_name, cls.offers_account, cls.offers_pwd, cls.offers_api_key,
-                          cls.status, cls.ip_info, cls.options, cls.union_id).outerjoin(OffersUnion,
-                                                                                        OffersUnion.id == cls.union_id).where(
+                          cls.status, cls.ip_info, cls.options, cls.union_id,
+                          func.date_format(cls.create_time, "%Y-%m-%d %H:%i:%S").label('create_time')).outerjoin(
+                OffersUnion,
+                OffersUnion.id == cls.union_id).where(
                 *filter_condition).order_by().limit(
                 page_size).offset((page - 1) * page_size)
 
@@ -107,8 +109,8 @@ class Offers(PBaseModel):
     account_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 账号id
     offers_name = BaseType.BaseColumn(BaseType.BaseString(288), nullable=False)  # 任务名
     offers_desc = BaseType.BaseColumn(BaseType.BaseText)  # 任务描述
-    country = BaseType.BaseColumn(BaseType.BaseString(888))  # 国家
-    pay = BaseType.BaseColumn(BaseType.BaseFloat)  # 佣金
+    country = BaseType.BaseColumn(BaseType.BaseString(1500))  # 国家
+    pay = BaseType.BaseColumn(BaseType.BaseString(255))  # 佣金
     pay_unit = BaseType.BaseColumn(BaseType.BaseString(288))  # 佣金单位
     offers_url = BaseType.BaseColumn(BaseType.BaseString(888))  # 任务链接
     remark = BaseType.BaseColumn(BaseType.BaseText)  # 备注
