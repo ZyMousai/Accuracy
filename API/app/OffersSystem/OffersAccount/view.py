@@ -13,6 +13,13 @@ offers_account_router = APIRouter(
     tags=["OffersAccount"])
 
 
+@offers_account_router.get('/all')
+async def get_offers_union_all(dbs=Depends(db_session)):
+    result = await OffersAccount.get_all(dbs, *[("is_delete", '==0', 0)])
+    response_json = {"data": result}
+    return response_json
+
+
 @offers_account_router.delete("/")
 async def delete_offers_account(offers_account_ids: List[int] = Query(...), dbs=Depends(db_session)):
     result = await OffersAccount.delete_data(dbs, tuple(offers_account_ids), auto_commit=False)
@@ -25,7 +32,7 @@ async def delete_offers_account(offers_account_ids: List[int] = Query(...), dbs=
 async def search_offers_account(search_info: OffersAccountSearch = Depends(OffersAccountSearch),
                                 dbs=Depends(db_session)):
     filter_condition = [
-        ('OffersUnion.union_name', f'.like(f"%{search_info.union_name}%")', search_info.union_name),
+        ('cls.union_id', f'=={search_info.union_id}', search_info.union_id),
         ('cls.offers_account', f'.like(f"%{search_info.offers_account}%")', search_info.offers_account),
         ("cls.created_time", f'>="{search_info.start_time}"', search_info.start_time),
         ("cls.created_time", f'<="{search_info.end_time}"', search_info.end_time),
@@ -35,7 +42,6 @@ async def search_offers_account(search_info: OffersAccountSearch = Depends(Offer
     result, count, total_page = await OffersAccount.get_all_detail_page_associated(dbs, search_info.page,
                                                                                    search_info.page_size,
                                                                                    *filter_condition)
-
     response_json = {"total": count,
                      "page": search_info.page,
                      "page_size": search_info.page_size,
@@ -47,6 +53,10 @@ async def search_offers_account(search_info: OffersAccountSearch = Depends(Offer
                          "offers_pwd": decrypt(i.offers_pwd),
                          "offers_api_key": i.offers_api_key,
                          "status": i.status,
+                         "ip_info": i.ip_info,
+                         "options": i.options,
+                         "union_id": i.union_id,
+                         "create_time": i.create_time
                      } for i in result]
                      }
     return response_json

@@ -6,7 +6,7 @@ from fastapi import Query
 
 
 class OffersAccountSearch(BaseModel):
-    union_name: Optional[str]
+    union_id: Optional[int]
     start_time: Optional[str]
     end_time: Optional[str]
     offers_account: Optional[str]
@@ -21,7 +21,7 @@ class AddOffersAccount(BaseModel):
     offers_pwd: str
     offers_api_key: Optional[str]
     options: Optional[Dict] = Query({})
-    status: int = Query(1)
+    status: Optional[int] = 1
     ip_info: Optional[Dict] = Query({"country": "US", "state": ""})
 
 
@@ -31,6 +31,6 @@ class UpdateOffersAccount(BaseModel):
     offers_account: Optional[str]
     offers_pwd: Optional[str]
     offers_api_key: Optional[str]
-    options: Optional[List[Dict]]
+    options: Optional[Dict]
     status: Optional[int]
     ip_info: Optional[Dict]

@@ -1,8 +1,11 @@
 import random
 import datetime
 import json
+import pymysql
 import requests
 from concurrent.futures import ThreadPoolExecutor
+import csv
+from util.crypto import decrypt
 from util.mysql_c.MysqlClient import MysqlClient
 
 requests.packages.urllib3.disable_warnings()
@@ -40,6 +43,9 @@ class UnionApi(object):
         self.__response_json_list = []
         # 解析前的请求结果 byte格式
         self.__response_content = None
+        # 保留临时数据
+        self.__response_data = None
+
         # 解析后的请求响应体
         self.parse_response = None
         # 请求page
@@ -53,39 +59,98 @@ class UnionApi(object):
         self.__zone = 'mk_jjj'
         self.__password = '6az62t9nrgbi'
 
-    def __request_union(self):
+    def __request_union(self, url=None):
         session = requests.Session()
         while True:
             # 组建url
-            self.__generate_requests_url()
+            if not url:
+                self.__generate_requests_url()
+            else:
+                self.__request_url = url
             # 组建params
             self.____generate_requests_params()
             # 组建代理
             self.__generate_requests_proxy()
             # 发送请求
-            r = session.get(url=self.__request_url, params=self.__request_params, headers=self.__request_headers,
-                            proxies=self.__request_proxy, verify=False)
+            request_parm = {
+                "params": self.__request_params,
+                "headers": self.__request_headers,
+                "proxies": self.__request_proxy,
+                "verify": False,
+                "timeout": 15
+            }
+            if self.__union_system == 'imp':
+                request_parm["auth"] = ("IRyDs4JcaoaM1291437SjnkGSbL4X35oF1", self.__account_api_key)
+
+            r = session.get(url=self.__request_url, **request_parm)
             if r.status_code == 200:
-                json_result = r.json()
-                if self.__union_system == 'affise':
-                    self.__response_json_list.append(json_result)
-                    if json_result.get("pagination").get("next_page"):
-                        self.__page = json_result.get("pagination").get("next_page")
-                    else:
-                        break
-                elif self.__union_system == 'everflow':
-                    if not json_result.get("offers"):
-                        break
-                    else:
+
+                content_type = r.headers["Content-Type"]
+
+                if content_type == "application/octet-stream":
+                    self.__response_content = r.content
+                    with open("adpump_offers.csv", 'wb') as f:
+                        f.write(self.__response_content)
+
+                    csv_reader = csv.reader(open("./adpump_offers.csv", encoding="ISO-8859-5"))
+                    for line in list(csv_reader)[1:]:
+                        line_data = "@".join(line).replace("@", ",").replace('"=""', '').replace('"""',
+                                                                                                 "").replace(
+                            '="',
+                            '').replace(
+                            '"',
+                            '').split(
+                            ";")
+                        offer_view_url = f"https://adpump.com/ww-en/wmOffers/view/id:{str(line_data[0])}"
+                        self.__request_union(offer_view_url)
+                        line_data.append(self.__response_data)
+                        self.__response_json_list.append(line_data)
+                    break
+                elif "text/html" in content_type:
+                    self.__response_data = r.text
+                    break
+                else:
+                    json_result = r.json()
+                    if self.__union_system == 'affise':
                         self.__response_json_list.append(json_result)
-                        if json_result.get("paging").get("total_count") > self.__pagesize:
-                            self.__page += 1
+                        if json_result.get("pagination").get("next_page"):
+                            self.__page = json_result.get("pagination").get("next_page")
                         else:
                             break
-                else:
-                    self.__response_json_list.append(json_result)
-                    break
+                    elif self.__union_system == 'everflow':
+                        if not json_result.get("offers"):
+                            break
+                        else:
+                            self.__response_json_list.append(json_result)
+                            if json_result.get("paging").get("total_count") > self.__pagesize:
+                                self.__page += 1
+                            else:
+                                break
+                    elif self.__union_system == 'imp':
+                        if "Ads" in json_result:
+                            if not json_result.get("Ads"):
+                                break
+                            else:
+                                self.__json_data = json_result.get("Ads")
+                                for data in self.__json_data:
+                                    url = f"https://api.impact.com/Mediapartners/IRyDs4JcaoaM1291437SjnkGSbL4X35oF1/Campaigns/{data['CampaignId']}"
+                                    self.__request_union(url)
 
+                                    data["campaigns_data"] = self.__response_data
+                                    url = "https://api.impact.com" + self.__response_data["PublicTermsUri"]
+                                    self.__request_union(url)
+                                    data["campaigns_data"]["public_terms"] = self.__response_data
+                                    self.__response_json_list.append(data)
+                                if int(json_result.get("@numpages")) > self.__pagesize:
+                                    self.__page += 1
+                                else:
+                                    break
+                        else:
+                            self.__response_data = json_result
+                            break
+                    else:
+                        self.__response_json_list.append(json_result)
+                        break
         session.close()
 
     def __generate_requests_proxy(self):
@@ -127,9 +192,9 @@ class UnionApi(object):
         elif self.__union_system == 'everflow':
             self.__request_url = self.__union_system_url.format(version='v1', plate='affiliates', fun='alloffers')
         elif self.__union_system == 'adpump':
-            pass
+            self.__request_url = self.__union_system_url
         elif self.__union_system == 'imp':
-            pass
+            self.__request_url = self.__union_system_url
         else:
             pass
 
@@ -169,9 +234,15 @@ class UnionApi(object):
                 "row_limit": self.__pagesize
             }
         elif self.__union_system == 'adpump':
-            pass
+            self.__request_headers[
+                'Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'
+            self.__request_headers['Referer'] = 'https://adpump.com/ww-en/wmOffers'
         elif self.__union_system == 'imp':
-            pass
+            self.__request_params = {
+                "Page": self.__page,
+                "PageSize": self.__pagesize
+            }
+            self.__request_headers['Accept'] = 'application/json'
         else:
             pass
 
@@ -192,9 +263,11 @@ class UnionApi(object):
             from app.OffersSystem.Offers.SpiderParse.CakeSystem import CakeSystemParse
             self.parse_response = CakeSystemParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'adpump':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.AdpumpParse import AdpumpParse
+            self.parse_response = AdpumpParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         elif self.__union_system == 'imp':
-            pass
+            from app.OffersSystem.Offers.SpiderParse.ImpSpider import ImpParse
+            self.parse_response = ImpParse.parse(self.__union_id, self.__account_id, self.__response_json_list)
         else:
             pass
 
@@ -247,10 +320,10 @@ class UnionApiDB(object):
                     offer_desc = offer['offers_desc']
                     offer_name = offer['offers_name']
                     if offer_desc:
-                        offer_desc = offer_desc.replace('"', "'")
+                        offer_desc = offer_desc.replace('"', "'").replace('\n', '').replace('\t', '').replace("\\", '')
                     if offer_name:
                         offer_name = offer_name.replace('"', "'")
-                    sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{offer_desc}",{offer['pay']},"{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
+                    sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{pymysql.escape_string(offer_desc)}","{offer['pay']}","{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
                     sql += sql_p
                     # executemany 伪批量插入
                     # insert_list.append(
@@ -321,7 +394,7 @@ class UnionApiRun(object):
                 'union_system_url': x[11],
                 'account_id': x[0],
                 'account': x[1],
-                'account_password': x[2],
+                'account_password': decrypt(x[2]),
                 'account_api_key': x[3],
                 'account_options': json.loads(x[4]),
                 'account_ip_info': json.loads(x[5]),
@@ -381,30 +454,30 @@ class PrintLog(object):
 
 
 if __name__ == '__main__':
-    system_t = {
-        'hasoffers': 'https://{network_id}.api.hasoffers.com/Apiv3/json?Target={plate}&Method={fun}',  # 网盟id
-        'offer18': 'https://api.offer18.com/api/{plate}/{fun}',  # 板块，功能
-        'affise': 'http://api.adswapper.affise.com/{version}/{plate}',  # 版本，板块
-        'everflow': 'https://api.eflow.team/{version}/{plate}/{fun}',  # 版本，板块，功能
-        'cake': 'https://login.suited45.com/affiliates/api/{plate}/{fun}'  # 板块，功能
-    }
-    ttt = {
-        'union_id': 5,
-        'union_system_id': 4,
-        'union_system': 'hasoffers',
-        'union_system_url': 'https://{network_id}.api.hasoffers.com/Apiv3/json?Target={plate}&Method={fun}',
-        'account_id': 5,
-        'account': 'keisha@yourgreatchoice.com',
-        'account_password': 'Adtrust123',
-        'account_api_key': 'f2f1023c033d0ce3f46ed89d9c5ebde1f59c32935fd8558c2d672a141efcd000',
-        'account_options': {
-            "NetworkId": "adtrustmedia"
-        },
-        'account_ip_info': {
-            "state": "MD",
-            "country": "US"
-        }
-
-    }
+    # system_t = {
+    #     'hasoffers': 'https://{network_id}.api.hasoffers.com/Apiv3/json?Target={plate}&Method={fun}',  # 网盟id
+    #     'offer18': 'https://api.offer18.com/api/{plate}/{fun}',  # 板块，功能
+    #     'affise': 'http://api.adswapper.affise.com/{version}/{plate}',  # 版本，板块
+    #     'everflow': 'https://api.eflow.team/{version}/{plate}/{fun}',  # 版本，板块，功能
+    #     'cake': 'https://login.suited45.com/affiliates/api/{plate}/{fun}'  # 板块，功能
+    # }
+    # ttt = {
+    #     'union_id': 5,
+    #     'union_system_id': 4,
+    #     'union_system': 'hasoffers',
+    #     'union_system_url': 'https://{network_id}.api.hasoffers.com/Apiv3/json?Target={plate}&Method={fun}',
+    #     'account_id': 5,
+    #     'account': 'keisha@yourgreatchoice.com',
+    #     'account_password': 'Adtrust123',
+    #     'account_api_key': 'f2f1023c033d0ce3f46ed89d9c5ebde1f59c32935fd8558c2d672a141efcd000',
+    #     'account_options': {
+    #         "NetworkId": "adtrustmedia"
+    #     },
+    #     'account_ip_info': {
+    #         "state": "MD",
+    #         "country": "US"
+    #     }
+    #
+    # }
     ax = UnionApiRun()
     ax.run()
