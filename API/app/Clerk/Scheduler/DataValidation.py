@@ -43,3 +43,7 @@ class DisplayUpdateJob(BaseModel):
     alarm: Optional[int] = Query(None)
     at: Optional[str] = Query(None)
 
+
+class RebootMachine(BaseModel):
+    job_name: str
+
