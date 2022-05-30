@@ -380,6 +380,17 @@ export default {
           this.$message.error(`获取数据失败！`);
         }
       })
+      this.editform.id = ''
+      this.editform.status = null
+      this.editform.union_id = null
+      this.editform.offers_account = null
+      this.editform.offers_pwd = null
+      this.editform.offers_api_key = null
+      this.editform.options = null
+      this.editform.ip_info = null
+      this.editform.ip_info_state = ""
+      this.editform.ip_info_country = ""
+      this.editform.users = []
     },
     toggleAdvanced () {
       this.advanced = !this.advanced

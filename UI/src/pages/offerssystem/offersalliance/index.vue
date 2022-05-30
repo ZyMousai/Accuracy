@@ -259,13 +259,19 @@ export default {
             re_da[i]["index"] = i + 1
           }
           this.dataSource = re_da
-
+          this.total = res.data.total
+          this.tableloading = false
           console.log(this.dataSource);
         } else {
           this.tableloading = false
           this.$message.error(`获取数据失败！`);
         }
       })
+      this.editform.id = ''
+      this.editform.union_name = null
+      this.editform.union_url = null
+      this.editform.union_system_id = null
+
     },
     toggleAdvanced () {
       this.advanced = !this.advanced
