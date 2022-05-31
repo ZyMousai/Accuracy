@@ -158,10 +158,10 @@
             <a-input v-model="editform.offers_api_key" />
           </a-form-model-item>
 
-          <a-form-model-item ref="ip_info_state" label="ip国家" prop="ip_info_state">
+          <a-form-model-item ref="ip_info_state" label="ip洲或地区" prop="ip_info_state">
             <a-input v-model="editform.ip_info_state" />
           </a-form-model-item>
-          <a-form-model-item ref="ip_info_country" label="ip洲或地区" prop="ip_info_country">
+          <a-form-model-item ref="ip_info_country" label="ip国家" prop="ip_info_country">
             <a-input v-model="editform.ip_info_country" />
           </a-form-model-item>
           <a-form-model-item label="options">
