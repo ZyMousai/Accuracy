@@ -2,12 +2,13 @@
 import pandas as pd
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 
 from sql_models.Clerk.OrmCardManagement import TbAccount, TbCard, TbTask
 from app.Clerk.Card.DataValidation import AddCard, UpdateCard, SearchCard, AddAccount, SearchAccount, UpdateAccount, \
     AddTask, UpdateTask, SearchTask, Export, Statistics
 from sql_models.db_config import db_session
+from sqlalchemy import select
 import xlwt
 from io import BytesIO
 from fastapi.responses import StreamingResponse
