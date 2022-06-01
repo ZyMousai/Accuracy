@@ -159,10 +159,17 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
 
 
 # 初始化钉钉机器人
-def dingtalk_initialization():
+def dingtalk_initialization(test=False):
     stamp = str(round(time.time() * 1000))
     try:
-        url_token = globals_config.urlToken  # 钉钉群机器人Webhook
+        # 钉钉群机器人Webhook
+        if test:
+            try:
+                url_token = globals_config.test_urlToken
+            except:
+                url_token = globals_config.urlToken
+        else:
+            url_token = globals_config.urlToken
         secret = globals_config.secret  # 钉钉群机器人secret
     except Exception as ex:
         print(ex)
@@ -186,8 +193,8 @@ def interval_ip(num, machines_list):
 
 # 执行重启命令
 def paramiko_cmd(number, hostname, port=22, username="dingzj", password="Ff!4242587"):
-    if type(number) != str:
-        number = str(number)
+    # 是int就转str，不是int就先转int去零，再转str
+    number = str(number) if type(number) != str else str(int(number))
     # 链接机器执行重启命令
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -198,22 +205,23 @@ def paramiko_cmd(number, hostname, port=22, username="dingzj", password="Ff!4242
     cmd_result = stdout.read()
     print(cmd_result)
     ssh.close()
-    return cmd_result
+    return cmd_result, cmd_shutdown
 
 
 # 重启指定编号的机器，并发送钉钉
 def reset_machine(number, machines_list):
-    if type(number) != str:
-        number = str(number)
+    number = str(number) if type(number) != str else str(int(number))
     # 获取机器对应的ip
     hostname = interval_ip(number, machines_list)
     if hostname:
-        cmd_result = paramiko_cmd(number, hostname)  # 执行重启命令
+        cmd_result, cmd_shutdown = paramiko_cmd(number, hostname)  # 执行重启命令
         if "success" not in str(cmd_result):
             # 当机器没开机时会出现这种情况
             alarm_content = "心跳故障修复失败: 机器：" + number + "执行重启命令失败"  # 告警内容
+            test_alarm_content = "故障排查，echo: " + str(cmd_result) + " \n cmd_shutdown:" + cmd_shutdown
+            dingtalk_initialization(test=True).send_markdown(title="故障修复", text=test_alarm_content)
         else:
-            alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
+            alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警!"  # 告警内容
         dingtalk_initialization().send_markdown(title="故障修复", text=alarm_content)
         alarm_time = datetime.datetime.now() + datetime.timedelta(seconds=30*60)  # 执行时间半小时后
         heartbeat_scheduler.add_job(id=number + "alert", func=trigger_final_alarm, args=[number],
