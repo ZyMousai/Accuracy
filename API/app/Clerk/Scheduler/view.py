@@ -9,7 +9,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from dingtalkchatbot.chatbot import DingtalkChatbot
-from app.Clerk.Scheduler.DataValidation import Alarm, SearchJob, DisplaySearchJob, DisplayAddJob, DisplayUpdateJob
+from app.Clerk.Scheduler.DataValidation import Alarm, SearchJob, DisplaySearchJob, DisplayAddJob, DisplayUpdateJob, \
+    RebootMachine
 from config import MysqlConfig, globals_config
 from sql_models.Clerk.OrmSchedulerHeartbeat import Heartbeat, Machine
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -136,7 +137,6 @@ async def exposed_add_job(info: Alarm, dbs: AsyncSession = Depends(db_session)):
     alarm_time = now_time + datetime.timedelta(seconds=(interval * 60))
     # alarm_time = now_time + datetime.timedelta(seconds=10)
     print(alarm_time)
-
     # 任务创建时，删除最终告警，发送恢复上线提醒
     if not heartbeat_scheduler.get_job(job_name):
         try:
@@ -175,6 +175,8 @@ def dingtalk_initialization():
 
 # 查询数据中机器所在范围
 def interval_ip(num, machines_list):
+    if type(num) != int:
+        num = int(num)
     for machine in machines_list:
         sc = machine[0].split("-")
         if int(sc[0]) <= num <= int(sc[1]):
@@ -182,34 +184,36 @@ def interval_ip(num, machines_list):
     return None
 
 
-# 重启指定编号的机器
-def reset_machine(number, machines_list, port=22, username="dingzj", password="Ff!4242587"):
-    number = int(number)
-    # 获取机器对应的ip
-    # try:
-    hostname = interval_ip(number, machines_list)
-    # except Exception as e:
-    #     alarm_content = str(number) + " 故障: 获取机器对应ip失败" + str(e)  # 告警内容
-    #     dingtalk_initialization().send_markdown(title="故障", text=alarm_content)
-    #     return False
-    if hostname:
-        # 链接机器执行重启命令
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=hostname, port=port, username=username, password=password)
+# 执行重启命令
+def paramiko_cmd(number, hostname, port=22, username="dingzj", password="Ff!4242587"):
+    if type(number) != str:
         number = str(number)
-        cmd_shutdown = "vim-cmd vmsvc/power.reset $(vim-cmd vmsvc/getallvms | awk '$2==" + number + \
-                       " {print $1}') && echo " + number + " success"
-        stdin, stdout, stderr = ssh.exec_command(cmd_shutdown)
-        n = stdout.read()
-        ssh.close()
-        print(n)
-        if "success" not in n:
+    # 链接机器执行重启命令
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=hostname, port=port, username=username, password=password)
+    cmd_shutdown = "vim-cmd vmsvc/power.reset $(vim-cmd vmsvc/getallvms | awk '$2==" + number + \
+                   " {print $1}') && echo " + number + " success"
+    stdin, stdout, stderr = ssh.exec_command(cmd_shutdown)
+    cmd_result = stdout.read()
+    print(cmd_result)
+    ssh.close()
+    return cmd_result
+
+
+# 重启指定编号的机器，并发送钉钉
+def reset_machine(number, machines_list):
+    if type(number) != str:
+        number = str(number)
+    # 获取机器对应的ip
+    hostname = interval_ip(number, machines_list)
+    if hostname:
+        cmd_result = paramiko_cmd(number, hostname)  # 执行重启命令
+        if "success" not in str(cmd_result):
             # 当机器没开机时会出现这种情况
             alarm_content = "心跳故障修复失败: 机器：" + number + "执行重启命令失败"  # 告警内容
         else:
             alarm_content = "心跳故障修复尝试: 已对机器：" + number + "执行重启命令，半小时内未恢复将发送最终报警"  # 告警内容
-
         dingtalk_initialization().send_markdown(title="故障修复", text=alarm_content)
         alarm_time = datetime.datetime.now() + datetime.timedelta(seconds=30*60)  # 执行时间半小时后
         heartbeat_scheduler.add_job(id=number + "alert", func=trigger_final_alarm, args=[number],
@@ -309,8 +313,6 @@ def loop_detection():
         # 连接数据库修改数据后，关闭数据库的连接
         if job_names or reboot:
             session.close()
-
-
 
 
 # 定时刷新库里的campaign信息
@@ -470,3 +472,45 @@ async def update_heartbeat_display(info: DisplayUpdateJob, dbs: AsyncSession = D
             raise HTTPException(status_code=403, detail="Task does not exist.")
     response_json = {"data": update_data_dict}
     return response_json
+
+
+@clerk_scheduler_router.post('/reboot')
+async def add_heartbeat_display(info: RebootMachine, dbs: AsyncSession = Depends(db_session)):
+    """
+        重启机器
+
+    :param info:
+
+        重启机器携带的参数
+
+    :param dbs:
+
+        数据库依赖
+
+    :return:
+
+        数据添加后在表里的id
+    """
+
+    # machines = session.query(Machine).filter(Machine.restart_authorization == 1).all()
+    filter_condition = [
+        ('restart_authorization', '==1', 1)
+    ]
+    machine_result = await Machine.get_all(dbs, *filter_condition)
+
+    if machine_result:
+        machines_list = []  # machines list
+        for machine in machine_result:
+            machines_list.append([machine.scope, machine.machine_ip])
+        # 获取机器对应的ip
+        hostname = interval_ip(info.job_name, machines_list)
+        if hostname:
+            return paramiko_cmd(info.job_name, hostname)
+        else:
+            return {"data": "No corresponding machine found"}
+    else:
+        return {"data": "No machines allowed to reboot"}
+
+
+
+

@@ -53,29 +53,29 @@
               </a-form-item>
             </a-col>
 
-            <a-col :md="6" :sm="24" >
-              <a-form-item
-                label="佣金"
-                :labelCol="{ span: 5 }"
-                :wrapperCol="{ span: 18, offset: 1 }"
-              >
-                <a-select v-model="query.pay_filter" placeholder="" :allowClear="true" :showSearch="true"
-                    :filter-option ="filterOption" style="width: 66px;">
-                  <a-select-option
-                    v-for="item in ['<','<=','==','>=', '>', '!=']"
-                    :key="item"
-                    :value="item"
-                  >
-                    {{ item }}
-                  </a-select-option>
-                </a-select>
-                <a-input-number
-                  v-model="query.pay"
-                  :value="query.pay"
-                  :allowClear="true"
-                />
-              </a-form-item>
-            </a-col>
+<!--            <a-col :md="6" :sm="24" >-->
+<!--              <a-form-item-->
+<!--                label="佣金"-->
+<!--                :labelCol="{ span: 5 }"-->
+<!--                :wrapperCol="{ span: 18, offset: 1 }"-->
+<!--              >-->
+<!--                <a-select v-model="query.pay_filter" placeholder="" :allowClear="true" :showSearch="true"-->
+<!--                    :filter-option ="filterOption" style="width: 66px;">-->
+<!--                  <a-select-option-->
+<!--                    v-for="item in ['<','<=','==','>=', '>', '!=']"-->
+<!--                    :key="item"-->
+<!--                    :value="item"-->
+<!--                  >-->
+<!--                    {{ item }}-->
+<!--                  </a-select-option>-->
+<!--                </a-select>-->
+<!--                <a-input-number-->
+<!--                  v-model="query.pay"-->
+<!--                  :value="query.pay"-->
+<!--                  :allowClear="true"-->
+<!--                />-->
+<!--              </a-form-item>-->
+<!--            </a-col>-->
           </a-row>
         </div>
         <span style="float: right; margin-top: 3px;">
@@ -205,8 +205,8 @@ export default {
         union_id: null,
         account_id: null,
         offers_name: null,
-        pay: null,
-        pay_filter: null,
+        // pay: null,
+        // pay_filter: null,
         country: null,
       },
       total: 0,
