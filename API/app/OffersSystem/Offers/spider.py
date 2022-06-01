@@ -295,7 +295,7 @@ class UnionApiDB(object):
         # 模块名
         self.__name = self.__class__.__name__
         # 初始化mysql连接
-        self.__mysql = MysqlClient(host='45.63.5.115', port=3306, user='root', password='4242587f*',
+        self.__mysql = MysqlClient(host='45.76.15.187', port=3306, user='root', password='HaiAn4242587_',
                                    database='AccuracyDB')
 
     def get_accounts_info(self):
@@ -308,39 +308,41 @@ class UnionApiDB(object):
 
     def save_data(self, data):
         # 插入数据
-        # sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
-        # offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
         sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
-        offers_url) values """
-        # insert_list = []
+        offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        # sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
+        # offers_url) values """
+        insert_list = []
         if data:
             for offers in data:
-                for offer in offers:
-                    # 拼接sql 运行效率更快
-                    offer_desc = offer['offers_desc']
-                    offer_name = offer['offers_name']
-                    if offer_desc:
-                        offer_desc = offer_desc.replace('"', "'").replace('\n', '').replace('\t', '').replace("\\", '')
-                    if offer_name:
-                        offer_name = offer_name.replace('"', "'")
-                    sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{pymysql.escape_string(offer_desc)}","{offer['pay']}","{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
-                    sql += sql_p
-                    # executemany 伪批量插入
-                    # insert_list.append(
-                    #     (
-                    #         offer['union_id'],
-                    #         offer['account_id'],
-                    #         offer['offers_name'],
-                    #         offer['offers_desc'],
-                    #         offer['pay'],
-                    #         offer['pay_unit'],
-                    #         offer['country'],
-                    #         offer['offers_url'],
-                    #     )
-                    # )
-        sql = sql[:-1]
-        tag = self.__mysql.execute_sql(sql)
-        # tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
+                if offers:
+                    for offer in offers:
+                        # 拼接sql 运行效率更快
+                        offer_desc = offer.get('offers_desc', '') if offer.get('offers_desc', '') else ""
+                        offer_name = offer.get('offers_name', '')
+                        if offer_desc:
+                            offer_desc = offer_desc.replace('"', "'").replace('\n', '').replace('\t', '').replace(
+                                "\\",'')
+                        if offer_name:
+                            offer_name = offer_name.replace('"', "'")
+                        # sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{pymysql.escape_string(offer_desc)}","{offer['pay']}","{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
+                        # sql += sql_p
+                        # executemany 伪批量插入
+                        insert_list.append(
+                            (
+                                offer['union_id'],
+                                offer['account_id'],
+                                offer_name,
+                                offer_desc,
+                                offer.get('pay', ''),
+                                offer.get('pay_unit', ''),
+                                offer.get('country', ''),
+                                offer.get('offers_url', ''),
+                            )
+                        )
+        # sql = sql[:-1]
+        # tag = self.__mysql.execute_sql(sql)
+        tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
         if not tag:
             raise SystemError('Save Data Failed.')
 
