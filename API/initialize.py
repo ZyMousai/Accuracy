@@ -1,6 +1,6 @@
 """初始化文件"""
 from app.routers import acc_man_router, clerk_router, doc_man_router, per_man_router, server_man_router, \
-    offers_system_router
+    offers_system_router, esxi_system_router
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import GlobalsConfig
@@ -41,3 +41,4 @@ def init_routers(app):
     app.include_router(per_man_router)
     app.include_router(server_man_router)
     app.include_router(offers_system_router)
+    app.include_router(esxi_system_router)

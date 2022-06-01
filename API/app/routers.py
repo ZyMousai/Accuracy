@@ -14,6 +14,7 @@ from app.PersonnelManagement.Departments.view import departments_router
 from app.PersonnelManagement.Roles.view import roles_router
 from app.PersonnelManagement.Users.view import users_router
 from app.ServerManagenebt.ServerConfig.view import server_router
+from app.EsxiServerSystem.EsxiMonitor.view import esxi_sys_router
 
 # =====注册二级路由=====
 # ### AccountManagement
@@ -47,3 +48,7 @@ offers_system_router = APIRouter(prefix="/api/OffersSystem")
 offers_system_router.include_router(offers_account_router)
 offers_system_router.include_router(offers_union_router)
 offers_system_router.include_router(offers_router)
+
+# ### EsxiServerSystem
+esxi_system_router = APIRouter(prefix="/api/EsxiSystem")
+esxi_system_router.include_router(esxi_sys_router)
