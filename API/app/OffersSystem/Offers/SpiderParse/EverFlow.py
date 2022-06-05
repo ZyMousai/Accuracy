@@ -9,6 +9,7 @@ class EverFlowParse(object):
             for offer in response:
                 result_list.append(
                     {
+                        "offers_id": offer.get("network_offer_id"),
                         "union_id": union_id,
                         "account_id": account_id,
                         "offers_name": offer["name"],

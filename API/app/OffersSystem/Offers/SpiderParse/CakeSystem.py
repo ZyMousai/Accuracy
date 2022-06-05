@@ -13,6 +13,7 @@ class CakeSystemParse(object):
                     country = None
                 result_list.append(
                     {
+                        "offers_id": offer.get("offer_id"),
                         "union_id": union_id,
                         "account_id": account_id,
                         "offers_name": offer.get("offer_name"),

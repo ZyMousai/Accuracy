@@ -105,6 +105,7 @@ class OffersAccount(PBaseModel):
 
 class Offers(PBaseModel):
     __tablename__ = 'offers'
+    offers_id = BaseType.BaseColumn(BaseType.BaseString(288))  # 任务id
     union_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 联盟id
     account_id = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False)  # 账号id
     offers_name = BaseType.BaseColumn(BaseType.BaseString(288), nullable=False)  # 任务名
@@ -114,6 +115,7 @@ class Offers(PBaseModel):
     pay_unit = BaseType.BaseColumn(BaseType.BaseString(288))  # 佣金单位
     offers_url = BaseType.BaseColumn(BaseType.BaseString(888))  # 任务链接
     remark = BaseType.BaseColumn(BaseType.BaseText)  # 备注
+    create_time = BaseType.BaseColumn(BaseType.BaseDateTime, nullable=False, default=datetime.datetime.now())  # 创建时间
 
     @classmethod
     async def get_all_detail_page_associated(cls, dbs, page, page_size, *args):

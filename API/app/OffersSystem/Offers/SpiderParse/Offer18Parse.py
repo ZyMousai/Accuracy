@@ -8,6 +8,7 @@ class Offer18Parse(object):
             for index, offer in response.items():
                 result_list.append(
                     {
+                        "offers_id": offer.get("offerid"),
                         "union_id": union_id,
                         "account_id": account_id,
                         "offers_name": offer["name"],

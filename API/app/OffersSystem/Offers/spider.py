@@ -1,10 +1,13 @@
 import random
 import datetime
 import json
-import pymysql
 import requests
+import pandas
+import datacompy
 from concurrent.futures import ThreadPoolExecutor
 import csv
+
+from config import MysqlConfig
 from util.crypto import decrypt
 from util.mysql_c.MysqlClient import MysqlClient
 
@@ -295,8 +298,8 @@ class UnionApiDB(object):
         # 模块名
         self.__name = self.__class__.__name__
         # 初始化mysql连接
-        self.__mysql = MysqlClient(host='45.76.15.187', port=3306, user='root', password='HaiAn4242587_',
-                                   database='AccuracyDB')
+        self.__mysql = MysqlClient(host=MysqlConfig.host, port=MysqlConfig.port, user=MysqlConfig.username,
+                                   password=MysqlConfig.password, database=MysqlConfig.db)
 
     def get_accounts_info(self):
         sql = """select oa.id,oa.offers_account,oa.offers_pwd,oa.offers_api_key,oa.`options`,oa.ip_info,oa.union_id,
@@ -307,50 +310,94 @@ class UnionApiDB(object):
         return self.__mysql.select_many(sql)
 
     def save_data(self, data):
+        if not data:
+            return
+        # 查询出所有数据
+        count, result = self.query_all_data()
+        if result:
+            title = ["id", "union_id", "account_id", "offers_name", "pay", "country", "offers_url"]
+            # 把里面的元组转成字典
+            query_result = [dict(zip(title, x)) for x in result]
+            # 转成打DataFrame 进行对比
+            df1 = pandas.DataFrame(query_result)
+            df2 = pandas.DataFrame(data)
+            compare = datacompy.Compare(df1, df2, join_columns=title[1:])
+            # 进行对比，删除不存在的，新增没有的
+            # 库里面有，但是拿回来的数据没有，则代表下架(df1独有)
+            df1_ = compare.df1_unq_rows
+            print("df1_:")
+            print(df1_)
+            delete_ids = list(df1_.loc[:, "id"])
+            delete_ids = list(map(lambda x: int(x), delete_ids))
+            if delete_ids:
+                # 逻辑删除下架了的offers
+                self.delete_data_logic(tuple(delete_ids), auto_commit=True)
+            # 进行对比，新增没有的，库里面没有
+            # 拿回来数据有，则代表需要新增(df2独有)
+            df2_ = compare.df2_unq_rows
+            print("df2_:")
+            print(df2_)
+            # df2_values = list(map(lambda x: list(map(lambda n: int(n), x)), df2_.values))
+            df2_values = df2_.values
+            insert_data = [dict(zip(data[0].keys(), x)) for x in df2_values]
+        else:
+            insert_data = data
         # 插入数据
-        sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
-        offers_url) value (0,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        sql = """insert into offers (is_delete,offers_id,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
+        offers_url,create_time) value (0,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
         # sql = """insert into offers (is_delete,union_id,account_id,offers_name,offers_desc,pay,pay_unit,country,
         # offers_url) values """
         insert_list = []
-        if data:
-            for offers in data:
-                if offers:
-                    for offer in offers:
-                        # 拼接sql 运行效率更快
-                        offer_desc = offer.get('offers_desc', '') if offer.get('offers_desc', '') else ""
-                        offer_name = offer.get('offers_name', '')
-                        if offer_desc:
-                            offer_desc = offer_desc.replace('"', "'").replace('\n', '').replace('\t', '').replace(
-                                "\\", '')
-                        if offer_name:
-                            offer_name = offer_name.replace('"', "'")
-                        # sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{pymysql.escape_string(offer_desc)}","{offer['pay']}","{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
-                        # sql += sql_p
-                        # executemany 伪批量插入
-                        insert_list.append(
-                            (
-                                offer['union_id'],
-                                offer['account_id'],
-                                offer_name,
-                                offer_desc,
-                                offer.get('pay', ''),
-                                offer.get('pay_unit', ''),
-                                offer.get('country', ''),
-                                offer.get('offers_url', ''),
-                            )
-                        )
-        # sql = sql[:-1]
-        # tag = self.__mysql.execute_sql(sql)
-        tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
-        if not tag:
-            raise SystemError('Save Data Failed.')
+        if insert_data:
+            for offer in insert_data:
+                if offer:
+                    # 拼接sql 运行效率更快
+                    offer_desc = offer.get('offers_desc', '') if offer.get('offers_desc', '') else ""
+                    offer_name = offer.get('offers_name', '')
+                    if offer_desc:
+                        offer_desc = offer_desc.replace('"', "'").replace('\n', '').replace('\t', '').replace(
+                            "\\", '')
+                    if offer_name:
+                        offer_name = offer_name.replace('"', "'")
+                    # sql_p = f"""({0},{offer['union_id']},{offer['account_id']},"{offer_name}","{pymysql.escape_string(offer_desc)}","{offer['pay']}","{offer['pay_unit']}","{offer['country']}","{offer['offers_url']}"),"""
+                    # sql += sql_p
+                    # executemany 伪批量插入
+                    insert_list.append(
+                        (offer['offers_id'],
+                         offer['union_id'],
+                         offer['account_id'],
+                         offer_name,
+                         offer_desc,
+                         offer.get('pay', ''),
+                         offer.get('pay_unit', ''),
+                         offer.get('country', ''),
+                         offer.get('offers_url', ''),
+                         datetime.datetime.now()
+                         )
+                    )
+            # sql = sql[:-1]
+            # tag = self.__mysql.execute_sql(sql)
+            tag = self.__mysql.handle_many(sql, insert_list, auto_commit=True)
+            if not tag:
+                raise SystemError('Save Data Failed.')
 
     def clear_table(self):
         # 清空表
         sql = """Delete from offers;"""
         # sql = """Truncate table offers;"""
         self.__mysql.handle_one(sql, auto_commit=False)
+
+    def delete_data_logic(self, ids, auto_commit=False):
+        if len(ids) == 1:
+            ids = str(ids).replace(",", "")
+        # 逻辑删除
+        sql = f"""update offers set is_delete =1 where id in {ids}"""
+        self.__mysql.handle_one(sql, auto_commit=auto_commit)
+
+    def query_all_data(self):
+        sql = """select id,union_id,account_id,offers_name,pay,country,offers_url from offers where is_delete = 0;"""
+        cont, result = self.__mysql.select_many(sql)
+        return cont, result
 
     def close(self):
         self.__mysql.close()
@@ -386,7 +433,6 @@ class UnionApiRun(object):
         oa.id,oa.offers_account,oa.offers_pwd,oa.offers_api_key,oa.`options`,oa.ip_info,oa.union_id,
         ou.union_name,ou.union_url,ou.union_system_id,us.union_system,us.union_system_api_url
         """
-        print_task_list = []
         for x in query_info[1]:
             task = {
                 'union_id': x[6],
@@ -402,17 +448,17 @@ class UnionApiRun(object):
                 'account_ip_info': json.loads(x[5]),
             }
             task_list.append(task)
-            print_task_list.append(
-                {
-                    'union_id': x[6],
-                    'union_name': x[7],
-                    'account_id': x[0],
-                    'account': x[1],
-                }
-            )
+
+            print_task = {
+                'union_id': x[6],
+                'union_name': x[7],
+                'account_id': x[0],
+                'account': x[1],
+            }
+            PrintLog.print_log(self.__name, PrintLog.INFO,
+                               f'ThreadNum:{self.__thread_num}---Task:{print_task}')
 
         # 打印日志
-        PrintLog.print_log(self.__name, PrintLog.INFO, f'ThreadNum:{self.__thread_num}---TotalTask:{print_task_list}')
 
         # 发送请求解析数据 使用线程池
         def run_union_api(task_info):
@@ -426,11 +472,21 @@ class UnionApiRun(object):
         result = [data for data in executor.map(run_union_api, task_list)]
 
         if result:
-            # 清空现有表
-            mysql_conn.clear_table()
-            PrintLog.print_log(self.__name, PrintLog.INFO, 'TableName<offers> Clear Success')
+            # # 清空现有表
+            # mysql_conn.clear_table()
+            # PrintLog.print_log(self.__name, PrintLog.INFO, 'TableName<offers> Clear Success')
             try:
                 # 入库
+                result = [n for x in result for n in x]
+                for i in result:
+                    pay = i.get('pay')
+                    if pay is None:
+                        i['pay'] = '0'
+                    elif isinstance(pay, float) or isinstance(pay, int):
+                        i['pay'] = str(int(pay))
+                    else:
+                        i['pay'] = str(pay)
+
                 mysql_conn.save_data(result)
                 PrintLog.print_log(self.__name, PrintLog.INFO, 'SaveData Success')
 
@@ -483,3 +539,75 @@ if __name__ == '__main__':
     # }
     ax = UnionApiRun()
     ax.run()
+
+    # print(c)
+    # print(r)
+
+    # cake案例
+    # xx = [
+    #     {'offers_id': 4051, 'union_id': 4, 'account_id': 4, 'offers_name': 'Insure My Car v1042 Email - Internal Only',
+    #      'offers_desc': '', 'country': None, 'pay': '11', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3328, 'union_id': 4, 'account_id': 4, 'offers_name': 'LowerMyBills - Long Form - No Splash',
+    #      'offers_desc': '', 'country': None, 'pay': '72', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3146, 'union_id': 4, 'account_id': 4, 'offers_name': 'LowerMyBills - Short Form',
+    #      'offers_desc': '', 'country': None, 'pay': '36', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2591, 'union_id': 4, 'account_id': 4, 'offers_name': 'NEW RoofingCostGuide *By Approval Only*',
+    #      'offers_desc': '', 'country': None, 'pay': '11', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3252, 'union_id': 4, 'account_id': 4, 'offers_name': 'Personal Loan Pro - Revshare NEW ',
+    #      'offers_desc': '', 'country': None, 'pay': '80', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3768, 'union_id': 4, 'account_id': 4, 'offers_name': 'Roofmaxx - TYP', 'offers_desc': '',
+    #      'country': None, 'pay': '27', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 804, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - DownPaymentSurvey - SC',
+    #      'offers_desc': '7 days a week ', 'country': None, 'pay': '5', 'pay_unit': '$',
+    #      'offers_url': 'https://downpaymentsurvey.com'},
+    #     {'offers_id': 804, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - DownPaymentSurvey - SC',
+    #      'offers_desc': '7 days a week ', 'country': None, 'pay': '90', 'pay_unit': '$',
+    #      'offers_url': 'https://downpaymentsurvey.com'},
+    #     {'offers_id': 2197, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - EnhancedRelief - SC',
+    #      'offers_desc': 'Converts on full lead submit \n7 days a week ', 'country': 'US', 'pay': '40', 'pay_unit': '$',
+    #      'offers_url': 'https://enhancedrelief.com'},
+    #     {'offers_id': 2197, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - EnhancedRelief - SC',
+    #      'offers_desc': 'Converts on full lead submit \n7 days a week ', 'country': None, 'pay': '90', 'pay_unit': '$',
+    #      'offers_url': 'https://enhancedrelief.com'},
+    #     {'offers_id': 2489, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - FedsCutRates - GHM',
+    #      'offers_desc': '', 'country': None, 'pay': '40', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2489, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - FedsCutRates - GHM',
+    #      'offers_desc': '', 'country': None, 'pay': '90', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2482, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - GovHomePrograms - CRT',
+    #      'offers_desc': '', 'country': None, 'pay': '35', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2482, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - GovHomePrograms - CRT',
+    #      'offers_desc': '', 'country': None, 'pay': '100', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 781, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - HarpQuiz.com',
+    #      'offers_desc': 'Converts on full lead submit \n7 days a week \n', 'country': None, 'pay': '30',
+    #      'pay_unit': '$', 'offers_url': 'https://harpquiz.com'},
+    #     {'offers_id': 2604, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - HomeRoofingSurvey - GHM',
+    #      'offers_desc': '', 'country': 'US', 'pay': '0', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2604, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - HomeRoofingSurvey - GHM',
+    #      'offers_desc': '', 'country': 'US', 'pay': '90', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2605, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - HomeWindowSurvey - GHM',
+    #      'offers_desc': '', 'country': None, 'pay': '100', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2684, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - InsuranceSpecialists (AutoGo2) - MP',
+    #      'offers_desc': '', 'country': 'US', 'pay': '10', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2613, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - InsuranceSpecialists (Life) - MP ',
+    #      'offers_desc': '', 'country': None, 'pay': '10', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2613, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - InsuranceSpecialists (Life) - MP ',
+    #      'offers_desc': '', 'country': None, 'pay': '90', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2699, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - InsuranceSpecialists (Med2) - MP',
+    #      'offers_desc': '', 'country': 'US', 'pay': '11', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2699, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - InsuranceSpecialists (Med2) - MP',
+    #      'offers_desc': '', 'country': 'US', 'pay': '90', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2606, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - QualifiedSolarSurvey - GHM',
+    #      'offers_desc': '', 'country': None, 'pay': '1', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2606, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - QualifiedSolarSurvey - GHM',
+    #      'offers_desc': '', 'country': None, 'pay': '100', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3349, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - Rent2OwnQualifier - SC',
+    #      'offers_desc': '', 'country': None, 'pay': '5', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 3349, 'union_id': 4, 'account_id': 4, 'offers_name': 'V2FE - Rent2OwnQualifier - SC',
+    #      'offers_desc': '', 'country': None, 'pay': '90', 'pay_unit': '$', 'offers_url': ''},
+    #     {'offers_id': 2622, 'union_id': 4, 'account_id': 4,
+    #      'offers_name': 'zzzEXPIRED -  DO NOT USE - V2FE - InsuranceSpecialists (Car3) - MP',
+    #      'offers_desc': 'Auto Insurance \nDoes not pay on uninsured consumers \n', 'country': None, 'pay': '8',
+    #      'pay_unit': '$', 'offers_url': 'https://car3.insurancespecialists.com/'}]
+    # ax = UnionApiDB()
+    # ax.save_data(xx)
+    # del ax

@@ -10,6 +10,7 @@ class HasOffersParse(object):
                 for o_index, offer in offers.items():
                     result_list.append(
                         {
+                            "offers_id": offer.get("id"),
                             "union_id": union_id,
                             "account_id": account_id,
                             "offers_name": offer["name"],

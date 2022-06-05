@@ -13,6 +13,7 @@ class AffiseParse(object):
                 else:
                     country = ",".join(offer["payments"][0]["countries"])
                 result_dict = {
+                    "offers_id": offer.get("id"),
                     "union_id": union_id,
                     "account_id": account_id,
                     "offers_name": offer["title"],
