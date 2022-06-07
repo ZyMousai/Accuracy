@@ -15,6 +15,7 @@ from app.PersonnelManagement.Roles.view import roles_router
 from app.PersonnelManagement.Users.view import users_router
 from app.ServerManagenebt.ServerConfig.view import server_router
 from app.EsxiServerSystem.EsxiMonitor.view import esxi_sys_router
+from app.Clerk.Machine.view import machine_router
 
 # =====注册二级路由=====
 # ### AccountManagement
@@ -27,6 +28,7 @@ clerk_router.include_router(voluum_router)
 clerk_router.include_router(clerk_card_router)
 clerk_router.include_router(track_router)
 clerk_router.include_router(clerk_scheduler_router)
+clerk_router.include_router(machine_router)
 
 # ### DocumentManagement
 doc_man_router = APIRouter(prefix="/api/DocumentManagement")

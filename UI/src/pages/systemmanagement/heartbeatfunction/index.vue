@@ -278,7 +278,7 @@ import {
   DeleteHeartbeatDisplay,
   // GetServiceNameDateOne,
   PatchHeartbeatDisplay,
-} from "../../services/systemmanagement";
+} from "../../../services/systemmanagement";
 
 const columns = [
   {title: "id", dataIndex: "id"},

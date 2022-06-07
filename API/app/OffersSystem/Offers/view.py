@@ -14,7 +14,7 @@ offers_router = APIRouter(
 
 
 @offers_router.get('/')
-async def get_user(info: SearchOffers = Depends(SearchOffers),
+async def get_offer(info: SearchOffers = Depends(SearchOffers),
                    dbs: AsyncSession = Depends(db_session)):
     """
     获取offer列表
@@ -26,6 +26,8 @@ async def get_user(info: SearchOffers = Depends(SearchOffers),
     filter_condition = [
         ('union_id', f'=={info.union_id}', info.union_id),
         ('account_id', f'=={info.account_id}', info.account_id),
+        ("create_time", f'>="{info.start_create_time}"', info.start_create_time),
+        ("create_time", f'<="{info.end_create_time}"', info.end_create_time),
         ('offers_name', f'.like(f"%{info.offers_name}%")', info.offers_name),
         ('pay', f'{info.pay_filter}{info.pay}', info.pay),
         ('country', f'.like(f"%{info.country}%")', info.country),

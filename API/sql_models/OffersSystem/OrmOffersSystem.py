@@ -120,38 +120,37 @@ class Offers(PBaseModel):
     @classmethod
     async def get_all_detail_page_associated(cls, dbs, page, page_size, *args):
         """获取所有数据-分页"""
-        # try:
-        # 构建查询条件
-        filter_condition = list()
-        for x in args:
-            if x[2] is not None:
-                filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
-        # 处理分页
-        _orm_count = select(func.count(cls.id)).outerjoin(OffersUnion, cls.union_id == OffersUnion.id).outerjoin(
-            OffersAccount, cls.account_id == OffersAccount.id).where(*filter_condition)
+        try:
+            # 构建查询条件
+            filter_condition = list()
+            for x in args:
+                if x[2] is not None:
+                    filter_condition.append(eval(f'cls.{x[0]}{x[1]}'))
+            # 处理分页
+            _orm_count = select(func.count(cls.id)).outerjoin(OffersUnion, cls.union_id == OffersUnion.id).outerjoin(
+                OffersAccount, cls.account_id == OffersAccount.id).where(*filter_condition)
 
-        count = (await dbs.execute(_orm_count)).scalar()
-        remainder = count % page_size
-        if remainder == 0:
-            total_page = int(count // page_size)
-        else:
-            total_page = int(count // page_size) + 1
+            count = (await dbs.execute(_orm_count)).scalar()
+            remainder = count % page_size
+            if remainder == 0:
+                total_page = int(count // page_size)
+            else:
+                total_page = int(count // page_size) + 1
 
-        # 查询数据
-        # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
+            # 查询数据
+            # scalars主要作用是把数据映射到orm类上去，不然得到的就是一行一行的查询结果
 
-        _orm = select(cls.id, cls.union_id, OffersUnion.union_name,
-                      cls.account_id, OffersAccount.offers_account,
-                      cls.offers_name, cls.offers_desc, cls.country,
-                      cls.pay, cls.pay_unit, cls.offers_url, cls.remark) \
-            .outerjoin(OffersUnion, cls.union_id == OffersUnion.id) \
-            .outerjoin(OffersAccount, cls.account_id == OffersAccount.id) \
-            .where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
+            _orm = select(cls.id, cls.union_id, OffersUnion.union_name, cls.account_id,
+                          OffersAccount.offers_account, cls.offers_id, cls.offers_name,
+                          cls.offers_desc, cls.country, cls.pay, cls.pay_unit,
+                          cls.offers_url, cls.remark, cls.create_time) \
+                .outerjoin(OffersUnion, cls.union_id == OffersUnion.id) \
+                .outerjoin(OffersAccount, cls.account_id == OffersAccount.id) \
+                .where(*filter_condition).order_by().limit(page_size).offset((page - 1) * page_size)
 
-        result = (await dbs.execute(_orm)).all()
-
-        # except Exception as e:
-        #     return JSONResponse(status_code=400, content={"detail": str(e)})
+            result = (await dbs.execute(_orm)).all()
+        except Exception as e:
+            return JSONResponse(status_code=400, content={"detail": str(e)})
         return result, count, total_page
 
 

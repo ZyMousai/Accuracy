@@ -55,4 +55,5 @@ module.exports = {
     OffersAccountOne: `${BASE_URL}/OffersSystem/OffersAccount/v1/detail`,
     OffersAccountAll: `${BASE_URL}/OffersSystem/OffersAccount/v1/all`,
     Offers: `${BASE_URL}/OffersSystem/Offers/v1/`,
+    Machine: `${BASE_URL}/Clerk/machine/v1`,
 }

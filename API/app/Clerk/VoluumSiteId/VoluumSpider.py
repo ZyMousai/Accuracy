@@ -99,16 +99,18 @@ class VoluumData(VoluumSpider):
             mongo.delete_data(clo_name)
 
     def add_campaign(self):
-        clo_name = 'voluum_campaigns'
-        mongo = MongoClient(**globals_config.MONGO_INFO.__dict__)
+        try:
+            clo_name = 'voluum_campaigns'
+            mongo = MongoClient(**globals_config.MONGO_INFO.__dict__)
 
-        self.__is_clear_database(mongo, clo_name)
+            self.__is_clear_database(mongo, clo_name)
 
-        self.get_token()
-        body = self.get_campaign()
-        mongo.add_data(clo_name, body['body']['campaigns'])
-        mongo.close()
-
+            self.get_token()
+            body = self.get_campaign()
+            mongo.add_data(clo_name, body['body']['campaigns'])
+            mongo.close()
+        except:
+            pass
         print('**add_campaign OK')
 
     def add_reports(self):

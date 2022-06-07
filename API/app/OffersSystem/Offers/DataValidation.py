@@ -21,6 +21,8 @@ class PayFilter(str, Enum):
 
 class SearchOffers(BaseModel):
     union_id: Optional[int] = Query(None)
+    start_create_time: Optional[str] = Query(None)
+    end_create_time: Optional[str] = Query(None)
     account_id: Optional[int] = Query(None)
     offers_name: Optional[str] = Query(None)
     pay: Optional[int] = Query(None)

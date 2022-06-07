@@ -93,6 +93,11 @@
         :loading="tableloading"
         :pagination="false"
       >
+        <div slot="offers_api_key" slot-scope="record" :title="record.offers_api_key">
+          <div class="api_key_class" style="">
+            {{ record.offers_api_key }}
+          </div>
+        </div>
         <div slot="action" slot-scope="record">
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit"/>修改
@@ -107,6 +112,9 @@
                     @change="record.status_loading=true;status_change(record.status, record.id)"/>
         </div>
         <!--                    :checked="record.status ? true : false"-->
+
+
+
       </a-table>
       <a-pagination
         style="margin-top: 15px;"
@@ -168,7 +176,7 @@
             <a-space
               v-for="(user, index) in editform.users"
               :key="user.id"
-              style="display: flex; margin-bottom: 0px;align-items: center;"
+              style="display: flex; margin-bottom: 0;align-items: center;"
               align="baseline"
             >
               <a-form-item
@@ -248,7 +256,8 @@ const columns = [
   },
   {
     title: 'api-key',
-    dataIndex: 'offers_api_key'
+    key: 'offers_api_key',
+    scopedSlots: {customRender: 'offers_api_key'}
   },
   {
     title: '创建时间',
@@ -357,15 +366,18 @@ export default {
       OffersAccountDate(this.query).then(res => {
         if (res.status === 200) {
           console.log(res);
-          var reg = /(.*)(.)$/;
+          // var reg = /(.*)(.)$/;
           var re_da = res.data.data;
           // 给予序号
           for (var i = 0; i < re_da.length; i++) {
             re_da[i]["index"] = i + 1
             re_da[i]["status_loading"] = false
-            re_da[i]["offers_pwd_mi"] = re_da[i]["offers_pwd"].replace(reg,function(a,b){
-                return b.replace(/./g,"*") + "*";
-            });
+            //密码换成*
+            // re_da[i]["offers_pwd_mi"] = re_da[i]["offers_pwd"].replace(reg,function(a,b){
+            //     return b.replace(/./g,"*") + "*";
+            // });
+            //密码换成固定长度的* (那还显示干啥？？)
+            re_da[i]["offers_pwd_mi"] = "*********"
           }
           this.dataSource = re_da
           this.total = res.data.total
@@ -564,6 +576,14 @@ export default {
     filterOption(input, option){
 			return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0;
 		},
+    // 复制成功时的回调函数
+    onCopy () {
+     this.$message.success("内容已复制到剪切板！")
+    },
+    // 复制失败时的回调函数
+    onCopyError () {
+     this.$message.error("抱歉，复制失败！")
+    },
   }
 }
 </script>
@@ -583,5 +603,11 @@ export default {
     .fold {
       width: 100%;
     }
+  }
+  .api_key_class{
+    white-space: nowrap; word-break: break-all; text-overflow: ellipsis; overflow: hidden;  width: 152px
+  }
+  .api_key_class:hover{
+    white-space: inherit;
   }
 </style>

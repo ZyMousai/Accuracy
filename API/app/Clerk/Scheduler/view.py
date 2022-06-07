@@ -24,6 +24,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from queue import Queue
 from util.crypto import decrypt
+from sqlalchemy.pool import NullPool
 import paramiko
 # 系统管理 - 心跳功能
 clerk_scheduler_router = APIRouter(
@@ -45,7 +46,8 @@ loop_detection_scheduler = BackgroundScheduler(
     timezone="Asia/Shanghai",
     job_defaults={'coalesce': True},
     SCHEDULER_API_ENABLED=True)
-engine = create_engine(MYSQL_URL, encoding='utf-8')
+engine = create_engine(MYSQL_URL, encoding='utf-8', poolclass=NullPool)
+# engine = create_engine(MYSQL_URL, encoding='utf-8')
 # autocommit：是否自动提交 autoflush：是否自动刷新并加载数据库 bind：绑定数据库引擎
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 实例化

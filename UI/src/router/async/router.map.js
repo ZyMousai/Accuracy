@@ -166,7 +166,13 @@ const routerMap = {
         path: 'heartbeatfunction',
         name: '心跳功能',
         component: () =>
-            import ('@/pages/systemmanagement')
+            import ('@/pages/systemmanagement/heartbeatfunction')
+    },
+    machine:{
+        path:"machine",
+        name:"机器",
+        component:()=>
+            import ('@/pages/systemmanagement/machine')
     },
     offerssystem:{
         path:'offerssystem',
