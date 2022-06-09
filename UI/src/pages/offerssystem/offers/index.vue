@@ -38,11 +38,11 @@
 <!--            </a-col>-->
             <a-col :md="6" :sm="24" >
               <a-form-item
-                label="Country"
+                label="国家"
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}"
               >
-                <a-input v-model="query.country" placeholder="Country" :allowClear="true"/>
+                <a-input v-model="query.country" placeholder="国家" :allowClear="true"/>
               </a-form-item>
             </a-col>
             <a-col :md="6" :sm="24">
@@ -184,10 +184,10 @@ const columns = [
     title: '联盟',
     dataIndex: 'union_name'
   },
-  // {
-  //   title: '账号',
-  //   dataIndex: 'offers_account'
-  // },
+  {
+    title: '国家',
+    dataIndex: 'country'
+  },
   {
     title: '任务名',
     dataIndex: 'offers_name'
