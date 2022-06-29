@@ -111,7 +111,7 @@ class VoluumData(VoluumSpider):
             mongo.close()
         except:
             pass
-        print('**add_campaign OK')
+        # print('**add_campaign OK')
 
     def add_reports(self):
         clo_name = 'voluum_reports'

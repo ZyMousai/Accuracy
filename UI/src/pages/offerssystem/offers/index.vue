@@ -425,8 +425,8 @@ export default {
     // 日期选择
     bptjTimeChange(date, dateString){
       console.log(dateString);
-      this.query.start_time = dateString[0] ? dateString[0] : null
-      this.query.end_time = dateString[1] ? dateString[1] : null
+      this.query.start_create_time = dateString[0] ? dateString[0] : null
+      this.query.end_create_time = dateString[1] ? dateString[1] : null
     },
   }
 }

@@ -23,7 +23,7 @@ class Heartbeat(PBaseModel):
 class Machine(PBaseModel):
     __tablename__ = 'machine'
 
-    machine_ip = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, unique=True, comment='机器ip')
+    machine_ip = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, comment='机器ip')
     scope = BaseType.BaseColumn(BaseType.BaseString(255), nullable=False, unique=True, comment='范围,例：1-60')
     restart_authorization = BaseType.BaseColumn(BaseType.BaseInteger, nullable=False, default=1,
                                                 comment='重启授权:0-关闭；1-开启')

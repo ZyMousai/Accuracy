@@ -515,12 +515,10 @@ async def add_heartbeat_display(info: RebootMachine, dbs: AsyncSession = Depends
         # 获取机器对应的ip
         hostname = interval_ip(info.job_name, machines_list)
         if hostname:
-            return paramiko_cmd(info.job_name, hostname)
+            cmd_result, _ = paramiko_cmd(info.job_name, hostname)
+            return {"code": 200, "data": cmd_result}
         else:
-            return {"data": "No corresponding machine found"}
+            return {"code": 400, "data": "No corresponding machine found"}
     else:
-        return {"data": "No machines allowed to reboot"}
-
-
-
+        return {"code": 400, "data": "No machines allowed to reboot"}
 
