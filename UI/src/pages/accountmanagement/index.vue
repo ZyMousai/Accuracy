@@ -165,7 +165,6 @@ const columns = [
   {
     title: '密码',
     dataIndex: 'password',
-    width: 800,
     scopedSlots: { customRender: 'password' }
   },
   {
