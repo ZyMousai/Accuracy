@@ -46,6 +46,7 @@ module.exports = {
     CardsExcelExport: `${BASE_URL}/Clerk/card/v1/export`,
     RoleAccount: `${BASE_URL}/PersonnelManagement/roles/v1/RoleAccount`,
     DocumentDownloadURL: `${BASE_URL}/DocumentManagement/documents/v1/download`,
+    RebootMachine: `${BASE_URL}/Clerk/heartbeat/v1/reboot`,
     HeartbeatGetServiceName: `${BASE_URL}/Clerk/heartbeat/v1/display`,
     HeartbeatGetServiceNameOne: `${BASE_URL}/Clerk/heartbeat/v1/display/detail`,
     OffersUnion: `${BASE_URL}/OffersSystem/OffersUnion/v1/`,

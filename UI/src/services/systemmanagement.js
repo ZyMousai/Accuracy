@@ -1,4 +1,4 @@
-import{HeartbeatGetServiceName, HeartbeatGetServiceNameOne} from '@/services/api'
+import{HeartbeatGetServiceName, HeartbeatGetServiceNameOne, RebootMachine} from '@/services/api'
 import { request, METHOD } from '@/utils/request'
 /**
  * 心跳功能
@@ -52,4 +52,14 @@ export async function DeleteHeartbeatDisplay(id) {
     return request(HeartbeatGetServiceName, "DELETE", {
         ids: id
     })
+}
+
+/**
+ * 心跳功能
+ * 重启机器
+ * @param query  查新请求参数
+ * @returns {Promise<AxiosResponse<T>>}
+ */
+export async function PostRebootMachine(query) {
+    return request(RebootMachine, METHOD.POST, query)
 }

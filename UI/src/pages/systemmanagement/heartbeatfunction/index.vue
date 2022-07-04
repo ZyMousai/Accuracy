@@ -132,6 +132,11 @@
           {{ record.interval }} 分钟
         </div>
 
+        <div slot="type" slot-scope="{ record }">
+          <a-button v-if="record.type === 'machine'" @click="reboot(record.job_name)">重启</a-button>
+<!--          <a-button type="primary" @click="queryevents">查询</a-button>-->
+        </div>
+
         <div slot="action" slot-scope="{ record }">
           <a @click="showModal(record)" style="margin-right: 8px">
             <a-icon type="edit" />修改
@@ -272,11 +277,10 @@
 
 <script>
 import StandardTable from "@/components/table/StandardTable";
-import { GetServiceNameDate, GetServiceNameDateOne } from "@/services/systemmanagement";
+import { GetServiceNameDate, GetServiceNameDateOne, PostRebootMachine } from "@/services/systemmanagement";
 import {
   AddHeartbeatDisplay,
   DeleteHeartbeatDisplay,
-  // GetServiceNameDateOne,
   PatchHeartbeatDisplay,
 } from "../../../services/systemmanagement";
 
@@ -297,8 +301,12 @@ const columns = [
     dataIndex: "interval",
     scopedSlots: {customRender: "interval"},
   },
+  {
+    title: "重启",
+    dataIndex: "type",
+    scopedSlots: {customRender: "type"},
+  },
   {title: "操作", scopedSlots: {customRender: "action"}},
-
 ];
 
 const dataSource = [];
@@ -537,6 +545,18 @@ export default {
         this.isdisabled = false;
         this.visible = true;
       }
+    },
+    //重启机器
+    reboot(name){
+      console.log(name)
+      PostRebootMachine({"job_name": name}).then((res) => {
+        if (res.status === 200) {
+          console.log(res)
+          this.$message.success(`${this.tablename}重启成功！`+res.data[0]);
+        } else {
+          this.$message.error(`${this.tablename}重启失败！`);
+        }
+      });
     },
     // 提交编辑表单
     handleOk() {
