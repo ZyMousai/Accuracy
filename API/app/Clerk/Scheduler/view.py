@@ -485,7 +485,7 @@ async def update_heartbeat_display(info: DisplayUpdateJob, dbs: AsyncSession = D
 
 
 @clerk_scheduler_router.post('/reboot')
-async def add_heartbeat_display(info: RebootMachine, dbs: AsyncSession = Depends(db_session)):
+async def reboot_machine(info: RebootMachine, dbs: AsyncSession = Depends(db_session)):
     """
         重启机器
 

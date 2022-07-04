@@ -454,7 +454,6 @@ export default {
               }else {
                 re_da[i]["last_heartbeat"] = last_heartbeat.replace("T", " ");
               }
-
             }
             re_da[i]["create_time"] = re_da[i]["create_time"].replace("T", " ");
             // 时间格式转换（使用插件moment）
